@@ -1,3 +1,12 @@
 {
-  "extends": "astro/tsconfigs/relaxed"
+  "compilerOptions": {
+    "strict": false,
+    "jsx": "preserve",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "skipLibCheck": true
+  }
 }
