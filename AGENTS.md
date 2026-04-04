@@ -215,6 +215,77 @@ function calculateTotal(items: CartItem[], taxRate: number): number {
 
 ## 3. Git Workflow
 
+This project uses **git flow** for branching strategy and **git bug** for issue tracking.
+
+### git flow
+
+```bash
+# Initialize git flow (one-time setup)
+git flow init
+
+# Start a new feature
+git flow feature start feature-name
+
+# Finish a feature (merges into develop)
+git flow feature finish feature-name
+
+# Start a release
+git flow release start v1.0.0
+
+# Finish a release (merges to main and develop, tags)
+git flow release finish v1.0.0
+
+# Start a hotfix
+git flow hotfix start hotfix-name
+
+# Finish a hotfix (merges to main and develop)
+git flow hotfix finish hotfix-name
+
+# Publish a feature/release/hotfix
+git flow feature publish feature-name
+git flow release publish v1.0.0
+git flow hotfix publish hotfix-name
+
+# Pull a published feature
+git flow feature pull origin feature-name
+```
+
+### git bug
+
+```bash
+# List all bugs
+git bug
+
+# Create a new bug
+git bug add "Bug title"
+
+# Update bug status
+git bug update <id> status <new-status>
+
+# List available statuses
+git bug ls_labels
+
+# Assign bug to someone
+git bug update <id> assign "user@example.com"
+
+# Show bug details
+git bug show <id>
+
+# Filter bugs by status
+git bug list status:open
+git bug list status:in-progress
+git bug list status:closed
+
+# Add comment to bug
+git bug comment <id> "Comment text"
+
+# Link current branch to a bug
+git bug link <id>
+
+# Filter bugs assigned to you
+git bug list assignee:"your@email.com"
+```
+
 ### Commits
 
 ```bash
@@ -222,17 +293,26 @@ function calculateTotal(items: CartItem[], taxRate: number): number {
 git commit -m "feat(auth): add OAuth2 login support"
 git commit -m "fix(api): handle null response from upstream"
 git commit -m "docs(readme): update installation instructions"
+git commit -m "fix(bug #123): resolve null pointer in user service"
 
 # Types: feat, fix, docs, style, refactor, test, chore
+# Reference bugs in commits when applicable
 ```
 
 ### Branch Naming
 
 ```bash
-# Format: type/description
-feat/user-authentication
-fix/redirect-loop-on-login
-refactor/extract-validation-utils
+# Feature branches (git flow)
+git flow feature start user-authentication
+git flow feature start 123-user-authentication  # Linked to bug
+
+# Bugfix branches
+git flow bugfix start 123-fix-redirect-loop
+
+# Format when not using git flow
+feat/123-user-authentication
+fix/123-redirect-loop
+bugfix/123-fix-null-pointer
 ```
 
 ---
