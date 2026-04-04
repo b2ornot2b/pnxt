@@ -376,7 +376,12 @@ The project designs a **net-new programming paradigm built exclusively for LLMs*
 |-------|-------|--------|
 | Phase 1 | Core Architecture, State Separation & FFI | Complete (external) |
 | Phase 2 | Bridge Layer & Mathematical Spec | Complete (external) |
-| Phase 3 (current) | Existing deep dives (needs realignment to original prompt) | In Progress |
+| Phase 3 | Deep analysis of pillars, patterns, and architecture | Complete |
+| Phase 4 | Prototype implementation & empirical evaluation | Planned |
+
+### Project Status
+
+For the current project status, roadmap, and next steps, see [`status.md`](status.md).
 
 ### Agent Identity
 
