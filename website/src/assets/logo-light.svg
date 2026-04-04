@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" fill="none">
+  <defs>
+    <linearGradient id="grad-light" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#7c3aed;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2563eb;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <!-- Outer hexagon -->
+  <polygon points="20,2 36,11 36,29 20,38 4,29 4,11" fill="none" stroke="url(#grad-light)" stroke-width="2"/>
+  <!-- Inner network nodes -->
+  <circle cx="20" cy="12" r="3" fill="#7c3aed"/>
+  <circle cx="12" cy="26" r="3" fill="#4f46e5"/>
+  <circle cx="28" cy="26" r="3" fill="#2563eb"/>
+  <!-- Connecting lines -->
+  <line x1="20" y1="12" x2="12" y2="26" stroke="#4f46e5" stroke-width="1.5" opacity="0.6"/>
+  <line x1="20" y1="12" x2="28" y2="26" stroke="#4f46e5" stroke-width="1.5" opacity="0.6"/>
+  <line x1="12" y1="26" x2="28" y2="26" stroke="#4f46e5" stroke-width="1.5" opacity="0.6"/>
+  <!-- Center dot -->
+  <circle cx="20" cy="21" r="2" fill="url(#grad-light)"/>
+</svg>

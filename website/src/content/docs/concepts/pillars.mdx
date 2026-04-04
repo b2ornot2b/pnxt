@@ -1,0 +1,124 @@
+---
+title: The Three Pillars of ANP
+description: Agent-Computer Interface, Semantic Memory, and Natural Language — the foundational pillars of Agent-Native Programming.
+---
+
+import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+The Agent-Native Programming paradigm is built on three foundational pillars. Each addresses a fundamental requirement for agents to operate as first-class entities in software development.
+
+---
+
+## Pillar 1: Agent-Computer Interface (ACI)
+
+> **Key Principle**: Interfaces should encode knowledge about correct usage, reducing cognitive burden on agents while enabling structural safety guarantees.
+
+The ACI provides structured protocols for agent-to-system communication. Unlike raw shell access or unstructured APIs, the ACI is designed so that **correct usage is easy and misuse is structurally difficult**.
+
+### Key Aspects
+
+- **Semantic operations** — Expose intent, not mechanics (`edit_file` instead of `write_bytes`)
+- **Discoverable affordances** — Agents query what's available and learn constraints
+- **Structural guardrails** — Safety is embedded in the interface, not delegated to agent discipline
+- **Composability** — Operations chain, parallelize, and nest cleanly
+- **Graceful degradation** — Structured errors with corrective suggestions
+
+### Protocol Layers
+
+```
+┌─────────────────────────────────────────────┐
+│  Layer 4: Semantic Layer                     │
+│  (Domain-specific operations and workflows)  │
+├─────────────────────────────────────────────┤
+│  Layer 3: Capability Layer                   │
+│  (Tool definitions, permissions, discovery)  │
+├─────────────────────────────────────────────┤
+│  Layer 2: Session Layer                      │
+│  (Context management, state, transactions)   │
+├─────────────────────────────────────────────┤
+│  Layer 1: Transport Layer                    │
+│  (Message encoding, delivery, framing)       │
+└─────────────────────────────────────────────┘
+```
+
+<LinkCard
+  title="Full ACI Specification"
+  description="Deep dive into the protocol architecture, message taxonomy, and implementation patterns."
+  href="/pnxt/research/phase-3/agent-computer-interface/"
+/>
+
+---
+
+## Pillar 2: Semantic Memory
+
+> **Key Principle**: Memory is not just storage — it is an active, evolving system that makes an agent more valuable in its hundredth session than its first.
+
+Drawing from cognitive science (Atkinson-Shiffrin, Tulving, Baddeley), ANP proposes a three-layer memory architecture:
+
+### Memory Layers
+
+```
+┌─────────────────────────────────────────────┐
+│  Working Memory                              │
+│  Current session context, active task state   │
+│  Capacity: Limited  |  Lifetime: Session     │
+├─────────────────────────────────────────────┤
+│  Semantic Memory                             │
+│  Facts, patterns, relationships, skills      │
+│  Capacity: Large  |  Lifetime: Long-term     │
+├─────────────────────────────────────────────┤
+│  Episodic Memory                             │
+│  Events, interactions, decisions, outcomes    │
+│  Capacity: Large  |  Lifetime: Long-term     │
+└─────────────────────────────────────────────┘
+```
+
+### What Agents Remember
+
+<CardGrid>
+  <Card title="Factual Knowledge" icon="document">
+    Project structure, module boundaries, API contracts, configuration conventions.
+  </Card>
+  <Card title="Procedural Knowledge" icon="setting">
+    Build processes, deployment procedures, review conventions, release workflows.
+  </Card>
+  <Card title="Episodic Knowledge" icon="history">
+    Design decisions, rejected approaches, fragile code areas, team preferences.
+  </Card>
+  <Card title="Meta-Knowledge" icon="information">
+    Self-calibration data, learned heuristics, effective tools and approaches.
+  </Card>
+</CardGrid>
+
+<LinkCard
+  title="Full Memory Architecture"
+  description="Complete analysis of memory requirements, lifecycle management, and cross-agent sharing."
+  href="/pnxt/research/phase-3/semantic-memory/"
+/>
+
+---
+
+## Pillar 3: Natural Language as Lingua Franca
+
+> **Key Principle**: Natural language is not just for prompts — it's the architectural interface for task specification, progress reporting, and collaboration.
+
+In ANP, natural language serves as the primary medium of communication between:
+
+- **Human to Agent** — Task specification, feedback, oversight
+- **Agent to Human** — Progress reporting, clarification requests, decision proposals
+- **Agent to Agent** — Coordination, negotiation, knowledge sharing
+
+### Why Natural Language?
+
+- **Expressiveness** — Captures nuance, intent, uncertainty, and context that typed interfaces cannot
+- **Accessibility** — No special tooling needed for human participants
+- **Flexibility** — Adapts to novel situations without schema changes
+- **Partnership** — Positions agents as colleagues, not just tools
+
+This doesn't mean abandoning structure — the ACI provides structured operations for precise actions. Natural language handles the spaces between: planning, reasoning, explaining, and collaborating.
+
+<LinkCard
+  title="Multi-Agent Coordination"
+  description="How agents communicate and coordinate using natural language protocols."
+  href="/pnxt/research/phase-3/multi-agent-coordination/"
+/>

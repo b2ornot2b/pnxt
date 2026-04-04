@@ -1,0 +1,114 @@
+---
+title: pnxt — Agent-Native Programming
+description: A net-new programming paradigm built exclusively for LLMs and AI agents.
+template: splash
+hero:
+  tagline: |
+    A net-new programming paradigm built exclusively for LLMs and AI agents.
+    Moving beyond human-readable syntax toward structured, verifiable, graph-based program representations.
+  image:
+    dark: ../../assets/logo-dark.svg
+    light: ../../assets/logo-light.svg
+  actions:
+    - text: Read the Research
+      link: /pnxt/research/overview/
+      icon: right-arrow
+      variant: primary
+    - text: View on GitHub
+      link: https://github.com/b2ornot2b/pnxt
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+## Why a New Paradigm?
+
+Traditional programming languages are optimized for **human cognition** — visual hierarchy, short-term memory, lexical parsing. LLMs excel at structural data manipulation (JSON/graphs) but struggle with implicit control flow and loop-state tracking.
+
+**pnxt** designs an execution environment where LLMs **orchestrate logic graphs** rather than generate syntax. In the Agent-Native Programming (ANP) paradigm, AI agents are **first-class entities** with identity, memory, state, and tools — not just coding assistants bolted onto existing workflows.
+
+---
+
+## The Three Pillars
+
+<CardGrid stagger>
+  <Card title="Agent-Computer Interface" icon="setting">
+    Structured protocols for agent-to-system communication with versioned capabilities, clear error handling, and recovery patterns. Agents negotiate what they can do, not just what they're told.
+  </Card>
+  <Card title="Semantic Memory" icon="document">
+    Persistent, evolving memory — working, semantic, and episodic — that makes agents more valuable in their hundredth session than their first. Memory is the foundation of coherent agency.
+  </Card>
+  <Card title="Natural Language" icon="pencil">
+    Natural language as the primary interface for task specification, progress reporting, and collaboration. Human partnership, not replacement.
+  </Card>
+</CardGrid>
+
+---
+
+## Theoretical Foundations
+
+<CardGrid>
+  <Card title="HoTT Typed Tokenization" icon="puzzle">
+    Code as categorical objects, morphisms, and paths — built on Homotopy Type Theory for mathematical rigor.
+  </Card>
+  <Card title="VPIR" icon="approve-check-circle">
+    Verifiable Programmatic Intermediate Representation with mechanically verifiable reasoning chains.
+  </Card>
+  <Card title="Dataflow Process Networks" icon="random">
+    Actors communicating via FIFO channels, eliminating imperative loops in favor of declarative data flow.
+  </Card>
+  <Card title="LLMbda Calculus" icon="moon">
+    Lambda calculus with Information Flow Control for noninterference guarantees.
+  </Card>
+  <Card title="SMT Solvers" icon="approve-check">
+    Z3/CVC5 for constraint satisfaction and formal verification of agent behaviors.
+  </Card>
+  <Card title="Bridge Grammar" icon="translate">
+    Constrained-decoding JSON schema forcing LLMs to output valid VPIR nodes.
+  </Card>
+</CardGrid>
+
+---
+
+## Key Principles
+
+<CardGrid>
+  <LinkCard
+    title="Incrementalism"
+    description="Every component is designed for phased adoption — start small, grow organically."
+    href="/pnxt/roadmap/phase-4/"
+  />
+  <LinkCard
+    title="Structural Safety"
+    description="Correct behavior is easy by design. Incorrect behavior is structurally difficult."
+    href="/pnxt/research/phase-3/trust-safety-governance/"
+  />
+  <LinkCard
+    title="Explicit Over Implicit"
+    description="Side effects declared, capabilities negotiated, trust measured — nothing hidden."
+    href="/pnxt/research/phase-3/agent-computer-interface/"
+  />
+  <LinkCard
+    title="Memory as Foundation"
+    description="Persistent memory transforms stateless interactions into coherent agent experiences."
+    href="/pnxt/research/phase-3/semantic-memory/"
+  />
+</CardGrid>
+
+---
+
+## Research Status
+
+| Phase | Focus | Status |
+|-------|-------|--------|
+| Phase 1 | Core Architecture, State Separation & FFI | Complete |
+| Phase 2 | Bridge Layer & Mathematical Spec | Complete |
+| Phase 3 | Deep analysis of pillars, patterns, and architecture | Complete |
+| Phase 4 | Prototype implementation & empirical evaluation | **Planned** |
+
+<LinkCard
+  title="View Full Project Status & Roadmap"
+  description="See the current state of the project, completed milestones, and what's coming next."
+  href="/pnxt/status/"
+/>

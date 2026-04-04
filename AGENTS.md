@@ -443,7 +443,69 @@ tests/
 
 ---
 
-## 8. Getting Help
+## 8. Website (GitHub Pages)
+
+The project website is built with [Astro Starlight](https://starlight.astro.build/) and deployed automatically to GitHub Pages.
+
+### Structure
+
+```
+website/
+├── astro.config.mjs              # Site configuration, sidebar, metadata
+├── package.json                  # Dependencies
+├── src/
+│   ├── content/docs/             # All page content (Markdown/MDX)
+│   │   ├── index.mdx             # Landing page (splash hero)
+│   │   ├── introduction.mdx      # Project introduction
+│   │   ├── status.md             # Project status (mirrors status.md)
+│   │   ├── concepts/             # Core concepts (pillars, foundations)
+│   │   ├── research/             # Research summaries
+│   │   │   ├── overview.md
+│   │   │   └── phase-3/          # Phase 3 document summaries
+│   │   ├── roadmap/              # Phase 4 plan, future vision
+│   │   └── contributing/         # Contributing guidelines
+│   ├── assets/                   # Logos and images
+│   └── styles/custom.css         # Custom theme
+```
+
+### Keeping the Website in Sync
+
+The website is designed to reference source documents dynamically. When updating documentation:
+
+1. **When editing `status.md`**: Also update `website/src/content/docs/status.md` to reflect changes
+2. **When editing research docs in `docs/research/phase-3/`**: Update the corresponding summary page in `website/src/content/docs/research/phase-3/`
+3. **When adding new research phases**: Add new sidebar entries in `website/astro.config.mjs` and create corresponding content pages
+4. **When updating `README.md`**: Review `website/src/content/docs/index.mdx` and `introduction.mdx` for consistency
+5. **When updating `AGENTS.md`**: Review `website/src/content/docs/contributing/guidelines.md` for consistency
+
+Each website page includes a tip/note linking to its source document in the repository, so readers can always find the authoritative version.
+
+### Deployment
+
+- **Automatic**: Pushes to `main` that touch `website/`, `docs/`, `README.md`, `status.md`, or `AGENTS.md` trigger a rebuild and deploy via GitHub Actions
+- **PR validation**: Pull requests touching those paths run a build check to catch errors before merge
+- **Manual**: The deploy workflow can be triggered manually via `workflow_dispatch`
+
+### Local Development
+
+```bash
+cd website
+npm install
+npm run dev       # Start dev server
+npm run build     # Production build
+npm run preview   # Preview production build
+```
+
+### Adding New Pages
+
+1. Create a `.md` or `.mdx` file in the appropriate `website/src/content/docs/` subdirectory
+2. Add a frontmatter block with `title` and `description`
+3. Add a sidebar entry in `website/astro.config.mjs` under the appropriate section
+4. If the page summarizes a source document, add a tip/note linking to the source
+
+---
+
+## 9. Getting Help
 
 - Read existing code to understand patterns
 - Check tests for usage examples

@@ -1,0 +1,69 @@
+---
+title: Introduction to pnxt
+description: What is pnxt and why does it exist?
+---
+
+import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+**pnxt** is a research project designing a **net-new programming paradigm built exclusively for LLMs and AI agents**, moving beyond human-readable legacy syntax toward structured, verifiable, graph-based program representations.
+
+## The Problem
+
+Traditional programming languages are optimized for **human cognition** — visual hierarchy, short-term memory, lexical parsing. LLMs, however, excel at structural data manipulation (JSON/graphs) but struggle with implicit control flow and loop-state tracking.
+
+Current approaches try to make LLMs better at writing human-centric code. **pnxt asks a different question**: what if we designed programming from the ground up for how LLMs actually think?
+
+## The Vision
+
+pnxt designs an execution environment where LLMs **orchestrate logic graphs** rather than generate syntax. In the Agent-Native Programming (ANP) paradigm, AI agents are **first-class entities** with identity, memory, state, and tools — not just coding assistants bolted onto existing workflows.
+
+## Core Principles
+
+<CardGrid>
+  <Card title="Incrementalism" icon="rocket">
+    Every component is designed for phased adoption. Start small, grow organically as trust and tooling mature.
+  </Card>
+  <Card title="Structural Safety" icon="approve-check-circle">
+    Correct behavior is easy by design. Incorrect behavior is structurally difficult — not relying on discipline.
+  </Card>
+  <Card title="Explicit Over Implicit" icon="open-book">
+    Side effects declared, capabilities negotiated, trust measured. Nothing important is left to convention.
+  </Card>
+  <Card title="Human Partnership" icon="heart">
+    Agents as colleagues with graduated trust. Humans retain authority over consequential decisions.
+  </Card>
+</CardGrid>
+
+## What Makes ANP Different?
+
+Unlike conventional agent frameworks that bolt LLM capabilities onto existing paradigms, pnxt proposes genuinely novel contributions:
+
+- **Persistent evolving memory** — agents learn and grow across sessions
+- **Natural language as interface** — not just for prompts, but as architectural lingua franca
+- **Negotiated capability contracts** — agents discover and negotiate what they can do
+- **Graduated trust as architectural concern** — trust is measured, not assumed
+
+## Getting Started
+
+<CardGrid>
+  <LinkCard
+    title="Three Pillars of ANP"
+    description="Understand the foundational pillars: ACI, Semantic Memory, and Natural Language."
+    href="/pnxt/concepts/pillars/"
+  />
+  <LinkCard
+    title="Research Overview"
+    description="Explore the complete Phase 3 research covering all aspects of ANP."
+    href="/pnxt/research/overview/"
+  />
+  <LinkCard
+    title="Project Status"
+    description="See where pnxt is today and what's coming next."
+    href="/pnxt/status/"
+  />
+  <LinkCard
+    title="Theoretical Foundations"
+    description="Dive into HoTT, VPIR, DPN, LLMbda Calculus, and SMT solvers."
+    href="/pnxt/concepts/foundations/"
+  />
+</CardGrid>
