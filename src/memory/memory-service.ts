@@ -14,6 +14,9 @@ import type {
   ConsolidationReport,
 } from '../types/memory.js';
 
+import type { StorageBackend, StoredMemoryRecord } from './storage-backend.js';
+import { InMemoryStorageBackend } from './storage-backend.js';
+
 export interface MemoryService {
   store(entry: MemoryEntry): Promise<string>;
 
@@ -28,24 +31,62 @@ export interface MemoryService {
   consolidate(params: ConsolidationParams): Promise<ConsolidationReport>;
 }
 
+export interface MemoryServiceOptions {
+  backend?: StorageBackend;
+}
+
 /**
  * In-memory implementation of MemoryService for prototyping and testing.
+ *
+ * Accepts an optional StorageBackend for persistence. When no backend is
+ * provided, defaults to InMemoryStorageBackend (no persistence).
  */
 export class InMemoryMemoryService implements MemoryService {
-  private memories = new Map<string, { entry: MemoryEntry; accessCount: number; lastAccessed: string }>();
+  private memories = new Map<string, StoredMemoryRecord>();
   private nextId = 1;
+  private backend: StorageBackend;
+  private initialized = false;
+
+  constructor(options?: MemoryServiceOptions) {
+    this.backend = options?.backend ?? new InMemoryStorageBackend();
+  }
+
+  private async ensureLoaded(): Promise<void> {
+    if (this.initialized) return;
+    const records = await this.backend.load();
+    this.memories = records;
+
+    // Derive next ID from existing records
+    let maxId = 0;
+    for (const id of this.memories.keys()) {
+      const num = parseInt(id.replace('mem_', ''), 10);
+      if (!isNaN(num) && num > maxId) {
+        maxId = num;
+      }
+    }
+    this.nextId = maxId + 1;
+
+    this.initialized = true;
+  }
 
   async store(entry: MemoryEntry): Promise<string> {
+    await this.ensureLoaded();
+
     const id = `mem_${this.nextId++}`;
-    this.memories.set(id, {
+    const record: StoredMemoryRecord = {
+      id,
       entry,
       accessCount: 0,
       lastAccessed: new Date().toISOString(),
-    });
+    };
+    this.memories.set(id, record);
+    await this.backend.append(id, record);
     return id;
   }
 
   async query(params: MemoryQueryParams): Promise<MemoryResult[]> {
+    await this.ensureLoaded();
+
     const results: MemoryResult[] = [];
     const limit = params.limit ?? 10;
 
@@ -79,6 +120,8 @@ export class InMemoryMemoryService implements MemoryService {
   }
 
   async update(id: string, updates: Partial<MemoryEntry>): Promise<void> {
+    await this.ensureLoaded();
+
     const stored = this.memories.get(id);
     if (!stored) {
       throw new Error(`Memory not found: ${id}`);
@@ -93,16 +136,23 @@ export class InMemoryMemoryService implements MemoryService {
     if (updates.metadata !== undefined) {
       stored.entry.metadata = { ...stored.entry.metadata, ...updates.metadata };
     }
+
+    await this.backend.append(id, stored);
   }
 
   async forget(id: string, _reason: string): Promise<void> {
+    await this.ensureLoaded();
+
     if (!this.memories.has(id)) {
       throw new Error(`Memory not found: ${id}`);
     }
     this.memories.delete(id);
+    await this.backend.remove(id);
   }
 
   async getRelated(entityId: string, _relationship?: string): Promise<MemoryResult[]> {
+    await this.ensureLoaded();
+
     const results: MemoryResult[] = [];
 
     for (const [id, stored] of this.memories) {
@@ -121,6 +171,8 @@ export class InMemoryMemoryService implements MemoryService {
   }
 
   async consolidate(params: ConsolidationParams): Promise<ConsolidationReport> {
+    await this.ensureLoaded();
+
     let consolidatedCount = 0;
 
     for (const [, stored] of this.memories) {
