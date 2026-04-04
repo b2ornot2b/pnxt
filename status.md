@@ -1,6 +1,6 @@
 # pnxt Project Status
 
-> Last updated: 2026-04-04
+> Last updated: 2026-04-04 (Phase 4 in progress)
 
 ---
 
@@ -34,8 +34,8 @@ Phase 4 transitions from research to **prototype implementation and empirical ev
 ### Priority 1: Core Infrastructure
 
 - [x] **Project scaffolding** — Initialize package.json, TypeScript config, test infrastructure, and CI pipeline
-- [ ] **Memory Service prototype** — Implement the three-layer memory model (working, semantic, episodic) as the foundational service *(in-memory prototype complete; needs persistent storage backend)*
-- [ ] **ACI Gateway prototype** — Build the structured protocol layer for agent-to-system communication *(in-memory prototype complete; needs trust integration and audit logging)*
+- [x] **Memory Service prototype** — Three-layer memory model with pluggable `StorageBackend` interface, `InMemoryStorageBackend` for testing, and `FileStorageBackend` for persistent JSON-file storage across sessions
+- [x] **ACI Gateway prototype** — Structured protocol layer with graduated trust checking (5 levels, side-effect-based requirements), `TrustResolver` for agent trust lookup, append-only `AuditLogger` recording all invocations/denials, and `InMemoryAuditLogger` implementation
 
 ### Priority 2: Agent Runtime
 
@@ -103,9 +103,10 @@ pnxt/
 │   │   ├── aci.ts         # ACI Gateway types
 │   │   └── json-schema.ts # JSON Schema utility type
 │   ├── memory/            # Memory Service
-│   │   └── memory-service.ts  # Three-layer memory model (in-memory impl)
+│   │   ├── memory-service.ts  # Three-layer memory model with pluggable backend
+│   │   └── storage-backend.ts # StorageBackend interface, InMemory & File impls
 │   ├── aci/               # ACI Gateway
-│   │   └── aci-gateway.ts     # Agent-computer interface gateway
+│   │   └── aci-gateway.ts     # ACI gateway with trust checking & audit logging
 │   └── agent/             # Agent Runtime
 │       └── agent-runtime.ts   # Agent lifecycle management
 ├── docs/

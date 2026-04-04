@@ -1,5 +1,7 @@
-import { InMemoryACIGateway } from './aci-gateway.js';
+import { InMemoryACIGateway, InMemoryAuditLogger } from './aci-gateway.js';
+import type { TrustResolver } from './aci-gateway.js';
 import type { ToolRegistration, ToolInvocation } from '../types/aci.js';
+import type { TrustLevel } from '../types/agent.js';
 
 function makeRegistration(overrides: Partial<ToolRegistration> = {}): ToolRegistration {
   return {
@@ -79,7 +81,9 @@ describe('InMemoryACIGateway', () => {
 
     it('should handle tool execution errors', async () => {
       gateway.registerTool(
-        makeRegistration({ ops: { timeout: 5000, retryable: true, idempotent: false, costCategory: 'moderate' } }),
+        makeRegistration({
+          ops: { timeout: 5000, retryable: true, idempotent: false, costCategory: 'moderate' },
+        }),
         async () => {
           throw new Error('Something went wrong');
         },
@@ -94,7 +98,9 @@ describe('InMemoryACIGateway', () => {
 
     it('should timeout long-running tools', async () => {
       gateway.registerTool(
-        makeRegistration({ ops: { timeout: 50, retryable: false, idempotent: false, costCategory: 'expensive' } }),
+        makeRegistration({
+          ops: { timeout: 50, retryable: false, idempotent: false, costCategory: 'expensive' },
+        }),
         async () => new Promise((resolve) => setTimeout(resolve, 200)),
       );
 
@@ -103,5 +109,160 @@ describe('InMemoryACIGateway', () => {
       expect(result.success).toBe(false);
       expect(result.error?.message).toContain('timed out');
     }, 10000);
+  });
+
+  describe('trust checking', () => {
+    let trustLevels: Map<string, TrustLevel>;
+    let trustResolver: TrustResolver;
+    let auditLogger: InMemoryAuditLogger;
+
+    beforeEach(() => {
+      trustLevels = new Map<string, TrustLevel>();
+      trustResolver = (agentId: string) => trustLevels.get(agentId);
+      auditLogger = new InMemoryAuditLogger();
+      gateway = new InMemoryACIGateway({ trustResolver, auditLogger });
+    });
+
+    it('should allow invocation when agent trust meets requirement', async () => {
+      trustLevels.set('agent-1', 2);
+      gateway.registerTool(
+        makeRegistration({ sideEffects: ['git'] }),
+        async (input) => input,
+      );
+
+      const result = await gateway.invoke(makeInvocation());
+      expect(result.success).toBe(true);
+    });
+
+    it('should block invocation when agent trust is insufficient', async () => {
+      trustLevels.set('agent-1', 0);
+      gateway.registerTool(
+        makeRegistration({ sideEffects: ['file_write'] }),
+        async (input) => input,
+      );
+
+      const result = await gateway.invoke(makeInvocation());
+      expect(result.success).toBe(false);
+      expect(result.error?.code).toBe('INSUFFICIENT_TRUST');
+    });
+
+    it('should block invocation for unknown agents', async () => {
+      gateway.registerTool(
+        makeRegistration({ sideEffects: ['file_write'] }),
+        async (input) => input,
+      );
+
+      const result = await gateway.invoke(makeInvocation({ agentId: 'unknown-agent' }));
+      expect(result.success).toBe(false);
+      expect(result.error?.code).toBe('AGENT_NOT_FOUND');
+    });
+
+    it('should use requiredTrustLevel override when specified', async () => {
+      trustLevels.set('agent-1', 3);
+      gateway.registerTool(
+        makeRegistration({ sideEffects: ['none'], requiredTrustLevel: 4 }),
+        async (input) => input,
+      );
+
+      const result = await gateway.invoke(makeInvocation());
+      expect(result.success).toBe(false);
+      expect(result.error?.code).toBe('INSUFFICIENT_TRUST');
+    });
+
+    it('should allow read-only tools for level 0 agents', async () => {
+      trustLevels.set('agent-1', 0);
+      gateway.registerTool(
+        makeRegistration({ sideEffects: ['none', 'file_read'] }),
+        async (input) => input,
+      );
+
+      const result = await gateway.invoke(makeInvocation());
+      expect(result.success).toBe(true);
+    });
+
+    it('should require level 3 for process side effects', async () => {
+      trustLevels.set('agent-1', 2);
+      gateway.registerTool(
+        makeRegistration({ sideEffects: ['process'] }),
+        async (input) => input,
+      );
+
+      const result = await gateway.invoke(makeInvocation());
+      expect(result.success).toBe(false);
+      expect(result.error?.code).toBe('INSUFFICIENT_TRUST');
+    });
+  });
+
+  describe('audit logging', () => {
+    let auditLogger: InMemoryAuditLogger;
+
+    beforeEach(() => {
+      auditLogger = new InMemoryAuditLogger();
+      const trustLevels = new Map<string, TrustLevel>([['agent-1', 4 as TrustLevel]]);
+      gateway = new InMemoryACIGateway({
+        trustResolver: (id) => trustLevels.get(id),
+        auditLogger,
+      });
+    });
+
+    it('should log successful invocations', async () => {
+      gateway.registerTool(makeRegistration(), async (input) => input);
+      await gateway.invoke(makeInvocation());
+
+      const events = auditLogger.getEvents();
+      expect(events.length).toBe(1);
+      expect(events[0].result).toBe('success');
+      expect(events[0].event).toBe('invoke:test.echo');
+    });
+
+    it('should log failed invocations', async () => {
+      gateway.registerTool(makeRegistration(), async () => {
+        throw new Error('boom');
+      });
+      await gateway.invoke(makeInvocation());
+
+      const events = auditLogger.getEvents();
+      expect(events.length).toBe(1);
+      expect(events[0].result).toBe('failure');
+      expect(events[0].resultDetails).toBe('boom');
+    });
+
+    it('should log trust denials', async () => {
+      const trustLevels = new Map<string, TrustLevel>([['agent-1', 0 as TrustLevel]]);
+      gateway = new InMemoryACIGateway({
+        trustResolver: (id) => trustLevels.get(id),
+        auditLogger,
+      });
+
+      gateway.registerTool(
+        makeRegistration({ sideEffects: ['file_write'] }),
+        async (input) => input,
+      );
+      await gateway.invoke(makeInvocation());
+
+      const events = auditLogger.getEvents({ category: 'permission' });
+      expect(events.length).toBe(1);
+      expect(events[0].result).toBe('blocked');
+    });
+
+    it('should filter events by agentId', async () => {
+      gateway.registerTool(makeRegistration(), async (input) => input);
+      await gateway.invoke(makeInvocation({ agentId: 'agent-1', requestId: 'r1' }));
+
+      const events = auditLogger.getEvents({ agentId: 'agent-1' });
+      expect(events.length).toBe(1);
+      expect(events[0].actor.id).toBe('agent-1');
+
+      const empty = auditLogger.getEvents({ agentId: 'agent-99' });
+      expect(empty.length).toBe(0);
+    });
+
+    it('should log tool-not-found as failure', async () => {
+      await gateway.invoke(makeInvocation({ toolName: 'missing' }));
+
+      const events = auditLogger.getEvents();
+      expect(events.length).toBe(1);
+      expect(events[0].result).toBe('failure');
+    });
   });
 });
