@@ -354,9 +354,29 @@ describe('UserService', () => {
 
 ---
 
-## 5. Agent-Specific Guidelines
+## 5. Research Context & Agent-Specific Guidelines
 
-Since pnxt is an **Agent-Native Programming** project, agents are first-class participants:
+### Original Research Prompt
+
+The foundational vision for this project is defined in [`docs/research/original-prompt.md`](docs/research/original-prompt.md). **All research and implementation work must align with this master prompt.**
+
+The project designs a **net-new programming paradigm built exclusively for LLMs**, not a conventional agent-tooling framework. Key pillars:
+
+- **Typed Tokenization (HoTT)**: Code as categorical objects, morphisms, and paths — not flat text
+- **VPIR**: Verifiable Programmatic Intermediate Representation with mechanically verifiable reasoning chains
+- **Dataflow Process Networks**: Actors communicating via FIFO channels, eliminating imperative loops
+- **LLMbda Calculus (IFC)**: Lambda calculus with Information Flow Control for noninterference guarantees
+- **SMT Solvers**: Z3/CVC5 for constraint satisfaction and formal verification
+- **Bridge Grammar**: Constrained-decoding JSON schema forcing LLMs to output valid VPIR nodes
+- **Tree-sitter DKB Knowledge Graph**: Codebase stored as a non-Euclidean graph, not flat files
+
+### Research Phases
+
+| Phase | Focus | Status |
+|-------|-------|--------|
+| Phase 1 | Core Architecture, State Separation & FFI | Complete (external) |
+| Phase 2 | Bridge Layer & Mathematical Spec | Complete (external) |
+| Phase 3 (current) | Existing deep dives (needs realignment to original prompt) | In Progress |
 
 ### Agent Identity
 
@@ -370,6 +390,7 @@ Since pnxt is an **Agent-Native Programming** project, agents are first-class pa
 - Propose changes with clear rationale
 - Ask for clarification when requirements are ambiguous
 - Respect human decisions and constraints
+- **Always reference the original prompt when proposing research directions**
 
 ### Memory Management
 
