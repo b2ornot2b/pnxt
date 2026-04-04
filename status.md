@@ -33,9 +33,9 @@ Phase 4 transitions from research to **prototype implementation and empirical ev
 
 ### Priority 1: Core Infrastructure
 
-- [ ] **Memory Service prototype** — Implement the three-layer memory model (working, semantic, episodic) as the foundational service
-- [ ] **ACI Gateway prototype** — Build the structured protocol layer for agent-to-system communication
-- [ ] **Project scaffolding** — Initialize package.json, TypeScript config, test infrastructure, and CI pipeline
+- [x] **Project scaffolding** — Initialize package.json, TypeScript config, test infrastructure, and CI pipeline
+- [ ] **Memory Service prototype** — Implement the three-layer memory model (working, semantic, episodic) as the foundational service *(in-memory prototype complete; needs persistent storage backend)*
+- [ ] **ACI Gateway prototype** — Build the structured protocol layer for agent-to-system communication *(in-memory prototype complete; needs trust integration and audit logging)*
 
 ### Priority 2: Agent Runtime
 
@@ -86,16 +86,32 @@ pnxt/
 ├── AGENTS.md              # Agent development guidelines (CLAUDE.md symlinks here)
 ├── README.md              # Project overview
 ├── status.md              # This file — project status and roadmap
-└── docs/
-    └── research/
-        ├── original-prompt.md                              # Master research prompt
-        ├── Designing Agent-Native Programming Paradigm.md  # Core ANP design document
-        └── phase-3/                                        # Phase 3 research deliverables
-            ├── README.md
-            ├── 01-agent-computer-interface-specification.md
-            ├── 02-semantic-memory-architecture.md
-            ├── 03-multi-agent-coordination-patterns.md
-            ├── 04-trust-safety-governance.md
-            ├── 05-comparative-analysis.md
-            └── 06-implementation-reference-architecture.md
+├── package.json           # Node.js project configuration
+├── tsconfig.json          # TypeScript compiler configuration
+├── jest.config.js         # Jest test configuration
+├── eslint.config.js       # ESLint configuration
+├── .prettierrc            # Prettier configuration
+├── .github/workflows/
+│   ├── ci.yml             # CI pipeline (typecheck, lint, test, build)
+│   ├── deploy-website.yml # Website deployment
+│   └── validate-website.yml
+├── src/
+│   ├── index.ts           # Package entry point
+│   ├── types/             # Shared type definitions
+│   │   ├── memory.ts      # Memory model types
+│   │   ├── agent.ts       # Agent runtime types
+│   │   ├── aci.ts         # ACI Gateway types
+│   │   └── json-schema.ts # JSON Schema utility type
+│   ├── memory/            # Memory Service
+│   │   └── memory-service.ts  # Three-layer memory model (in-memory impl)
+│   ├── aci/               # ACI Gateway
+│   │   └── aci-gateway.ts     # Agent-computer interface gateway
+│   └── agent/             # Agent Runtime
+│       └── agent-runtime.ts   # Agent lifecycle management
+├── docs/
+│   └── research/
+│       ├── original-prompt.md
+│       ├── Designing Agent-Native Programming Paradigm.md
+│       └── phase-3/          # Phase 3 research deliverables
+└── website/               # Astro Starlight documentation site
 ```
