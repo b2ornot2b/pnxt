@@ -39,9 +39,9 @@ Phase 4 transitions from research to **prototype implementation and empirical ev
 
 ### Priority 2: Agent Runtime
 
-- [ ] **Agent runtime environment** — Basic agent lifecycle management (registration, execution, teardown)
-- [ ] **Capability negotiation** — Implement versioned capability discovery and contract negotiation
-- [ ] **Trust engine** — Graduated trust model with measurable trust scores
+- [x] **Agent runtime environment** — Basic agent lifecycle management (registration, execution, teardown)
+- [x] **Capability negotiation** — Versioned capability discovery with 3-phase handshake, semantic versioning, trust-based constraint tightening, revocation, and expiry support
+- [x] **Trust engine** — Graduated trust model (5 levels) with multi-dimensional trust, observable metric-based scoring (0–100), automatic calibration, per-dimension overrides, and trust reset/manual adjustment
 
 ### Priority 3: Validation and Evaluation
 
@@ -101,14 +101,20 @@ pnxt/
 │   │   ├── memory.ts      # Memory model types
 │   │   ├── agent.ts       # Agent runtime types
 │   │   ├── aci.ts         # ACI Gateway types
+│   │   ├── capability.ts  # Capability negotiation types
+│   │   ├── trust.ts       # Trust engine types
 │   │   └── json-schema.ts # JSON Schema utility type
 │   ├── memory/            # Memory Service
 │   │   ├── memory-service.ts  # Three-layer memory model with pluggable backend
 │   │   └── storage-backend.ts # StorageBackend interface, InMemory & File impls
 │   ├── aci/               # ACI Gateway
 │   │   └── aci-gateway.ts     # ACI gateway with trust checking & audit logging
-│   └── agent/             # Agent Runtime
-│       └── agent-runtime.ts   # Agent lifecycle management
+│   ├── agent/             # Agent Runtime
+│   │   └── agent-runtime.ts   # Agent lifecycle management
+│   ├── capability/        # Capability Negotiation
+│   │   └── capability-negotiation.ts  # Versioned capability discovery & contract negotiation
+│   └── trust/             # Trust Engine
+│       └── trust-engine.ts    # Graduated trust model with scoring & calibration
 ├── docs/
 │   └── research/
 │       ├── original-prompt.md
