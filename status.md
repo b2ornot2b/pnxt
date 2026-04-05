@@ -1,6 +1,6 @@
 # pnxt Project Status
 
-> Last updated: 2026-04-05 (Phase 6 Sprint 6 complete)
+> Last updated: 2026-04-05 (Phase 6 Sprint 7 complete)
 
 ---
 
@@ -126,6 +126,15 @@ Following the Advisory Review Panel's alignment assessment (3/10), Phase 5 imple
 | LLMbda Semantic Foundation | — | — | **VPIR nodes carry lambdaSemantics; vpirNodeToLambda + annotateGraphWithSemantics** |
 | Architecture Decisions | — | — | **ADR: Typed LLMbda Calculus (IFC, Z3, LLM safety justification)** |
 
+| Component | Phase 6 Sprint 7 |
+|-----------|-------------------|
+| User-Program Verification | **ProgramVerifier: preconditions, postconditions, invariants, assertions on VPIR programs via Z3** |
+| CVC5 Integration | **CVC5Solver (subprocess), MultiSolverVerifier (auto-fallback Z3→CVC5)** |
+| DPN Bisimulation | **Strong bisimulation + observational equivalence via partition refinement; HoTT path construction** |
+| Benchmarks | **+Multi-agent delegation (3 agents, trust boundaries, IFC), +Secure data pipeline (PII redaction, label propagation)** |
+| SMT Verification | **17 properties (+user_precondition, +bisimulation_equivalence)** |
+| Transport | **Transported results now use solver: 'transport' instead of 'z3'** |
+
 ---
 
 ## Test Coverage
@@ -144,6 +153,7 @@ Following the Advisory Review Panel's alignment assessment (3/10), Phase 5 imple
 | Phase 6 Sprint 4 | 37 | 712 | ~14,200 |
 | Phase 6 Sprint 5 | 40 | 767 | ~15,400 |
 | Phase 6 Sprint 6 | 44 | 817 | ~16,400 |
+| Phase 6 Sprint 7 | 49 | 882 | ~18,100 |
 
 ---
 
@@ -194,11 +204,21 @@ Phase 6 shifts from "build each pillar" to "connect and validate the pillars tog
 - [x] **Z3 Univalence Verification** — New `src/verification/z3-univalence.ts` encoding univalence as an SMT formula. `verifyUnivalenceAxiom()` on Z3Context checks that path↔equivalence round-trips hold for all equivalence pairs. New property: `univalence_axiom`. Total: **15 formally verified Z3 properties** (from 14).
 - [x] **Type Extensions** — `TypeEquivalence`, `PathTerm`, `TypeFamily`, `TypeFamilyValue`, `TransportResult` types in `src/types/hott.ts`. `lambdaSemantics?: LambdaTerm` optional field on `VPIRNode` in `src/types/vpir.ts`. `univalence_axiom` added to `VerificationProperty`.
 
+### Sprint 7: Verification Maturity — User-Program Verification + Bisimulation (Complete)
+
+- [x] **User-Program Property Verification** — New `src/verification/z3-program-verifier.ts` enabling users to specify and verify custom properties on VPIR programs. `ProgramVerifier` class binds VPIR node attributes (trust, classification, confidence, type) to Z3 constants via naming convention `node_<id>_<attr>`. Supports four property kinds: preconditions (root node constraints), postconditions (terminal node guarantees), invariants (hold at every target node), and assertions (specific node checks). SMT-LIB2 formula parser with S-expression support. `toSmtLib2()` generates solver-portable queries. Transitions Z3 from meta-verification to program verification — the key step de Moura flagged.
+- [x] **CVC5 Integration** — New `src/verification/cvc5-integration.ts` adding CVC5 as an alternative solver via subprocess (`child_process.spawn`) with SMT-LIB2 on stdin/stdout. `CVC5Solver` class with `check()` and `isAvailable()`. `MultiSolverVerifier` orchestrates both solvers: Z3 mode (native WASM API), CVC5 mode (subprocess), or auto mode (Z3 first with timeout, CVC5 fallback). Same `VerificationResult` type for both — solvers are interchangeable. Graceful degradation when CVC5 binary is absent. Addresses de Moura's multi-solver concern.
+- [x] **DPN Bisimulation Checking** — New `src/channel/bisimulation.ts` implementing formal equivalence checking for DPN configurations. `buildLTS()` constructs Labelled Transition Systems from `DataflowGraphDefinition` (BFS state exploration, bounded). `checkStrongBisimulation()` uses Kanellakis-Smolka partition refinement. `checkObservationalEquivalence()` excludes tau actions for weak bisimulation. `toHoTTPath()` converts bisimulation results to HoTT paths via `createTypeEquivalence()` + `equivalenceToPath()`, connecting bisimulation to univalence. Combined with transport (S6), Z3 properties transfer to bisimilar configs without re-verification. Addresses Milner's "no formal equivalence checking" gap.
+- [x] **Multi-Agent Delegation Benchmark** — New `src/benchmarks/multi-agent-delegation.ts`. Three agents (researcher trust:3/confidential, assistant trust:2/internal, reviewer trust:4/restricted) coordinate on a research task. 6-node VPIR graph with proper IFC flow: assistant receives only public-level input, confidential data stays with researcher. Exercises trust boundaries, IFC enforcement, and capability negotiation. 5-stage `BenchmarkDefinition` with IFC flow check and trust boundary verification.
+- [x] **Secure Data Pipeline Benchmark** — New `src/benchmarks/secure-data-pipeline.ts`. Data flows through ingestion (public) → classification (confidential) → redaction → analysis → declassification gate → output. `analyzePipelineIFC()` traces label progression and detects violations. `verifyRedactionCompleteness()` confirms no PII remains after redaction. 5-stage benchmark with IFC analysis and redaction verification.
+- [x] **Type Extensions** — `ProgramProperty`, `ProgramPropertyKind`, `ProgramVerificationResult`, `VerificationConfig` in `src/types/verification.ts`. `VerificationProperty` extended with `user_precondition`, `user_postcondition`, `user_invariant`, `user_assertion`, `bisimulation_equivalence`. `VerificationResult.solver` widened to `'z3' | 'cvc5' | 'transport'`. New `src/types/bisimulation.ts` with `DPNState`, `DPNAction`, `DPNTransition`, `LabelledTransitionSystem`, `BisimulationRelation`, `BisimulationResult`. Transport results now use `solver: 'transport'` instead of `'z3'`.
+- [x] **Test Suite** — 5 new test files with 65 new tests: program verifier (18), CVC5 integration (7), bisimulation (18), delegation benchmark (11), pipeline benchmark (11). Total: **49 test suites, 882 tests**.
+
 ---
 
 ## Future Goals
 
-### Medium-Term (Phase 6 Sprint 6+)
+### Medium-Term (Phase 6 Sprint 7+)
 
 - **Web-based visualization frontend** — Interactive node-graph renderer consuming the JSON export format (D3.js/Cytoscape.js)
 - **LLMbda Calculus expansion** — Effect tracking, recursive types, pattern matching, and full lambda-to-VPIR compilation

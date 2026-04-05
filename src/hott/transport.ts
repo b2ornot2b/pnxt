@@ -157,7 +157,7 @@ export function transportVerificationResult(
   // Construct the transported result
   return {
     verified: true,
-    solver: 'z3',
+    solver: 'transport',
     duration: 0, // No solver time — transported via univalence
     property: verificationResult.property,
     counterexample: undefined,
