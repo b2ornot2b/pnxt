@@ -14,3 +14,4 @@ export * from './bridge-grammar/index.js';
 export * from './verification/index.js';
 export * from './errors/index.js';
 export * from './lambda/index.js';
+export * from './benchmarks/index.js';
