@@ -393,7 +393,7 @@ For the current project status, roadmap, and next steps, see [`status.md`](statu
 
 The project maintains a **Dream Team Advisory Board** of 10 domain experts (historical and living) whose perspectives are simulated during design reviews. When the user requests an **"advisor review"**, the agent convenes this panel as a round-table discussion covering type theory, concurrency, security, LLM architecture, language design, and paradigm vision.
 
-See [`docs/advisory-review-panel.md`](docs/advisory-review-panel.md) for the full panel roster, domain coverage matrix, and review output format.
+See [`docs/advisory-review-panel/`](docs/advisory-review-panel/) for the full panel roster, domain coverage matrix, review output format, and task tracker.
 
 ### Collaboration
 
