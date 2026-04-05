@@ -1,12 +1,12 @@
 # pnxt Project Status
 
-> Last updated: 2026-04-05 (Phase 5 Sprint 5 complete)
+> Last updated: 2026-04-05 (Phase 6 Sprint 1 complete)
 
 ---
 
 ## Current State
 
-The pnxt project has completed Phase 5 Sprint 5, delivering **HoTT typed tokenization foundations** (Category, Morphism, Path types with categorical law validation), **Tree-sitter DKB Knowledge Graph** (typed code entity graph with multi-hop traversal and HoTT conversion), **VPIR-to-HoTT bridge** (VPIR reasoning chains as categorical structures with path equivalences), and **end-to-end pipeline integration** (KG → VPIR → HoTT → Z3 with IFC enforcement at every boundary). All seven paradigm pillars now have foundational implementations.
+The pnxt project has completed Phase 6 Sprint 1, delivering **Tree-sitter AST parser integration** (automatic TypeScript codebase ingestion into Knowledge Graphs), **LLM-driven VPIR generation** (Claude API integration with Bridge Grammar constrained decoding), and **end-to-end Code-to-Verified-Reasoning pipeline** (Code → Tree-sitter → KG → VPIR → HoTT → Z3). Phase 6 focuses on integration and real-world validation — connecting the seven paradigm pillars into a working whole.
 
 ### Completed Work
 
@@ -49,7 +49,7 @@ The pnxt project has completed Phase 5 Sprint 5, delivering **HoTT typed tokeniz
 
 ---
 
-## Phase 5: Paradigm Foundation (In Progress)
+## Phase 5: Paradigm Foundation (Complete)
 
 Following the Advisory Review Panel's alignment assessment (3/10), Phase 5 implements the core paradigm components that distinguish pnxt from conventional agent frameworks.
 
@@ -114,18 +114,31 @@ Following the Advisory Review Panel's alignment assessment (3/10), Phase 5 imple
 | Sprint 3 | 20 | 355 | ~5,200 |
 | Sprint 4 | 22 | ~415 | ~6,600 |
 | Sprint 5 | 26 | 479 | ~8,200 |
+| Phase 6 Sprint 1 | 29 | ~530 | ~9,600 |
+
+---
+
+## Phase 6: Integration & Deepening (In Progress)
+
+Phase 6 shifts from "build each pillar" to "connect and validate the pillars together with real-world inputs."
+
+### Sprint 1: Tree-sitter + LLM Integration + End-to-End Pipeline (Complete)
+
+- [x] **Tree-sitter AST Parser Integration** — Parses TypeScript source code into AST via `web-tree-sitter`, extracts functions, classes, interfaces, type aliases, variables, imports and their relationships (calls, contains, imports, extends, implements) into typed KG nodes and edges. `parseFile()` for single files, `parseDirectory()` for multi-file ingestion with cross-file import resolution. Addresses medium-term goal #1.
+- [x] **LLM-Driven VPIR Generation** — Claude API integration via `@anthropic-ai/sdk` using Bridge Grammar schemas as tool definitions. `generateVPIRGraph()` sends task descriptions, validates responses through `parseVPIRGraph()`, with retry logic for invalid outputs. Mock client for testing, live API tests gated behind `ANTHROPIC_API_KEY`. Addresses Sutskever's advisory concern about Bridge Grammar practicality.
+- [x] **Integrated Code-to-Verified-Reasoning Pipeline** — End-to-end `runIntegrationPipeline()`: Code → Tree-sitter → KG → VPIR → HoTT → Z3. Five-stage pipeline with structured reporting, IFC label propagation, categorical validation at each stage, and timing metrics. Proves paradigm pillars work together on real TypeScript source code.
 
 ---
 
 ## Future Goals
 
-### Medium-Term (Phase 5 Sprint 6+)
+### Medium-Term (Phase 6 Sprint 2+)
 
-- **Tree-sitter parser integration** — Connect knowledge graph to actual Tree-sitter AST parsing for automatic codebase ingestion
-- **Enhanced visualization** — Graphical node-graph decompiler for web-based oversight
 - **HoTT higher paths** — 2-paths, groupoid structure, and univalence axiom for deeper refactoring proofs
+- **Enhanced visualization** — Graphical node-graph decompiler for web-based oversight
+- **Code quality cleanup** — Dead abstraction audit (BehaviorStyle/Verbosity), ACIError hierarchy
 
-### Long-Term (Phase 6+)
+### Long-Term (Phase 7+)
 
 - **Full LLMbda Calculus runtime** — Lambda calculus with noninterference guarantees
 - **Full Dataflow Process Network engine** — Actor-based execution with FIFO channel communication
@@ -185,16 +198,18 @@ pnxt/
 │   │   └── aci-gateway.ts     # ACI gateway with trust + IFC checking, audit logging
 │   ├── agent/             # Agent Runtime
 │   │   └── agent-runtime.ts   # Agent lifecycle management with channel support
-│   ├── bridge-grammar/    # Bridge Grammar (Phase 5 Sprint 2)
+│   ├── bridge-grammar/    # Bridge Grammar (Phase 5 Sprint 2 + Phase 6 Sprint 1)
 │   │   ├── vpir-schema.ts         # JSON Schema definitions for VPIR constrained decoding
 │   │   ├── schema-validator.ts    # Parse/validate LLM JSON into typed VPIR nodes/graphs
 │   │   ├── constrained-output.ts  # LLM schema format converters
+│   │   ├── llm-vpir-generator.ts  # Claude API VPIR generation (Phase 6 Sprint 1)
 │   │   └── index.ts               # Re-exports
 │   ├── hott/              # HoTT Typed Tokenization (Phase 5 Sprint 5)
 │   │   ├── category.ts        # Category operations (compose, identity, validate)
 │   │   └── vpir-bridge.ts     # VPIR-to-HoTT translation pipeline
-│   ├── knowledge-graph/   # Tree-sitter DKB Knowledge Graph (Phase 5 Sprint 5)
-│   │   └── knowledge-graph.ts # Typed graph with traversal and HoTT conversion
+│   ├── knowledge-graph/   # Tree-sitter DKB Knowledge Graph (Phase 5 Sprint 5 + Phase 6 Sprint 1)
+│   │   ├── knowledge-graph.ts # Typed graph with traversal and HoTT conversion
+│   │   └── ts-parser.ts       # Tree-sitter TypeScript parser → KG (Phase 6 Sprint 1)
 │   ├── channel/           # Dataflow Process Networks (Phase 5)
 │   │   ├── channel.ts         # Channel<T> — typed async FIFO with backpressure & IFC
 │   │   ├── process.ts         # Process — actor with typed input/output ports
@@ -218,7 +233,8 @@ pnxt/
 │   └── evaluation/        # Validation & Evaluation
 │       ├── multi-agent-scenarios.ts   # Coordination scenarios
 │       ├── benchmark-suite.ts         # Benchmark framework
-│       └── security-suite.ts          # Security test suite
+│       ├── security-suite.ts          # Security test suite
+│       └── integration-pipeline.ts    # Code→KG→VPIR→HoTT→Z3 pipeline (Phase 6 Sprint 1)
 ├── docs/
 │   └── research/
 │       ├── original-prompt.md

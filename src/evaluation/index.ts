@@ -36,3 +36,13 @@ export {
   runLabeledPipeline,
   runParallelCategoricalPreservation,
 } from './pipeline-scenarios.js';
+export {
+  runIntegrationPipeline,
+} from './integration-pipeline.js';
+export type {
+  PipelineOptions,
+  PipelineReport,
+  PipelineStage,
+  StageResult,
+  PipelineSummary,
+} from './integration-pipeline.js';
