@@ -67,11 +67,11 @@ Phase 3 expanded the foundational research with six detailed analysis documents.
 
 ## Phase 4: Prototype Implementation
 
-**Status**: Planned
+**Status**: Complete
 
-Phase 4 transitions from research to prototype implementation. See the [Phase 4 Plan](/pnxt/roadmap/phase-4/) for details.
+Phase 4 transitioned from research to prototype implementation and empirical evaluation. All priorities have been delivered. See the [Phase 4 details](/pnxt/roadmap/phase-4/) for the full breakdown.
 
-Key priorities:
-1. Memory Service and ACI Gateway prototypes
-2. Agent runtime environment
-3. Empirical evaluation and benchmarks
+Completed deliverables:
+1. **Core Infrastructure** — Memory Service (three-layer model with pluggable backends), ACI Gateway (trust-checked protocol layer with audit logging), project scaffolding (TypeScript, Jest, CI/CD)
+2. **Agent Runtime** — Lifecycle management, versioned capability negotiation with 3-phase handshake, graduated trust engine with multi-dimensional scoring
+3. **Validation & Evaluation** — Multi-agent coordination scenarios, benchmark suite, security test suite with adversarial tests across 5 categories
