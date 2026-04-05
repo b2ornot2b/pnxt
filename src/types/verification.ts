@@ -21,7 +21,11 @@ export type VerificationProperty =
   | 'groupoid_inverse_law'
   | 'higher_path_consistency'
   | 'n_path_coherence'
-  | 'lambda_type_safety';
+  | 'lambda_type_safety'
+  | 'ifc_noninterference_proof'
+  | 'dpn_progress'
+  | 'dpn_deadlock_freedom'
+  | 'dpn_fairness';
 
 /**
  * Result of a Z3 verification check.

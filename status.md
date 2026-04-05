@@ -1,12 +1,12 @@
 # pnxt Project Status
 
-> Last updated: 2026-04-05 (Phase 6 Sprint 3 complete)
+> Last updated: 2026-04-05 (Phase 6 Sprint 5 complete)
 
 ---
 
 ## Current State
 
-The pnxt project has completed Phase 6 Sprint 3, delivering **HoTT n-paths** (generalized from hardcoded 2-paths to arbitrary n-paths with truncation levels, vertical/horizontal composition, and n-groupoid structure/validation), **pipeline LLM integration** (Claude API wired into Code→KG→VPIR→HoTT→Z3 pipeline via Bridge Grammar with graceful fallback), **LLMbda Calculus core** (typed lambda calculus with IFC labels, beta reduction, type checking, noninterference verification, and VPIR/HoTT roundtrip), and **Z3 verification expansion** (2 new formally verified properties: n-path coherence and lambda type safety — **total 10 verified properties**). Phase 6 focuses on integration and deepening — connecting and validating the paradigm pillars together with real-world inputs.
+The pnxt project has completed Phase 6 Sprint 5, delivering **formal noninterference proofs** (Z3-backed IFC noninterference verification replacing tree-walk checking), **DPN liveness properties** (progress, deadlock freedom, and fairness verified via bounded model checking in Z3), **covert channel analysis** (structured 3-vector analysis of timing, memory access, and bridge grammar side channels), and **Weather API benchmark MVP** (Sprint 4 — end-to-end paradigm proof: NL→VPIR→HoTT→Z3→DPN��Result). Total: **14 formally verified Z3 properties**, 40 test suites, 767 tests. Phase 6 focuses on integration and deepening — connecting and validating the paradigm pillars together with real-world inputs.
 
 ### Completed Work
 
@@ -113,6 +113,16 @@ Following the Advisory Review Panel's alignment assessment (3/10), Phase 5 imple
 | Code Quality | — | **Dead abstraction removal, shared error hierarchy** | — |
 | LLMbda Calculus | — | — | **Core lambda calculus: terms, types, beta reduction, IFC noninterference, VPIR bridge** |
 
+| Component | Phase 6 Sprint 4 | Phase 6 Sprint 5 |
+|-----------|-------------------|-------------------|
+| DPN Runtime | **DPNRuntime: VPIR→DPN compilation + actor execution** | — |
+| Benchmark | **Weather API Shim MVP (NL→VPIR→HoTT→Z3→DPN→Result)** | — |
+| Benchmark Harness | **BenchmarkRunner with per-stage timing and reports** | — |
+| SMT Verification | 10 properties | **14 properties (+noninterference, +progress, +deadlock freedom, +fairness)** |
+| IFC Formal Proofs | — | **Z3-backed noninterference (replaces tree-walk)** |
+| Covert Channel Analysis | — | **3-vector analysis (timing, memory, bridge grammar)** |
+| DPN Liveness | — | **Progress, deadlock freedom, fairness via bounded model checking** |
+
 ---
 
 ## Test Coverage
@@ -128,6 +138,8 @@ Following the Advisory Review Panel's alignment assessment (3/10), Phase 5 imple
 | Phase 6 Sprint 1 | 29 | ~530 | ~9,600 |
 | Phase 6 Sprint 2 | 31 | 570 | ~10,800 |
 | Phase 6 Sprint 3 | 34 | 642 | ~12,600 |
+| Phase 6 Sprint 4 | 37 | 712 | ~14,200 |
+| Phase 6 Sprint 5 | 40 | 767 | ~15,400 |
 
 ---
 
@@ -155,11 +167,25 @@ Phase 6 shifts from "build each pillar" to "connect and validate the pillars tog
 - [x] **LLMbda Calculus Core** — New `src/lambda/` module implementing typed lambda calculus with IFC labels. `createVar`/`createAbs`/`createApp` term constructors, `betaReduce` single-step reduction, `normalize` multi-step normalization, `typeCheck` bidirectional type checking with IFC label propagation, `checkNoninterference` for detecting high→low security flows. `termToVPIR` converts lambda terms to valid VPIR graphs, enabling Lambda→VPIR→HoTT→Z3 roundtrip verification. Type definitions in `src/types/lambda.ts`. Addresses Church's "need pure lambda substrate" advisory gap.
 - [x] **Z3 Verification Expansion** — Two new SMT-verified properties: `n_path_coherence` (verifies inverse laws at every n-path level) and `lambda_type_safety` (verifies beta reduction preserves typing). Total: **10 formally verified properties**.
 
+### Sprint 4: Weather API Benchmark MVP — "Paradigm Proof" (Complete)
+
+- [x] **Weather API Shim MVP** �� Full end-to-end paradigm demonstration: natural language query ("What's the weather in Tokyo?") flows through Bridge Grammar → VPIR Graph → HoTT Category → Z3 Verification → DPN Execution → Verified Result. Mock weather tool registered as ACI tool with trust requirements, IFC labels, and capability negotiation. Deterministic VPIR graph factory with 7 nodes (observation, inference, action, assertion). Addresses Kay's "paradigm actualization" and Liskov's "Hello World" gaps.
+- [x] **DPN-as-Runtime Elevation** ��� `DPNRuntime` class maps VPIR nodes to DPN Process actors and VPIR edges to typed Channels, executing graphs through actor message-passing instead of direct function calls. Compile step validates VPIR graph, builds process definitions with fan-out support, creates output collector channels for terminal nodes. Full execution trace with per-process state and per-channel statistics. Addresses Milner's "DPN should be the execution paradigm" concern.
+- [x] **Benchmark Harness** — `BenchmarkRunner` class with standardized benchmark definitions. Per-stage timing, structured JSON reports, configurable pass/fail criteria, and timeout support. Weather API is first benchmark; harness designed for expansion (Sprint 7 adds more).
+- [x] **End-to-End Integration Tests** ��� ~70 new tests covering full pipeline path: tool registration, tool handler, VPIR graph generation, DPN compilation, DPN execution, HoTT categorization, pipeline integration, and benchmark runner integration.
+
+### Sprint 5: Formal Guarantees — Noninterference + Liveness (Complete)
+
+- [x] **Formal Noninterference via Z3** — New `src/verification/z3-noninterference.ts` encoding the noninterference property as an SMT formula: for any two executions differing only in high-security inputs, low-security outputs must be identical. Models lambda terms as state transitions with IFC labels, encodes two parallel executions with identical low inputs but different high inputs, asserts output difference → checks UNSAT. Produces counterexamples on violation. Augments the tree-walk approach in `llmbda.ts:363` with a mathematically rigorous Z3-backed proof. New Z3 property: `ifc_noninterference_proof`. Addresses Myers's "formal noninterference, not just label walks" concern.
+- [x] **Covert Channel Analysis** — New `src/verification/covert-channel-analysis.ts` with structured analysis of three covert channel vectors: (1) timing channels in DPN (backpressure timing, process execution timing, channel close timing), (2) memory access patterns in Knowledge Graph (query pattern leakage, cache timing, node enumeration), (3) Bridge Grammar side channels (schema selection leakage, LLM response timing, validation error leakage). Produces `CovertChannelReport` with 9 identified risks, severity ratings, mitigations, and affected components. Configurable analysis with mitigation toggles. Addresses Myers's "covert channels unanalyzed" gap.
+- [x] **DPN Liveness/Progress/Fairness via Z3** — New `src/verification/z3-liveness.ts` with three Z3-verified properties using bounded model checking: `dpn_progress` (pending transfers complete within bounded steps), `dpn_deadlock_freedom` (no circular wait via topological ordering — detects cycles with DFS), `dpn_fairness` (every ready process executes within P steps under round-robin scheduling). Includes `buildDependencyGraph()` utility for channel dependency analysis. Addresses Agha's "no liveness/fairness verification" and de Moura's "verification depth" concerns.
+- [x] **Z3Context Extension** — Four new methods on `Z3Context` interface: `verifyNoninterference`, `verifyDPNProgress`, `verifyDPNDeadlockFreedom`, `verifyDPNFairness`. Total: **14 formally verified Z3 properties** (from 10).
+
 ---
 
 ## Future Goals
 
-### Medium-Term (Phase 6 Sprint 4+)
+### Medium-Term (Phase 6 Sprint 6+)
 
 - **Web-based visualization frontend** — Interactive node-graph renderer consuming the JSON export format (D3.js/Cytoscape.js)
 - **LLMbda Calculus expansion** — Effect tracking, recursive types, pattern matching, and full lambda-to-VPIR compilation
@@ -240,10 +266,12 @@ pnxt/
 │   ├── knowledge-graph/   # Tree-sitter DKB Knowledge Graph (Phase 5 Sprint 5 + Phase 6 Sprint 1)
 │   │   ├── knowledge-graph.ts # Typed graph with traversal and HoTT conversion
 │   │   └── ts-parser.ts       # Tree-sitter TypeScript parser → KG (Phase 6 Sprint 1)
-│   ├── channel/           # Dataflow Process Networks (Phase 5)
+│   ├── channel/           # Dataflow Process Networks (Phase 5 + Phase 6 Sprint 4)
 │   │   ├── channel.ts         # Channel<T> — typed async FIFO with backpressure & IFC
 │   │   ├── process.ts         # Process — actor with typed input/output ports
-│   │   └── dataflow-graph.ts  # DataflowGraph — process composition & wiring
+│   │   ├── dataflow-graph.ts  # DataflowGraph — process composition & wiring
+│   │   ├── dpn-runtime.ts     # DPNRuntime — VPIR→DPN compilation + actor execution (Phase 6 Sprint 4)
+│   │   └── tracing-channel.ts # TracingChannel — channel decorator for execution observability
 │   ├── vpir/              # Verifiable Reasoning (Phase 5 + Phase 6 Sprint 2)
 │   │   ├── vpir-validator.ts    # Structural validation for VPIR nodes & graphs
 │   │   ├── vpir-interpreter.ts  # VPIR graph execution engine (parallel + cache support)
@@ -253,9 +281,12 @@ pnxt/
 │   ├── protocol/          # Natural Language Protocols (Phase 5 Sprint 3–4)
 │   │   ├── nl-protocol.ts       # Protocol state machines for agent communication
 │   │   └── protocol-channel.ts  # Protocol sessions over DPN channels (Sprint 4)
-│   ├── verification/      # Formal Verification (Phase 5 Sprint 2)
-│   │   ├── z3-invariants.ts   # Z3 SMT invariant verification
-│   │   └── index.ts           # Re-exports
+│   ├── verification/      # Formal Verification (Phase 5 Sprint 2 + Phase 6 Sprint 5)
+│   │   ├── z3-invariants.ts          # Z3 SMT invariant verification (14 properties)
+│   │   ├── z3-noninterference.ts     # Z3 noninterference proof encoding (Phase 6 Sprint 5)
+│   │   ├── z3-liveness.ts            # Z3 DPN progress, deadlock, fairness (Phase 6 Sprint 5)
+│   │   ├── covert-channel-analysis.ts # 3-vector covert channel analysis (Phase 6 Sprint 5)
+│   │   └── index.ts                  # Re-exports
 │   ├── capability/        # Capability Negotiation
 │   │   └── capability-negotiation.ts  # Versioned capability discovery
 │   ├── trust/             # Trust Engine
@@ -265,6 +296,9 @@ pnxt/
 │   │   └── llmbda.ts          # Typed lambda calculus with IFC, beta reduction, VPIR bridge
 │   ├── errors/            # Shared error classes (Phase 6 Sprint 2)
 │   │   └── vpir-errors.ts     # VPIR execution error hierarchy
+│   ├── benchmarks/        # Paradigm Benchmarks (Phase 6 Sprint 4)
+│   │   ├── weather-api-shim.ts    # Weather API end-to-end benchmark MVP
+│   │   └── benchmark-runner.ts    # Standardized benchmark harness
 │   └── evaluation/        # Validation & Evaluation
 │       ├── multi-agent-scenarios.ts   # Coordination scenarios
 │       ├── benchmark-suite.ts         # Benchmark framework
