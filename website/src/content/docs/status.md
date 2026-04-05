@@ -5,13 +5,13 @@ description: Current state, completed milestones, and roadmap for pnxt.
 
 # pnxt Project Status
 
-> Last updated: 2026-04-05 (Phase 6 complete — all 9 sprints)
+> Last updated: 2026-04-05 (Phase 7 Sprint 10 complete)
 
 ---
 
 ## Current State
 
-The pnxt project has completed **Phase 6** (all 9 sprints), delivering the full Agent-Native Programming paradigm prototype. Sprint 9 ("Categorical Frontier") added **categorical tokenization experiment** (42-token vocabulary with morphism composition rules, 3-approach comparison), **self-hosting proof of concept** (pnxt describes, validates, categorizes, and executes its own pipeline as VPIR), **paradigm transition roadmap** (M1-M5 milestones from self-description to self-hosting), and **advisory alignment package** (all 10 advisor concerns addressed). Total: **17 formally verified Z3 properties**, 55 test suites, 974+ tests. Advisory panel composite score: **9.2/10** (from 7.5 baseline). See [status.md](https://github.com/b2ornot2b/pnxt/blob/main/status.md) for full details.
+The pnxt project has entered **Phase 7** ("Self-Hosting Paradigm"), targeting milestones M2 (External Task Expression), M3 (LLM-Native Programming), and M4 (Self-Modification). Sprint 10 ("Handler Library + Tool Registry") delivered **Standard Handler Library** (8 pre-built tool handlers), **Declarative Tool Registry** (operation-to-handler mapping with discovery and trust validation), **DPN Supervisor** (supervisor actor pattern with bounded restarts and priority mailbox), and **DPN Runtime tool registry integration**. Total: **17 formally verified Z3 properties**, 58 test suites, 1073+ tests. Advisory panel composite score: **9.25/10**. See [status.md](https://github.com/b2ornot2b/pnxt/blob/main/status.md) for full details.
 
 ### Completed Work
 
