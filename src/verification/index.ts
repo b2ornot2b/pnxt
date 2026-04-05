@@ -48,3 +48,10 @@ export {
   MultiSolverVerifier,
   type CVC5Result,
 } from './cvc5-integration.js';
+export {
+  verifyGraphProperties,
+} from './z3-graph-verifier.js';
+export type {
+  GraphVerificationResult,
+  PropertyStatus,
+} from './z3-graph-verifier.js';
