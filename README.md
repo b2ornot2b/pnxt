@@ -35,6 +35,43 @@ In the Agent-Native Programming (ANP) paradigm, AI agents are **first-class enti
 | Phase 3 | Deep analysis of pillars, patterns, and architecture | Complete |
 | Phase 4 | Prototype implementation & empirical evaluation | Complete |
 
+See [`status.md`](status.md) for the detailed roadmap, future goals, and repository structure.
+
+## Implementation
+
+Phase 4 produced a working TypeScript prototype covering the core ANP subsystems:
+
+| Module | Description |
+|---|---|
+| **Memory Service** (`src/memory/`) | Three-layer memory model (working, semantic, episodic) with pluggable storage backends |
+| **ACI Gateway** (`src/aci/`) | Structured protocol layer with graduated trust checking and append-only audit logging |
+| **Agent Runtime** (`src/agent/`) | Agent lifecycle management — registration, execution, and teardown |
+| **Capability Negotiation** (`src/capability/`) | Versioned capability discovery with 3-phase handshake, revocation, and expiry support |
+| **Trust Engine** (`src/trust/`) | Graduated 5-level trust model with multi-dimensional scoring and automatic calibration |
+| **Evaluation Suite** (`src/evaluation/`) | Multi-agent coordination scenarios, benchmarks, and adversarial security tests |
+
+## Getting Started
+
+```bash
+# Install dependencies
+npm install
+
+# Run tests
+npm test
+
+# Type check
+npm run typecheck
+
+# Lint
+npm run lint
+
+# Build
+npm run build
+
+# Run full CI locally
+npm run ci
+```
+
 ## Documentation
 
 - [`docs/research/original-prompt.md`](docs/research/original-prompt.md) — Master research prompt defining the foundational vision
@@ -46,6 +83,7 @@ In the Agent-Native Programming (ANP) paradigm, AI agents are **first-class enti
   - Trust, Safety, and Governance Framework
   - Comparative Analysis with existing paradigms
   - Implementation Reference Architecture
+- [**Project Website**](https://b2ornot2b.github.io/pnxt/) — Documentation site built with Astro Starlight
 
 ## Key Themes
 
