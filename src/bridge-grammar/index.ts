@@ -31,3 +31,11 @@ export type {
   VPIRGeneratorOptions,
   VPIRGenerationResult,
 } from './llm-vpir-generator.js';
+export {
+  generateTaskVPIRGraph,
+  buildTaskAwareSystemPrompt,
+  buildTaskAwareVPIRTool,
+} from './task-vpir-generator.js';
+export type {
+  TaskVPIRGeneratorOptions,
+} from './task-vpir-generator.js';

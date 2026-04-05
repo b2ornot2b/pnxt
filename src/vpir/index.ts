@@ -13,3 +13,5 @@ export {
   exportPipelineToJSON,
   exportTraceToJSON,
 } from './vpir-graph-export.js';
+export { VPIRGraphBuilder } from './vpir-graph-builder.js';
+export type { NodeSpec, BuildResult } from './vpir-graph-builder.js';
