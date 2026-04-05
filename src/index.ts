@@ -8,3 +8,5 @@ export * from './evaluation/index.js';
 export * from './channel/index.js';
 export * from './vpir/index.js';
 export * from './protocol/index.js';
+export * from './hott/index.js';
+export * from './knowledge-graph/index.js';

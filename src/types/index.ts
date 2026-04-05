@@ -12,3 +12,5 @@ export * from './verification.js';
 export * from './vpir-execution.js';
 export * from './protocol.js';
 export * from './protocol-channel.js';
+export * from './hott.js';
+export * from './knowledge-graph.js';
