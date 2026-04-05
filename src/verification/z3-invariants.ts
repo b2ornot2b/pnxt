@@ -17,6 +17,8 @@ import type { VerificationResult } from '../types/verification.js';
 import type { VPIRGraph } from '../types/vpir.js';
 import type { TrustLevel } from '../types/agent.js';
 import type { Category, GroupoidStructure, NGroupoidStructure } from '../types/hott.js';
+import type { DataflowGraphDefinition } from '../types/channel.js';
+import type { LambdaTerm } from '../types/lambda.js';
 
 /**
  * Z3 context wrapper. Create once and reuse — initialization is heavyweight (~30MB WASM).
@@ -76,6 +78,26 @@ export interface Z3Context {
   /** Verify lambda calculus type safety: beta reduction preserves typing. */
   verifyLambdaTypeSafety(
     terms: LambdaTypeSafetyInput[],
+  ): Promise<VerificationResult>;
+
+  /** Verify IFC noninterference: two executions differing only in high-security inputs produce identical low-security outputs. */
+  verifyNoninterference(
+    terms: LambdaTerm[],
+  ): Promise<VerificationResult>;
+
+  /** Verify DPN progress: pending sender + pending receiver → transfer eventually completes (bounded). */
+  verifyDPNProgress(
+    config: DataflowGraphDefinition,
+  ): Promise<VerificationResult>;
+
+  /** Verify DPN deadlock freedom: no circular wait in channel dependency graph. */
+  verifyDPNDeadlockFreedom(
+    config: DataflowGraphDefinition,
+  ): Promise<VerificationResult>;
+
+  /** Verify DPN fairness: every ready process eventually executes (bounded round-robin). */
+  verifyDPNFairness(
+    config: DataflowGraphDefinition,
   ): Promise<VerificationResult>;
 }
 
@@ -934,6 +956,54 @@ export async function createZ3Context(): Promise<Z3Context> {
         solver: 'z3',
         duration: performance.now() - start,
         property: 'lambda_type_safety',
+      };
+    },
+
+    async verifyNoninterference(terms: import('../types/lambda.js').LambdaTerm[]): Promise<VerificationResult> {
+      const { verifyNoninterferenceZ3 } = await import('./z3-noninterference.js');
+      const result = await verifyNoninterferenceZ3(z3, terms);
+      return {
+        verified: result.verified,
+        counterexample: result.counterexample,
+        solver: 'z3',
+        duration: result.duration,
+        property: 'ifc_noninterference_proof',
+      };
+    },
+
+    async verifyDPNProgress(config: import('../types/channel.js').DataflowGraphDefinition): Promise<VerificationResult> {
+      const { verifyDPNProgress: verify } = await import('./z3-liveness.js');
+      const result = await verify(z3, config);
+      return {
+        verified: result.verified,
+        counterexample: result.counterexample,
+        solver: 'z3',
+        duration: result.duration,
+        property: 'dpn_progress',
+      };
+    },
+
+    async verifyDPNDeadlockFreedom(config: import('../types/channel.js').DataflowGraphDefinition): Promise<VerificationResult> {
+      const { verifyDPNDeadlockFreedom: verify } = await import('./z3-liveness.js');
+      const result = await verify(z3, config);
+      return {
+        verified: result.verified,
+        counterexample: result.counterexample,
+        solver: 'z3',
+        duration: result.duration,
+        property: 'dpn_deadlock_freedom',
+      };
+    },
+
+    async verifyDPNFairness(config: import('../types/channel.js').DataflowGraphDefinition): Promise<VerificationResult> {
+      const { verifyDPNFairness: verify } = await import('./z3-liveness.js');
+      const result = await verify(z3, config);
+      return {
+        verified: result.verified,
+        counterexample: result.counterexample,
+        solver: 'z3',
+        duration: result.duration,
+        property: 'dpn_fairness',
       };
     },
   };

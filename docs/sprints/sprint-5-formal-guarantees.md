@@ -164,10 +164,10 @@ Total Z3 properties: 10 → **14**
 
 ## 8. Definition of Done
 
-- [ ] `ifc_noninterference_proof` verified via Z3 (UNSAT for negation)
-- [ ] Covert channel analysis report with timing/memory/bridge vectors
-- [ ] `dpn_progress`, `dpn_deadlock_freedom`, `dpn_fairness` verified via Z3
-- [ ] Z3Context extended with 4 new verification methods
-- [ ] ~50 new tests, all passing
-- [ ] `npm test`, `npm run typecheck`, `npm run lint` all pass
+- [x] `ifc_noninterference_proof` verified via Z3 (UNSAT for negation)
+- [x] Covert channel analysis report with timing/memory/bridge vectors
+- [x] `dpn_progress`, `dpn_deadlock_freedom`, `dpn_fairness` verified via Z3
+- [x] Z3Context extended with 4 new verification methods
+- [x] ~55 new tests (767 total, up from 712), all passing
+- [x] `npm test`, `npm run typecheck`, `npm run lint` all pass
 - [ ] Advisory review checkpoint: Myers, Agha, de Moura re-assess
