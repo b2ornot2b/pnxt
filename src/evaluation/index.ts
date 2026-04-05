@@ -38,6 +38,7 @@ export {
 } from './pipeline-scenarios.js';
 export {
   runIntegrationPipeline,
+  serializeKGForLLM,
 } from './integration-pipeline.js';
 export type {
   PipelineOptions,

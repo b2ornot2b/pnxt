@@ -19,7 +19,9 @@ export type VerificationProperty =
   | 'morphism_composition_associativity'
   | 'identity_morphism_laws'
   | 'groupoid_inverse_law'
-  | 'higher_path_consistency';
+  | 'higher_path_consistency'
+  | 'n_path_coherence'
+  | 'lambda_type_safety';
 
 /**
  * Result of a Z3 verification check.

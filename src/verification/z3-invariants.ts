@@ -16,7 +16,7 @@
 import type { VerificationResult } from '../types/verification.js';
 import type { VPIRGraph } from '../types/vpir.js';
 import type { TrustLevel } from '../types/agent.js';
-import type { Category, GroupoidStructure } from '../types/hott.js';
+import type { Category, GroupoidStructure, NGroupoidStructure } from '../types/hott.js';
 
 /**
  * Z3 context wrapper. Create once and reuse — initialization is heavyweight (~30MB WASM).
@@ -65,6 +65,26 @@ export interface Z3Context {
   verifyHigherPathConsistency(
     category: Category,
   ): Promise<VerificationResult>;
+
+  /** Verify n-path coherence: at each level, composing path with inverse yields identity. */
+  verifyNPathCoherence(
+    category: Category,
+    structure: NGroupoidStructure,
+    maxLevel: number,
+  ): Promise<VerificationResult>;
+
+  /** Verify lambda calculus type safety: beta reduction preserves typing. */
+  verifyLambdaTypeSafety(
+    terms: LambdaTypeSafetyInput[],
+  ): Promise<VerificationResult>;
+}
+
+/** Input for lambda type safety verification. */
+export interface LambdaTypeSafetyInput {
+  termId: string;
+  beforeType: string;
+  afterType: string;
+  reductionRule: 'beta' | 'eta';
 }
 
 /** Input for capability grant verification. */
@@ -736,6 +756,184 @@ export async function createZ3Context(): Promise<Z3Context> {
         solver: 'z3',
         duration: performance.now() - start,
         property: 'higher_path_consistency',
+      };
+    },
+
+    async verifyNPathCoherence(
+      category: Category,
+      structure: NGroupoidStructure,
+      maxLevel: number,
+    ): Promise<VerificationResult> {
+      const start = performance.now();
+      const solver = new z3.Solver();
+
+      // For every n-path at each level, verify that its inverse properly swaps endpoints.
+      // A violation means composing a path with its inverse would not yield reflexivity.
+      const pathId = z3.Int.const('pathId');
+      const pathLevel = z3.Int.const('pathLevel');
+      const leftIdx = z3.Int.const('leftIdx');
+      const rightIdx = z3.Int.const('rightIdx');
+
+      const violations: any[] = [];
+      let idx = 0;
+
+      for (let level = 1; level <= maxLevel; level++) {
+        const levelInverses = structure.inversesByLevel.get(level);
+        if (!levelInverses) continue;
+
+        // Collect all paths at this level
+        const allPaths = new Map<string, { leftId: string; rightId: string }>();
+
+        if (level === 1 && category.paths) {
+          for (const [id, p] of category.paths) {
+            allPaths.set(id, { leftId: p.leftId, rightId: p.rightId });
+          }
+        }
+        const nPathsAtLevel = category.nPaths?.get(level);
+        if (nPathsAtLevel) {
+          for (const [id, p] of nPathsAtLevel) {
+            allPaths.set(id, { leftId: p.leftId, rightId: p.rightId });
+          }
+        }
+        if (level === 2 && category.higherPaths) {
+          for (const [id, hp] of category.higherPaths) {
+            allPaths.set(id, { leftId: hp.leftPathId, rightId: hp.rightPathId });
+          }
+        }
+
+        for (const [pId, path] of allPaths) {
+          const inv = levelInverses.get(pId);
+          if (!inv) {
+            violations.push(
+              z3.And(pathId.eq(idx), pathLevel.eq(level), leftIdx.eq(-1)),
+            );
+            idx++;
+            continue;
+          }
+
+          // For coherence: inverse must swap left/right
+          // Encode as integers: 0 = matches, 1 = mismatch
+          const leftMatch = inv.leftId === path.rightId ? 0 : 1;
+          const rightMatch = inv.rightId === path.leftId ? 0 : 1;
+
+          if (leftMatch !== 0 || rightMatch !== 0) {
+            violations.push(
+              z3.And(
+                pathId.eq(idx),
+                pathLevel.eq(level),
+                leftIdx.eq(leftMatch),
+                rightIdx.eq(rightMatch),
+              ),
+            );
+          }
+          idx++;
+        }
+      }
+
+      const duration = performance.now() - start;
+
+      if (violations.length === 0) {
+        return {
+          verified: true,
+          solver: 'z3',
+          duration,
+          property: 'n_path_coherence',
+        };
+      }
+
+      solver.add(z3.Or(...violations));
+      const result = await solver.check();
+
+      if (result === 'unsat') {
+        return { verified: true, solver: 'z3', duration: performance.now() - start, property: 'n_path_coherence' };
+      }
+
+      const model = solver.model();
+      return {
+        verified: false,
+        counterexample: {
+          pathIndex: Number(model.eval(pathId).toString()),
+          level: Number(model.eval(pathLevel).toString()),
+        },
+        solver: 'z3',
+        duration: performance.now() - start,
+        property: 'n_path_coherence',
+      };
+    },
+
+    async verifyLambdaTypeSafety(
+      terms: LambdaTypeSafetyInput[],
+    ): Promise<VerificationResult> {
+      const start = performance.now();
+      const solver = new z3.Solver();
+
+      // For each reduction step, verify that the type before and after are the same.
+      // We encode types as string hashes and check equality.
+      const beforeHash = z3.Int.const('beforeHash');
+      const afterHash = z3.Int.const('afterHash');
+      const termIdx = z3.Int.const('termIdx');
+
+      // Simple string hash for type comparison
+      function hashString(s: string): number {
+        let hash = 0;
+        for (let i = 0; i < s.length; i++) {
+          hash = ((hash << 5) - hash + s.charCodeAt(i)) | 0;
+        }
+        return hash;
+      }
+
+      const violations: any[] = [];
+
+      for (let i = 0; i < terms.length; i++) {
+        const t = terms[i];
+        const bHash = hashString(t.beforeType);
+        const aHash = hashString(t.afterType);
+
+        if (bHash !== aHash) {
+          violations.push(
+            z3.And(
+              termIdx.eq(i),
+              beforeHash.eq(bHash),
+              afterHash.eq(aHash),
+              beforeHash.neq(afterHash),
+            ),
+          );
+        }
+      }
+
+      const duration = performance.now() - start;
+
+      if (violations.length === 0) {
+        return {
+          verified: true,
+          solver: 'z3',
+          duration,
+          property: 'lambda_type_safety',
+        };
+      }
+
+      solver.add(z3.Or(...violations));
+      const result = await solver.check();
+
+      if (result === 'unsat') {
+        return { verified: true, solver: 'z3', duration: performance.now() - start, property: 'lambda_type_safety' };
+      }
+
+      const model = solver.model();
+      const tIdx = Number(model.eval(termIdx).toString());
+      const violatingTerm = terms[tIdx];
+      return {
+        verified: false,
+        counterexample: {
+          termIndex: tIdx,
+          termId: violatingTerm?.termId,
+          beforeType: violatingTerm?.beforeType,
+          afterType: violatingTerm?.afterType,
+          reductionRule: violatingTerm?.reductionRule,
+        },
+        solver: 'z3',
+        duration: performance.now() - start,
+        property: 'lambda_type_safety',
       };
     },
   };

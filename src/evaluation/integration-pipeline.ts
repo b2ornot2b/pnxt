@@ -12,15 +12,17 @@
  * - docs/research/original-prompt.md (full paradigm vision)
  */
 
-import type { KnowledgeGraphDefinition } from '../types/knowledge-graph.js';
+import type { KnowledgeGraphDefinition, KGNode } from '../types/knowledge-graph.js';
 import type { VPIRGraph, VPIRNode } from '../types/vpir.js';
 import type { Category, CategoryValidationResult } from '../types/hott.js';
 import type { SecurityLabel } from '../types/ifc.js';
+import type { LLMPipelineOptions } from '../types/vpir-execution.js';
 
 import { parseFile, initParser } from '../knowledge-graph/ts-parser.js';
 import { toHoTTCategory, query } from '../knowledge-graph/knowledge-graph.js';
 import { vpirGraphToCategory, validateCategoricalStructure } from '../hott/vpir-bridge.js';
 import { validateCategory } from '../hott/category.js';
+import { generateVPIRGraph } from '../bridge-grammar/llm-vpir-generator.js';
 
 /**
  * Options for the integration pipeline.
@@ -37,6 +39,9 @@ export interface PipelineOptions {
 
   /** Custom VPIR graph (skip LLM generation, use provided graph). */
   customVPIR?: VPIRGraph;
+
+  /** LLM-driven VPIR generation options. When enabled, uses Claude API via Bridge Grammar. */
+  llmGeneration?: LLMPipelineOptions;
 }
 
 /**
@@ -114,6 +119,9 @@ export interface PipelineSummary {
 
   /** Number of stages completed. */
   stagesCompleted: number;
+
+  /** Source of VPIR generation: 'llm', 'deterministic', or 'custom'. */
+  vpirSource?: 'llm' | 'deterministic' | 'custom';
 }
 
 /**
@@ -205,27 +213,80 @@ export async function runIntegrationPipeline(
   }
 
   // --- Stage 3: Reason (Generate VPIR from KG) ---
+  let vpirSource: 'llm' | 'deterministic' | 'custom' = 'deterministic';
   try {
     const stageStart = Date.now();
 
     if (options?.customVPIR) {
       vpirGraph = options.customVPIR;
+      vpirSource = 'custom';
+    } else if (options?.llmGeneration?.enabled) {
+      // LLM-driven VPIR generation via Bridge Grammar
+      const kgPrompt = serializeKGForLLM(kg);
+      const genResult = await generateVPIRGraph(kgPrompt, {
+        client: options.llmGeneration.client,
+        model: options.llmGeneration.model,
+        maxRetries: options.llmGeneration.maxRetries,
+        securityLabel: label,
+      });
+
+      if (genResult.success && genResult.graph) {
+        vpirGraph = genResult.graph;
+        vpirSource = 'llm';
+      } else {
+        // Fallback to deterministic on LLM failure
+        vpirGraph = generateVPIRFromKG(kg, label);
+        vpirSource = 'deterministic';
+      }
+
+      stages.push({
+        stage: 'reason',
+        completed: true,
+        durationMs: Date.now() - stageStart,
+        data: {
+          nodeCount: vpirGraph.nodes.size,
+          rootCount: vpirGraph.roots.length,
+          terminalCount: vpirGraph.terminals.length,
+          nodeTypes: countNodeTypes(vpirGraph),
+          source: vpirSource,
+          llmAttempts: genResult.attempts,
+          llmModel: options.llmGeneration.model ?? 'claude-sonnet-4-20250514',
+          llmErrors: genResult.errors.length > 0 ? genResult.errors : undefined,
+        },
+      });
     } else {
-      // Generate a VPIR graph from the KG structure
+      // Deterministic VPIR generation from KG structure
       vpirGraph = generateVPIRFromKG(kg, label);
+
+      stages.push({
+        stage: 'reason',
+        completed: true,
+        durationMs: Date.now() - stageStart,
+        data: {
+          nodeCount: vpirGraph.nodes.size,
+          rootCount: vpirGraph.roots.length,
+          terminalCount: vpirGraph.terminals.length,
+          nodeTypes: countNodeTypes(vpirGraph),
+          source: vpirSource,
+        },
+      });
     }
 
-    stages.push({
-      stage: 'reason',
-      completed: true,
-      durationMs: Date.now() - stageStart,
-      data: {
-        nodeCount: vpirGraph.nodes.size,
-        rootCount: vpirGraph.roots.length,
-        terminalCount: vpirGraph.terminals.length,
-        nodeTypes: countNodeTypes(vpirGraph),
-      },
-    });
+    // Push stage result for custom/deterministic paths if not already pushed
+    if (!stages.find((s) => s.stage === 'reason')) {
+      stages.push({
+        stage: 'reason',
+        completed: true,
+        durationMs: Date.now() - stageStart,
+        data: {
+          nodeCount: vpirGraph.nodes.size,
+          rootCount: vpirGraph.roots.length,
+          terminalCount: vpirGraph.terminals.length,
+          nodeTypes: countNodeTypes(vpirGraph),
+          source: vpirSource,
+        },
+      });
+    }
   } catch (err) {
     stages.push({
       stage: 'reason',
@@ -309,11 +370,54 @@ export async function runIntegrationPipeline(
       categoricallyValid: vpirValidation!.valid && kgValidation!.valid,
       ifcConsistent: (ifcData?.ifcConsistent as boolean) ?? false,
       stagesCompleted: stages.filter((s) => s.completed).length,
+      vpirSource,
     },
   };
 }
 
 // --- Internal helpers ---
+
+/**
+ * Serialize a Knowledge Graph into a natural-language description for LLM input.
+ *
+ * Converts the KG nodes and edges into a structured prompt describing
+ * the codebase, suitable for feeding to the Claude API for VPIR generation.
+ */
+export function serializeKGForLLM(kg: KnowledgeGraphDefinition): string {
+  const lines: string[] = [];
+  lines.push(`Analyze the following codebase structure (${kg.name}):`);
+  lines.push('');
+
+  // Summarize entities
+  const nodesByKind = new Map<string, KGNode[]>();
+  for (const node of kg.nodes.values()) {
+    const existing = nodesByKind.get(node.kind) ?? [];
+    existing.push(node);
+    nodesByKind.set(node.kind, existing);
+  }
+
+  lines.push('## Code Entities');
+  for (const [kind, nodes] of nodesByKind) {
+    lines.push(`- ${kind}: ${nodes.map((n) => n.name).join(', ')}`);
+  }
+
+  // Summarize relationships
+  lines.push('');
+  lines.push('## Relationships');
+  const edgesByRelation = new Map<string, number>();
+  for (const edge of kg.edges.values()) {
+    edgesByRelation.set(edge.relation, (edgesByRelation.get(edge.relation) ?? 0) + 1);
+  }
+  for (const [relation, count] of edgesByRelation) {
+    lines.push(`- ${relation}: ${count} connections`);
+  }
+
+  lines.push('');
+  lines.push('Generate a VPIR reasoning graph that analyzes this codebase structure,');
+  lines.push('identifying patterns, dependencies, and potential improvements.');
+
+  return lines.join('\n');
+}
 
 function makeDefaultLabel(): SecurityLabel {
   return {
