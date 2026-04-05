@@ -19,20 +19,24 @@ import type {
   VPIRExecutionResult,
   VPIRExecutionTrace,
   VPIRExecutionError,
+  VPIRExecutionOptions,
 } from '../types/vpir-execution.js';
 import { validateGraph } from './vpir-validator.js';
 import { canFlowTo } from '../types/ifc.js';
+import { analyzeParallelism, createInputHash, Semaphore } from './vpir-optimizer.js';
 
 /**
  * Execute a validated VPIR graph.
  *
  * @param graph - The VPIR graph to execute (must pass validation)
  * @param context - Execution context with handlers, ACI gateway, and timeout
+ * @param options - Optional execution options (parallel, cache, concurrency)
  * @returns Execution result with outputs, trace, and errors
  */
 export async function executeGraph(
   graph: VPIRGraph,
   context: VPIRExecutionContext,
+  options?: VPIRExecutionOptions,
 ): Promise<VPIRExecutionResult> {
   const startTime = Date.now();
   const trace: VPIRExecutionTrace[] = [];
@@ -56,12 +60,15 @@ export async function executeGraph(
     };
   }
 
-  // Compute topological order.
+  // Parallel execution path.
+  if (options?.parallel) {
+    return executeParallel(graph, context, options, startTime, trace, errors, nodeOutputs);
+  }
+
+  // Sequential execution path (default).
   const order = topologicalSort(graph);
 
-  // Execute nodes in order.
   for (const nodeId of order) {
-    // Check timeout.
     if (context.timeout && Date.now() - startTime > context.timeout) {
       errors.push({
         nodeId,
@@ -78,19 +85,49 @@ export async function executeGraph(
       };
     }
 
-    const node = graph.nodes.get(nodeId)!;
+    const result = await executeSingleNode(
+      nodeId, graph, context, options, nodeOutputs, trace, errors,
+    );
+    if (result) return { ...result, durationMs: Date.now() - startTime };
+  }
 
-    // Collect inputs from predecessor nodes.
-    const inputs = collectInputs(node, nodeOutputs);
+  return {
+    graphId: graph.id,
+    status: 'completed',
+    outputs: collectOutputs(graph, nodeOutputs),
+    trace,
+    errors,
+    durationMs: Date.now() - startTime,
+  };
+}
 
-    // Check IFC: each input's source label must flow to this node's label.
-    const ifcError = checkIFCFlow(node, graph, nodeOutputs);
-    if (ifcError) {
-      errors.push(ifcError);
-      trace.push(makeTrace(node, inputs, undefined, false, ifcError.message));
+/**
+ * Execute a VPIR graph with parallel wave-based execution.
+ */
+async function executeParallel(
+  graph: VPIRGraph,
+  context: VPIRExecutionContext,
+  options: VPIRExecutionOptions,
+  startTime: number,
+  trace: VPIRExecutionTrace[],
+  errors: VPIRExecutionError[],
+  nodeOutputs: Map<string, Map<string, unknown>>,
+): Promise<VPIRExecutionResult> {
+  const plan = analyzeParallelism(graph);
+  const maxConcurrency = options.maxConcurrency ?? 4;
+  const semaphore = new Semaphore(maxConcurrency);
+
+  for (const wave of plan.waves) {
+    // Check timeout before each wave.
+    if (context.timeout && Date.now() - startTime > context.timeout) {
+      errors.push({
+        nodeId: wave.nodeIds[0],
+        code: 'TIMEOUT',
+        message: `Execution timed out after ${context.timeout}ms`,
+      });
       return {
         graphId: graph.id,
-        status: 'failed',
+        status: 'timeout',
         outputs: collectOutputs(graph, nodeOutputs),
         trace,
         errors,
@@ -98,31 +135,34 @@ export async function executeGraph(
       };
     }
 
-    // Execute the node.
-    try {
-      const output = await executeNode(node, inputs, context);
+    // Execute all nodes in this wave concurrently (up to maxConcurrency).
+    const waveTraces: VPIRExecutionTrace[] = [];
+    const waveErrors: VPIRExecutionError[] = [];
+    let waveFailed = false;
 
-      // Store outputs keyed by port name.
-      const portOutputs = new Map<string, unknown>();
-      if (node.outputs.length === 1) {
-        portOutputs.set(node.outputs[0].port, output);
-      } else if (node.outputs.length > 1 && output && typeof output === 'object') {
-        // Multi-port output: expect object with port names as keys.
-        const outputObj = output as Record<string, unknown>;
-        for (const out of node.outputs) {
-          portOutputs.set(out.port, outputObj[out.port]);
+    const nodePromises = wave.nodeIds.map(async (nodeId) => {
+      await semaphore.acquire();
+      try {
+        if (waveFailed) return; // Skip if another node in this wave failed.
+
+        const result = await executeSingleNode(
+          nodeId, graph, context, options, nodeOutputs, waveTraces, waveErrors,
+        );
+        if (result) {
+          waveFailed = true;
         }
+      } finally {
+        semaphore.release();
       }
-      nodeOutputs.set(nodeId, portOutputs);
+    });
 
-      trace.push(makeTrace(node, inputs, output, true));
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      const code = categorizeError(err);
+    await Promise.all(nodePromises);
 
-      errors.push({ nodeId, code, message });
-      trace.push(makeTrace(node, inputs, undefined, false, message));
+    // Merge wave results into main trace/errors.
+    trace.push(...waveTraces);
+    errors.push(...waveErrors);
 
+    if (waveFailed) {
       return {
         graphId: graph.id,
         status: 'failed',
@@ -142,6 +182,87 @@ export async function executeGraph(
     errors,
     durationMs: Date.now() - startTime,
   };
+}
+
+/**
+ * Execute a single node with optional caching.
+ *
+ * Returns a partial result if execution should stop (error/failure),
+ * or null if execution should continue.
+ */
+async function executeSingleNode(
+  nodeId: string,
+  graph: VPIRGraph,
+  context: VPIRExecutionContext,
+  options: VPIRExecutionOptions | undefined,
+  nodeOutputs: Map<string, Map<string, unknown>>,
+  trace: VPIRExecutionTrace[],
+  errors: VPIRExecutionError[],
+): Promise<Omit<VPIRExecutionResult, 'durationMs'> | null> {
+  const node = graph.nodes.get(nodeId)!;
+  const inputs = collectInputs(node, nodeOutputs);
+
+  // Check IFC flow.
+  const ifcError = checkIFCFlow(node, graph, nodeOutputs);
+  if (ifcError) {
+    errors.push(ifcError);
+    trace.push(makeTrace(node, inputs, undefined, false, ifcError.message));
+    return {
+      graphId: graph.id,
+      status: 'failed',
+      outputs: collectOutputs(graph, nodeOutputs),
+      trace,
+      errors,
+    };
+  }
+
+  try {
+    let output: unknown;
+
+    // Check cache for deterministic nodes (observation, inference).
+    if (options?.cache && (node.type === 'observation' || node.type === 'inference')) {
+      const inputHash = createInputHash(inputs);
+      const cached = await options.cache.get(nodeId, inputHash);
+
+      if (cached !== undefined) {
+        output = cached;
+      } else {
+        output = await executeNode(node, inputs, context);
+        await options.cache.set(nodeId, inputHash, output);
+      }
+    } else {
+      output = await executeNode(node, inputs, context);
+    }
+
+    // Store outputs.
+    const portOutputs = new Map<string, unknown>();
+    if (node.outputs.length === 1) {
+      portOutputs.set(node.outputs[0].port, output);
+    } else if (node.outputs.length > 1 && output && typeof output === 'object') {
+      const outputObj = output as Record<string, unknown>;
+      for (const out of node.outputs) {
+        portOutputs.set(out.port, outputObj[out.port]);
+      }
+    }
+    nodeOutputs.set(nodeId, portOutputs);
+
+    trace.push(makeTrace(node, inputs, output, true));
+    return null;
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    const code = categorizeError(err);
+
+    errors.push({ nodeId, code, message });
+    trace.push(makeTrace(node, inputs, undefined, false, message));
+
+    return {
+      graphId: graph.id,
+      status: 'failed',
+      outputs: collectOutputs(graph, nodeOutputs),
+      trace,
+      errors,
+    };
+  }
 }
 
 /**
@@ -315,7 +436,7 @@ async function executeComposition(
 /**
  * Compute topological order of nodes in the graph.
  */
-function topologicalSort(graph: VPIRGraph): string[] {
+export function topologicalSort(graph: VPIRGraph): string[] {
   const inDegree = new Map<string, number>();
   const adjacency = new Map<string, string[]>();
 

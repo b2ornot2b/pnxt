@@ -9,7 +9,7 @@ This page reflects the current state of the pnxt project. It is derived from [st
 
 ## Current State
 
-The pnxt project has completed **Phase 5 Sprint 3**, delivering **end-to-end VPIR execution**, **formalized agent-to-agent NL protocols**, and **text-based VPIR visualization** for human oversight. VPIR reasoning chains can now be produced by LLMs (via Bridge Grammar), validated, executed, and rendered — closing the core execution loop.
+The pnxt project has completed **Phase 5 Sprint 4**, delivering **protocol-channel integration** (NL protocols over DPN channels) and **VPIR compiler optimizations** (parallel wave-based execution and result caching). Agent conversations now flow over typed async FIFO channels with backpressure and IFC enforcement, and VPIR graphs can execute independent branches concurrently.
 
 ## Completed Work
 
@@ -19,7 +19,7 @@ The pnxt project has completed **Phase 5 Sprint 3**, delivering **end-to-end VPI
 | Phase 2 | Bridge Layer & Mathematical Spec | Mathematical formalization, bridge grammar spec |
 | Phase 3 | Deep analysis of pillars, patterns, and architecture | Six research documents covering ACI, memory, coordination, trust, comparative analysis, and reference architecture |
 | Phase 4 | Prototype implementation & empirical evaluation | Core infrastructure, agent runtime, validation & benchmarks |
-| Phase 5 | Paradigm foundation | DPN channels, IFC labels, VPIR types, Bridge Grammar, Z3 verification, NL protocols, VPIR execution & visualization |
+| Phase 5 | Paradigm foundation | DPN channels, IFC labels, VPIR types, Bridge Grammar, Z3 verification, NL protocols, VPIR execution & visualization, protocol-channel integration, VPIR parallel execution & caching |
 
 ### Phase 3 Deliverables
 
@@ -71,6 +71,12 @@ The pnxt project has completed **Phase 5 Sprint 3**, delivering **end-to-end VPI
 - [x] **Natural Language Protocol Design** — Three protocol state machines (task-delegation, capability-negotiation, conflict-resolution) with transition validation and IFC enforcement
 - [x] **VPIR Visualization** — Text-based rendering of VPIR graphs (ASCII DAG) and execution traces (step-by-step table with timing and status)
 
+#### Sprint 4: Protocol-Channel Integration + VPIR Optimizations
+
+- [x] **Protocol-Channel Integration** — Bidirectional protocol channels wrapping DPN channels for real dataflow transport, with IFC enforcement, backpressure, and async iteration
+- [x] **VPIR Parallel Execution** — Wave-based execution planner grouping independent DAG branches for concurrent execution with configurable concurrency limits
+- [x] **VPIR Result Caching** — Cache interface with in-memory implementation for deterministic nodes (observation, inference), with stable input hashing
+
 ---
 
 ## Test Coverage
@@ -81,17 +87,16 @@ The pnxt project has completed **Phase 5 Sprint 3**, delivering **end-to-end VPI
 | Sprint 1 | 14 | 194+ |
 | Sprint 2 | 17 | 292 |
 | Sprint 3 | 20 | 355 |
+| Sprint 4 | 22 | ~415 |
 
 ---
 
 ## Future Goals
 
-### Medium-Term (Sprint 4+)
+### Medium-Term (Sprint 5+)
 
 - Tree-sitter DKB integration (knowledge graph-based codebase representation)
-- VPIR compiler optimizations (parallel execution, caching)
 - Enhanced visualization (graphical node-graph decompiler)
-- Protocol channels integration (bind NL protocols to DPN transport)
 
 ### Long-Term (Phase 6+)
 

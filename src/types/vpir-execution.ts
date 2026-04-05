@@ -108,6 +108,58 @@ export interface VPIRExecutionError {
 }
 
 /**
+ * Options for VPIR graph execution.
+ */
+export interface VPIRExecutionOptions {
+  /** Enable parallel execution of independent branches. Default: false. */
+  parallel?: boolean;
+
+  /** Enable result caching for deterministic nodes. Default: undefined (no cache). */
+  cache?: VPIRResultCache;
+
+  /** Maximum concurrent node executions when parallel is true. Default: 4. */
+  maxConcurrency?: number;
+}
+
+/**
+ * Cache interface for storing and retrieving deterministic node results.
+ * Keyed by node ID and a hash of the node's inputs.
+ */
+export interface VPIRResultCache {
+  /** Retrieve a cached result. Returns undefined on cache miss. */
+  get(nodeId: string, inputHash: string): Promise<unknown | undefined>;
+
+  /** Store a result in the cache. */
+  set(nodeId: string, inputHash: string, value: unknown): Promise<void>;
+
+  /** Check if a result exists in the cache. */
+  has(nodeId: string, inputHash: string): Promise<boolean>;
+}
+
+/**
+ * An execution plan grouping nodes into parallel waves.
+ * Nodes within a wave have all dependencies satisfied and can run concurrently.
+ */
+export interface ExecutionWave {
+  /** Node IDs in this wave, all of which can execute in parallel. */
+  nodeIds: string[];
+}
+
+/**
+ * A plan for executing a VPIR graph, potentially with parallelism.
+ */
+export interface ExecutionPlan {
+  /** Ordered waves of nodes to execute. */
+  waves: ExecutionWave[];
+
+  /** Total number of nodes in the plan. */
+  totalNodes: number;
+
+  /** Maximum parallelism (widest wave). */
+  maxParallelism: number;
+}
+
+/**
  * Result of executing a VPIR graph.
  */
 export interface VPIRExecutionResult {

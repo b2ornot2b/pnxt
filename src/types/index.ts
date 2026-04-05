@@ -11,3 +11,4 @@ export * from './bridge-grammar.js';
 export * from './verification.js';
 export * from './vpir-execution.js';
 export * from './protocol.js';
+export * from './protocol-channel.js';
