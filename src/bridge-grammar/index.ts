@@ -20,3 +20,13 @@ export {
   toStructuredOutputSchema,
   getSchemaForFormat,
 } from './constrained-output.js';
+
+export {
+  generateVPIRGraph,
+  createMockClient,
+  createSampleVPIRGraphJSON,
+} from './llm-vpir-generator.js';
+export type {
+  VPIRGeneratorOptions,
+  VPIRGenerationResult,
+} from './llm-vpir-generator.js';

@@ -10,3 +10,5 @@ export * from './vpir/index.js';
 export * from './protocol/index.js';
 export * from './hott/index.js';
 export * from './knowledge-graph/index.js';
+export * from './bridge-grammar/index.js';
+export * from './verification/index.js';
