@@ -137,6 +137,23 @@ export interface VPIRResultCache {
 }
 
 /**
+ * Options for LLM-driven VPIR generation in the integration pipeline.
+ */
+export interface LLMPipelineOptions {
+  /** Enable LLM-driven VPIR generation. Default: false (use deterministic). */
+  enabled: boolean;
+
+  /** Custom Anthropic client (for testing/DI). */
+  client?: import('@anthropic-ai/sdk').default;
+
+  /** Claude model to use. Default: 'claude-sonnet-4-20250514'. */
+  model?: string;
+
+  /** Maximum retry attempts for invalid output. Default: 2. */
+  maxRetries?: number;
+}
+
+/**
  * An execution plan grouping nodes into parallel waves.
  * Nodes within a wave have all dependencies satisfied and can run concurrently.
  */

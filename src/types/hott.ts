@@ -101,6 +101,82 @@ export interface HoTTPath {
 export type PathLevel = 1 | 2;
 
 /**
+ * Truncation level for a category.
+ * A finite number n means all paths above level n are trivially reflexive.
+ * 'infinite' means non-trivial paths exist at unbounded levels.
+ */
+export type TruncationLevel = number | 'infinite';
+
+/**
+ * An n-path — a path at arbitrary level in the homotopy tower.
+ *
+ * - Level 1: witnesses equivalence of morphisms (same as HoTTPath)
+ * - Level 2: witnesses equivalence of 1-paths (same as HigherPath)
+ * - Level n: witnesses equivalence of (n-1)-paths
+ *
+ * At level 1, leftId/rightId reference morphism IDs.
+ * At level n>1, leftId/rightId reference (n-1)-path IDs.
+ */
+export interface NPath {
+  /** Unique identifier. */
+  id: string;
+
+  /** Path level (1 = morphism equivalence, 2+ = higher). */
+  level: number;
+
+  /** ID of the left element (morphism if level 1, (n-1)-path if level > 1). */
+  leftId: string;
+
+  /** ID of the right element. */
+  rightId: string;
+
+  /** Evidence/proof of equivalence. */
+  witness: string;
+}
+
+/**
+ * N-groupoid structure — inverses at every path level.
+ */
+export interface NGroupoidStructure {
+  /** Category this structure belongs to. */
+  categoryId: string;
+
+  /** Maximum level for which inverses are computed. */
+  maxLevel: number;
+
+  /** Inverses by level: level → (path ID → inverse NPath). */
+  inversesByLevel: Map<number, Map<string, NPath>>;
+}
+
+/**
+ * Result of validating n-groupoid laws at all levels.
+ */
+export interface NGroupoidValidationResult {
+  /** Whether all laws hold at all levels. */
+  valid: boolean;
+
+  /** Specific violations found. */
+  violations: NGroupoidViolation[];
+}
+
+/**
+ * A violation of an n-groupoid law.
+ */
+export interface NGroupoidViolation {
+  /** Path level where violation occurred. */
+  level: number;
+
+  /** Which law was violated. */
+  law: 'inverse_left' | 'inverse_right' | 'coherence';
+
+  /** Human-readable description. */
+  message: string;
+
+  /** IDs of involved paths. */
+  ids: string[];
+}
+
+/**
  * A higher path (2-path) — a path between two 1-paths.
  *
  * Witnesses that two refactoring equivalences are themselves equivalent.
@@ -256,6 +332,9 @@ export interface Category {
 
   /** Higher path equivalences between 1-paths (2-paths). Optional for backward compatibility. */
   higherPaths?: Map<string, HigherPath>;
+
+  /** N-paths at arbitrary levels. Level → (path ID → NPath). Optional for backward compatibility. */
+  nPaths?: Map<number, Map<string, NPath>>;
 }
 
 /**

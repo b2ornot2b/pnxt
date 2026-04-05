@@ -304,6 +304,56 @@ export function validateCategory(category: Category): CategoryValidationResult {
     }
   }
 
+  // Check n-path validity: endpoints must reference elements at the correct level
+  if (category.nPaths) {
+    for (const [level, paths] of category.nPaths) {
+      for (const nPath of paths.values()) {
+        if (level === 1) {
+          // Level 1 references morphisms
+          if (!category.morphisms.has(nPath.leftId)) {
+            violations.push({
+              law: 'higher_path',
+              message: `NPath '${nPath.id}' (level ${level}) references missing left morphism '${nPath.leftId}'`,
+              morphismIds: [nPath.id],
+            });
+          }
+          if (!category.morphisms.has(nPath.rightId)) {
+            violations.push({
+              law: 'higher_path',
+              message: `NPath '${nPath.id}' (level ${level}) references missing right morphism '${nPath.rightId}'`,
+              morphismIds: [nPath.id],
+            });
+          }
+        } else {
+          // Level n>1 references (n-1)-paths
+          const lowerLevel = level - 1;
+          const lowerPaths = category.nPaths.get(lowerLevel);
+          const leftExists = lowerLevel === 1
+            ? (category.paths?.has(nPath.leftId) || lowerPaths?.has(nPath.leftId))
+            : lowerPaths?.has(nPath.leftId);
+          const rightExists = lowerLevel === 1
+            ? (category.paths?.has(nPath.rightId) || lowerPaths?.has(nPath.rightId))
+            : lowerPaths?.has(nPath.rightId);
+
+          if (!leftExists) {
+            violations.push({
+              law: 'higher_path',
+              message: `NPath '${nPath.id}' (level ${level}) references missing left ${lowerLevel}-path '${nPath.leftId}'`,
+              morphismIds: [nPath.id],
+            });
+          }
+          if (!rightExists) {
+            violations.push({
+              law: 'higher_path',
+              message: `NPath '${nPath.id}' (level ${level}) references missing right ${lowerLevel}-path '${nPath.rightId}'`,
+              morphismIds: [nPath.id],
+            });
+          }
+        }
+      }
+    }
+  }
+
   return {
     valid: violations.length === 0,
     violations,

@@ -1,12 +1,12 @@
 # pnxt Project Status
 
-> Last updated: 2026-04-05 (Phase 6 Sprint 2 complete)
+> Last updated: 2026-04-05 (Phase 6 Sprint 3 complete)
 
 ---
 
 ## Current State
 
-The pnxt project has completed Phase 6 Sprint 2, delivering **HoTT higher paths** (2-paths, groupoid structure, univalence axiom for provably-correct refactoring), **structured JSON visualization** (web-renderable graph export for VPIR/HoTT/pipeline/traces), **Z3 groupoid verification** (2 new formally verified properties: groupoid inverse law and higher path consistency), and **code quality cleanup** (dead abstraction removal, shared error hierarchy). Phase 6 focuses on integration and deepening — connecting and validating the paradigm pillars together with real-world inputs.
+The pnxt project has completed Phase 6 Sprint 3, delivering **HoTT n-paths** (generalized from hardcoded 2-paths to arbitrary n-paths with truncation levels, vertical/horizontal composition, and n-groupoid structure/validation), **pipeline LLM integration** (Claude API wired into Code→KG→VPIR→HoTT→Z3 pipeline via Bridge Grammar with graceful fallback), **LLMbda Calculus core** (typed lambda calculus with IFC labels, beta reduction, type checking, noninterference verification, and VPIR/HoTT roundtrip), and **Z3 verification expansion** (2 new formally verified properties: n-path coherence and lambda type safety — **total 10 verified properties**). Phase 6 focuses on integration and deepening — connecting and validating the paradigm pillars together with real-world inputs.
 
 ### Completed Work
 
@@ -102,15 +102,16 @@ Following the Advisory Review Panel's alignment assessment (3/10), Phase 5 imple
 | HoTT Typed Tokenization | Absent | — | — | — | — | Category, Morphism, Path types + VPIR bridge + KG conversion |
 | Tree-sitter DKB | Absent | — | — | — | — | Knowledge graph with typed edges, traversal, HoTT conversion |
 
-| Component | Phase 6 Sprint 1 | Phase 6 Sprint 2 |
-|-----------|-------------------|-------------------|
-| Tree-sitter Integration | TypeScript parser → KG | — |
-| LLM-Driven VPIR | Claude API + Bridge Grammar | — |
-| Integration Pipeline | Code→KG→VPIR→HoTT→Z3 | JSON export option |
-| HoTT Typed Tokenization | — | **2-paths, groupoid structure, univalence, refactoring equivalences** |
-| SMT Verification | 6 properties | **8 properties (+groupoid inverse, +higher path consistency)** |
-| Visualization | — | **Structured JSON export (graph, category, pipeline, trace)** |
-| Code Quality | — | **Dead abstraction removal, shared error hierarchy** |
+| Component | Phase 6 Sprint 1 | Phase 6 Sprint 2 | Phase 6 Sprint 3 |
+|-----------|-------------------|-------------------|-------------------|
+| Tree-sitter Integration | TypeScript parser → KG | — | — |
+| LLM-Driven VPIR | Claude API + Bridge Grammar | — | **Pipeline LLM integration (live Claude API in Code→KG→VPIR→HoTT→Z3)** |
+| Integration Pipeline | Code→KG→VPIR→HoTT→Z3 | JSON export option | **LLM-driven VPIR generation with fallback** |
+| HoTT Typed Tokenization | — | **2-paths, groupoid structure, univalence, refactoring equivalences** | **N-paths (arbitrary level), truncation levels, n-groupoid structure** |
+| SMT Verification | 6 properties | **8 properties (+groupoid inverse, +higher path consistency)** | **10 properties (+n-path coherence, +lambda type safety)** |
+| Visualization | — | **Structured JSON export (graph, category, pipeline, trace)** | — |
+| Code Quality | — | **Dead abstraction removal, shared error hierarchy** | — |
+| LLMbda Calculus | — | — | **Core lambda calculus: terms, types, beta reduction, IFC noninterference, VPIR bridge** |
 
 ---
 
@@ -126,6 +127,7 @@ Following the Advisory Review Panel's alignment assessment (3/10), Phase 5 imple
 | Sprint 5 | 26 | 479 | ~8,200 |
 | Phase 6 Sprint 1 | 29 | ~530 | ~9,600 |
 | Phase 6 Sprint 2 | 31 | 570 | ~10,800 |
+| Phase 6 Sprint 3 | 34 | 642 | ~12,600 |
 
 ---
 
@@ -146,15 +148,22 @@ Phase 6 shifts from "build each pillar" to "connect and validate the pillars tog
 - [x] **Z3 Groupoid Law Verification** — Two new SMT-verified properties: `groupoid_inverse_law` (verifies f∘f⁻¹ = id and f⁻¹∘f = id for all morphisms) and `higher_path_consistency` (verifies 2-paths connect valid 1-paths with matching endpoints). Total: 8 formally verified properties.
 - [x] **Code Quality Cleanup** — Removed dead `BehaviorStyle` and `Verbosity` types (set but never branched on). Extracted VPIR error classes (`ACIError`, `AssertionError`, `SubGraphError`, `HandlerError`) from local definitions in `vpir-interpreter.ts` to shared `src/errors/vpir-errors.ts` module.
 
+### Sprint 3: N-Paths + LLM Pipeline + LLMbda Calculus + Z3 Expansion (Complete)
+
+- [x] **HoTT N-Paths Generalization** — `NPath` type supporting arbitrary path levels (1, 2, 3, ..., n), `createNPath`/`addNPath` for validated n-path creation, `composeNPaths` for vertical composition, `horizontalCompose` for whiskering, `truncationLevel`/`isTruncated` for computing n-truncation, `buildNGroupoidStructure`/`validateNGroupoid` for n-groupoid inverse laws at every level. Category type extended with optional `nPaths` field (backward compatible). `validateCategory` extended to check n-path references. Addresses Voevodsky's "need n-paths generalization" gap.
+- [x] **Pipeline LLM Integration** — Wired `generateVPIRGraph()` (Claude API via Bridge Grammar) into the integration pipeline as an optional VPIR source. `PipelineOptions.llmGeneration` enables live LLM inference with configurable client, model, and retry count. `serializeKGForLLM()` converts Knowledge Graphs into natural-language prompts for Claude. Graceful fallback to deterministic generation on LLM failure. `PipelineSummary.vpirSource` tracks whether VPIR came from 'llm', 'deterministic', or 'custom'. Addresses Sutskever's "Bridge Grammar empirical validation" concern.
+- [x] **LLMbda Calculus Core** — New `src/lambda/` module implementing typed lambda calculus with IFC labels. `createVar`/`createAbs`/`createApp` term constructors, `betaReduce` single-step reduction, `normalize` multi-step normalization, `typeCheck` bidirectional type checking with IFC label propagation, `checkNoninterference` for detecting high→low security flows. `termToVPIR` converts lambda terms to valid VPIR graphs, enabling Lambda→VPIR→HoTT→Z3 roundtrip verification. Type definitions in `src/types/lambda.ts`. Addresses Church's "need pure lambda substrate" advisory gap.
+- [x] **Z3 Verification Expansion** — Two new SMT-verified properties: `n_path_coherence` (verifies inverse laws at every n-path level) and `lambda_type_safety` (verifies beta reduction preserves typing). Total: **10 formally verified properties**.
+
 ---
 
 ## Future Goals
 
-### Medium-Term (Phase 6 Sprint 3+)
+### Medium-Term (Phase 6 Sprint 4+)
 
 - **Web-based visualization frontend** — Interactive node-graph renderer consuming the JSON export format (D3.js/Cytoscape.js)
-- **HoTT n-paths** — Generalize from 2-paths to arbitrary n-paths for deeper homotopy structure
-- **Pipeline LLM integration** — Connect integration pipeline to live Claude API for end-to-end automated verification
+- **LLMbda Calculus expansion** — Effect tracking, recursive types, pattern matching, and full lambda-to-VPIR compilation
+- **Multi-language Tree-sitter parsers** — Extend KG parsing beyond TypeScript to Python, Rust, Go
 
 ### Long-Term (Phase 7+)
 
@@ -208,7 +217,8 @@ pnxt/
 │   │   ├── protocol.ts          # NL protocol message & conversation types (Phase 5 Sprint 3)
 │   │   ├── protocol-channel.ts  # Protocol-channel binding types (Phase 5 Sprint 4)
 │   │   ├── hott.ts              # HoTT types (Object, Morphism, Path, Category) (Sprint 5)
-│   │   └── knowledge-graph.ts   # Knowledge graph types (KGNode, KGEdge, KGQuery) (Sprint 5)
+│   │   ├── knowledge-graph.ts   # Knowledge graph types (KGNode, KGEdge, KGQuery) (Sprint 5)
+│   │   └── lambda.ts           # LLMbda Calculus types (Variable, Abstraction, Application) (Phase 6 Sprint 3)
 │   ├── memory/            # Memory Service
 │   │   ├── memory-service.ts  # Three-layer memory model with IFC enforcement
 │   │   └── storage-backend.ts # StorageBackend interface, InMemory & File impls
@@ -222,10 +232,11 @@ pnxt/
 │   │   ├── constrained-output.ts  # LLM schema format converters
 │   │   ├── llm-vpir-generator.ts  # Claude API VPIR generation (Phase 6 Sprint 1)
 │   │   └── index.ts               # Re-exports
-│   ├── hott/              # HoTT Typed Tokenization (Phase 5 Sprint 5 + Phase 6 Sprint 2)
-│   │   ├── category.ts        # Category operations (compose, identity, validate, addHigherPath)
+│   ├── hott/              # HoTT Typed Tokenization (Phase 5 Sprint 5 + Phase 6 Sprint 2–3)
+│   │   ├── category.ts        # Category operations (compose, identity, validate, addHigherPath, nPath validation)
 │   │   ├── vpir-bridge.ts     # VPIR-to-HoTT translation pipeline (+ refactoring equivalences)
-│   │   └── higher-paths.ts    # 2-paths, groupoid structure, univalence (Phase 6 Sprint 2)
+│   │   ├── higher-paths.ts    # 2-paths, groupoid structure, univalence (Phase 6 Sprint 2)
+│   │   └── n-paths.ts         # N-paths (arbitrary level), truncation, n-groupoid (Phase 6 Sprint 3)
 │   ├── knowledge-graph/   # Tree-sitter DKB Knowledge Graph (Phase 5 Sprint 5 + Phase 6 Sprint 1)
 │   │   ├── knowledge-graph.ts # Typed graph with traversal and HoTT conversion
 │   │   └── ts-parser.ts       # Tree-sitter TypeScript parser → KG (Phase 6 Sprint 1)
@@ -250,6 +261,8 @@ pnxt/
 │   ├── trust/             # Trust Engine
 │   │   ├── trust-engine.ts    # Graduated trust model with fixed-weight scoring
 │   │   └── causal-trust.ts    # Causal trust scorer with difficulty weighting
+│   ├── lambda/            # LLMbda Calculus (Phase 6 Sprint 3)
+│   │   └── llmbda.ts          # Typed lambda calculus with IFC, beta reduction, VPIR bridge
 │   ├── errors/            # Shared error classes (Phase 6 Sprint 2)
 │   │   └── vpir-errors.ts     # VPIR execution error hierarchy
 │   └── evaluation/        # Validation & Evaluation

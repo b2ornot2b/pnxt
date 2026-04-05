@@ -389,4 +389,124 @@ describe('Z3 SMT Invariant Verification', () => {
       expect(result.counterexample).toBeDefined();
     });
   });
+
+  describe('verifyNPathCoherence', () => {
+    it('should verify coherence for well-formed n-groupoid', async () => {
+      const { createCategory, addObject, addMorphism, addPath } = await import('../hott/category.js');
+      const { buildNGroupoidStructure } = await import('../hott/n-paths.js');
+
+      const cat = createCategory('c1', 'Test');
+      addObject(cat, { id: 'A', kind: 'term', label: 'A' });
+      addObject(cat, { id: 'B', kind: 'term', label: 'B' });
+      addMorphism(cat, { id: 'f', sourceId: 'A', targetId: 'B', label: 'f', properties: [] });
+      addMorphism(cat, { id: 'g', sourceId: 'A', targetId: 'B', label: 'g', properties: [] });
+      addPath(cat, { id: 'p1', leftId: 'f', rightId: 'g', witness: 'p1' });
+
+      const structure = buildNGroupoidStructure(cat, 1);
+      const result = await ctx.verifyNPathCoherence(cat, structure, 1);
+      expect(result.verified).toBe(true);
+      expect(result.property).toBe('n_path_coherence');
+    });
+
+    it('should verify coherence for 2-level n-groupoid', async () => {
+      const { createCategory, addObject, addMorphism, addPath } = await import('../hott/category.js');
+      const { createNPath, addNPath, buildNGroupoidStructure } = await import('../hott/n-paths.js');
+
+      const cat = createCategory('c1', 'Test');
+      addObject(cat, { id: 'A', kind: 'term', label: 'A' });
+      addObject(cat, { id: 'B', kind: 'term', label: 'B' });
+      addMorphism(cat, { id: 'f', sourceId: 'A', targetId: 'B', label: 'f', properties: [] });
+      addMorphism(cat, { id: 'g', sourceId: 'A', targetId: 'B', label: 'g', properties: [] });
+      addPath(cat, { id: 'p1', leftId: 'f', rightId: 'g', witness: 'p1' });
+      addPath(cat, { id: 'p2', leftId: 'f', rightId: 'g', witness: 'p2' });
+
+      const np2 = createNPath(cat, 2, 'p1', 'p2', 'α');
+      addNPath(cat, np2);
+
+      const structure = buildNGroupoidStructure(cat, 2);
+      const result = await ctx.verifyNPathCoherence(cat, structure, 2);
+      expect(result.verified).toBe(true);
+    });
+
+    it('should detect malformed inverse at level 1', async () => {
+      const { createCategory, addObject, addMorphism, addPath } = await import('../hott/category.js');
+
+      const cat = createCategory('c1', 'Test');
+      addObject(cat, { id: 'A', kind: 'term', label: 'A' });
+      addObject(cat, { id: 'B', kind: 'term', label: 'B' });
+      addMorphism(cat, { id: 'f', sourceId: 'A', targetId: 'B', label: 'f', properties: [] });
+      addMorphism(cat, { id: 'g', sourceId: 'A', targetId: 'B', label: 'g', properties: [] });
+      addPath(cat, { id: 'p1', leftId: 'f', rightId: 'g', witness: 'p1' });
+
+      // Create a bad structure where inverse doesn't swap endpoints
+      const badStructure = {
+        categoryId: cat.id,
+        maxLevel: 1,
+        inversesByLevel: new Map([[1, new Map([['p1', {
+          id: 'bad_inv', level: 1, leftId: 'f', rightId: 'g', witness: 'bad',
+        }]])]]),
+      };
+
+      const result = await ctx.verifyNPathCoherence(cat, badStructure, 1);
+      expect(result.verified).toBe(false);
+      expect(result.counterexample).toBeDefined();
+    });
+
+    it('should detect missing inverse', async () => {
+      const { createCategory, addObject, addMorphism, addPath } = await import('../hott/category.js');
+
+      const cat = createCategory('c1', 'Test');
+      addObject(cat, { id: 'A', kind: 'term', label: 'A' });
+      addObject(cat, { id: 'B', kind: 'term', label: 'B' });
+      addMorphism(cat, { id: 'f', sourceId: 'A', targetId: 'B', label: 'f', properties: [] });
+      addMorphism(cat, { id: 'g', sourceId: 'A', targetId: 'B', label: 'g', properties: [] });
+      addPath(cat, { id: 'p1', leftId: 'f', rightId: 'g', witness: 'p1' });
+
+      // Empty inverses
+      const emptyStructure = {
+        categoryId: cat.id,
+        maxLevel: 1,
+        inversesByLevel: new Map([[1, new Map()]]),
+      };
+
+      const result = await ctx.verifyNPathCoherence(cat, emptyStructure, 1);
+      expect(result.verified).toBe(false);
+    });
+  });
+
+  describe('verifyLambdaTypeSafety', () => {
+    it('should verify type safety for correctly-typed reductions', async () => {
+      const result = await ctx.verifyLambdaTypeSafety([
+        { termId: 't1', beforeType: 'Int', afterType: 'Int', reductionRule: 'beta' },
+        { termId: 't2', beforeType: '(Int → Bool)', afterType: '(Int → Bool)', reductionRule: 'beta' },
+      ]);
+      expect(result.verified).toBe(true);
+      expect(result.property).toBe('lambda_type_safety');
+    });
+
+    it('should detect type-changing reduction', async () => {
+      const result = await ctx.verifyLambdaTypeSafety([
+        { termId: 't1', beforeType: 'Int', afterType: 'Bool', reductionRule: 'beta' },
+      ]);
+      expect(result.verified).toBe(false);
+      expect(result.counterexample).toBeDefined();
+      expect((result.counterexample as Record<string, unknown>).beforeType).toBe('Int');
+      expect((result.counterexample as Record<string, unknown>).afterType).toBe('Bool');
+    });
+
+    it('should pass for empty input', async () => {
+      const result = await ctx.verifyLambdaTypeSafety([]);
+      expect(result.verified).toBe(true);
+    });
+
+    it('should detect violation among multiple reductions', async () => {
+      const result = await ctx.verifyLambdaTypeSafety([
+        { termId: 't1', beforeType: 'Int', afterType: 'Int', reductionRule: 'beta' },
+        { termId: 't2', beforeType: 'Bool', afterType: 'Int', reductionRule: 'beta' },
+        { termId: 't3', beforeType: 'String', afterType: 'String', reductionRule: 'eta' },
+      ]);
+      expect(result.verified).toBe(false);
+      expect((result.counterexample as Record<string, unknown>).termId).toBe('t2');
+    });
+  });
 });
