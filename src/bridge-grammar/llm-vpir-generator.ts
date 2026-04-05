@@ -177,8 +177,9 @@ export async function generateVPIRGraph(
 
 /**
  * Build the Anthropic tool definition for VPIR graph generation.
+ * Exported for reuse by the neurosymbolic Active Inference engine.
  */
-function buildVPIRGraphTool(
+export function buildVPIRGraphTool(
   securityLabel?: SecurityLabel,
 ): Anthropic.Tool {
   const description = securityLabel

@@ -151,6 +151,9 @@ export interface LLMPipelineOptions {
 
   /** Maximum retry attempts for invalid output. Default: 2. */
   maxRetries?: number;
+
+  /** Optional refinement config. When set, uses probabilistic refinement loop. */
+  refinement?: import('./neurosymbolic.js').RefinementConfig;
 }
 
 /**

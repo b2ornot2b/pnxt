@@ -25,6 +25,7 @@ export {
   generateVPIRGraph,
   createMockClient,
   createSampleVPIRGraphJSON,
+  buildVPIRGraphTool,
 } from './llm-vpir-generator.js';
 export type {
   VPIRGeneratorOptions,

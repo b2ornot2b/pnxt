@@ -17,3 +17,4 @@ export * from './knowledge-graph.js';
 export * from './visualization.js';
 export * from './lambda.js';
 export * from './bisimulation.js';
+export * from './neurosymbolic.js';
