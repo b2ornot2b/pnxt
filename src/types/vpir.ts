@@ -12,6 +12,7 @@
  */
 
 import type { SecurityLabel } from './ifc.js';
+import type { LambdaTerm } from './lambda.js';
 
 /**
  * Types of VPIR reasoning steps.
@@ -89,6 +90,9 @@ export interface VPIRNode {
 
   /** Optional: agent that produced this node. */
   agentId?: string;
+
+  /** Optional lambda calculus denotation (semantic foundation — Sprint 6). */
+  lambdaSemantics?: LambdaTerm;
 }
 
 /**

@@ -25,7 +25,8 @@ export type VerificationProperty =
   | 'ifc_noninterference_proof'
   | 'dpn_progress'
   | 'dpn_deadlock_freedom'
-  | 'dpn_fairness';
+  | 'dpn_fairness'
+  | 'univalence_axiom';
 
 /**
  * Result of a Z3 verification check.
