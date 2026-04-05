@@ -308,6 +308,113 @@ export interface UnivalenceWitness {
 }
 
 /**
+ * A type equivalence A ≃ B between two HoTT objects.
+ *
+ * An equivalence consists of morphisms f: A → B and g: B → A
+ * such that g∘f = id_A and f∘g = id_B (witnessed by sections
+ * and retractions).
+ */
+export interface TypeEquivalence {
+  /** Unique identifier. */
+  id: string;
+
+  /** The left type (A). */
+  leftType: HoTTObject;
+
+  /** The right type (B). */
+  rightType: HoTTObject;
+
+  /** Forward morphism f: A → B. */
+  forward: Morphism;
+
+  /** Backward morphism g: B → A. */
+  backward: Morphism;
+
+  /** Witness that g(f(a)) = a for all a in A. */
+  sectionWitness: string;
+
+  /** Witness that f(g(b)) = b for all b in B. */
+  retractionWitness: string;
+}
+
+/**
+ * A path term representing identity A = B in the universe of types.
+ *
+ * In HoTT, paths in the universe are the identity type: they witness
+ * that two types are equal. The univalence axiom states that every
+ * equivalence gives rise to such a path, and vice versa.
+ */
+export interface PathTerm {
+  /** Unique identifier. */
+  id: string;
+
+  /** Source type ID (A). */
+  sourceId: string;
+
+  /** Target type ID (B). */
+  targetId: string;
+
+  /** Evidence/proof witness. */
+  witness: string;
+
+  /** The equivalence this path was constructed from (if any). */
+  fromEquivalence?: TypeEquivalence;
+}
+
+/**
+ * A type family P: Type → Type.
+ *
+ * Maps types (HoTT objects) to their "fibers" — properties or
+ * structures that depend on the type. Transport moves values
+ * between fibers along paths.
+ */
+export interface TypeFamily {
+  /** Unique identifier. */
+  id: string;
+
+  /** Human-readable label. */
+  label: string;
+
+  /** Maps object IDs to their fiber values. */
+  fibers: Map<string, TypeFamilyValue>;
+}
+
+/**
+ * A value in a type family fiber — represents a property or
+ * structure that a type possesses.
+ */
+export interface TypeFamilyValue {
+  /** The type (object) this value belongs to. */
+  typeId: string;
+
+  /** The actual value/property. */
+  value: unknown;
+
+  /** Human-readable label. */
+  label: string;
+}
+
+/**
+ * Result of transporting a value along a path.
+ */
+export interface TransportResult {
+  /** Whether transport succeeded. */
+  success: boolean;
+
+  /** The original value at the source type. */
+  sourceValue: TypeFamilyValue;
+
+  /** The transported value at the target type (if successful). */
+  transportedValue?: TypeFamilyValue;
+
+  /** The path used for transport. */
+  path: PathTerm;
+
+  /** The type family being transported over. */
+  typeFamily: TypeFamily;
+}
+
+/**
  * A category: objects + morphisms + composition + identity laws.
  *
  * This is the core structure for typed tokenization — a codebase

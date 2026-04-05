@@ -144,11 +144,11 @@ This addresses Church's concern that the calculus is a "verification layer, not 
 
 ## 7. Definition of Done
 
-- [ ] Univalence axiom encoded with path↔equivalence round-trip
-- [ ] Transport implemented: properties transfer between equivalent types
-- [ ] Z3 `univalence_axiom` property verified
-- [ ] ADR `docs/decisions/typed-llmbda-calculus.md` complete
-- [ ] VPIR nodes carry `lambdaSemantics` denotations
-- [ ] ~45 new tests, all passing
-- [ ] `npm test`, `npm run typecheck`, `npm run lint` all pass
+- [x] Univalence axiom encoded with path↔equivalence round-trip
+- [x] Transport implemented: properties transfer between equivalent types
+- [x] Z3 `univalence_axiom` property verified
+- [x] ADR `docs/decisions/typed-llmbda-calculus.md` complete
+- [x] VPIR nodes carry `lambdaSemantics` denotations
+- [x] ~50 new tests (817 total), all passing
+- [x] `npm test`, `npm run typecheck`, `npm run lint` all pass
 - [ ] Advisory review checkpoint: Voevodsky, Church, Myers re-assess

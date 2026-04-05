@@ -99,6 +99,11 @@ export interface Z3Context {
   verifyDPNFairness(
     config: DataflowGraphDefinition,
   ): Promise<VerificationResult>;
+
+  /** Verify univalence axiom: path↔equivalence round-trip for all equivalences in a category. */
+  verifyUnivalenceAxiom(
+    category: Category,
+  ): Promise<VerificationResult>;
 }
 
 /** Input for lambda type safety verification. */
@@ -1004,6 +1009,18 @@ export async function createZ3Context(): Promise<Z3Context> {
         solver: 'z3',
         duration: result.duration,
         property: 'dpn_fairness',
+      };
+    },
+
+    async verifyUnivalenceAxiom(category: import('../types/hott.js').Category): Promise<VerificationResult> {
+      const { verifyUnivalenceZ3 } = await import('./z3-univalence.js');
+      const result = await verifyUnivalenceZ3(z3, category);
+      return {
+        verified: result.verified,
+        counterexample: result.counterexample,
+        solver: 'z3',
+        duration: result.duration,
+        property: 'univalence_axiom',
       };
     },
   };

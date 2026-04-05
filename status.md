@@ -1,12 +1,12 @@
 # pnxt Project Status
 
-> Last updated: 2026-04-05 (Phase 6 Sprint 5 complete)
+> Last updated: 2026-04-05 (Phase 6 Sprint 6 complete)
 
 ---
 
 ## Current State
 
-The pnxt project has completed Phase 6 Sprint 5, delivering **formal noninterference proofs** (Z3-backed IFC noninterference verification replacing tree-walk checking), **DPN liveness properties** (progress, deadlock freedom, and fairness verified via bounded model checking in Z3), **covert channel analysis** (structured 3-vector analysis of timing, memory access, and bridge grammar side channels), and **Weather API benchmark MVP** (Sprint 4 — end-to-end paradigm proof: NL→VPIR→HoTT→Z3→DPN��Result). Total: **14 formally verified Z3 properties**, 40 test suites, 767 tests. Phase 6 focuses on integration and deepening — connecting and validating the paradigm pillars together with real-world inputs.
+The pnxt project has completed Phase 6 Sprint 6, delivering **univalence axiom encoding** (proper HoTT univalence: equivalence-to-path mutual inverses with Z3 verification), **transport along paths** (property transfer between equivalent VPIR graphs without re-verification), **LLMbda as semantic foundation** (VPIR nodes carry lambda calculus denotations), and **typed LLMbda ADR** (formal justification for typed over untyped lambda calculus). Previously completed: **formal noninterference proofs** (Z3-backed IFC noninterference verification replacing tree-walk checking), **DPN liveness properties** (progress, deadlock freedom, and fairness verified via bounded model checking in Z3), **covert channel analysis** (structured 3-vector analysis of timing, memory access, and bridge grammar side channels), and **Weather API benchmark MVP** (Sprint 4 — end-to-end paradigm proof: NL→VPIR→HoTT→Z3→DPN��Result). Total: **15 formally verified Z3 properties**, 44 test suites, 817 tests. Phase 6 focuses on integration and deepening — connecting and validating the paradigm pillars together with real-world inputs.
 
 ### Completed Work
 
@@ -113,15 +113,18 @@ Following the Advisory Review Panel's alignment assessment (3/10), Phase 5 imple
 | Code Quality | — | **Dead abstraction removal, shared error hierarchy** | — |
 | LLMbda Calculus | — | — | **Core lambda calculus: terms, types, beta reduction, IFC noninterference, VPIR bridge** |
 
-| Component | Phase 6 Sprint 4 | Phase 6 Sprint 5 |
-|-----------|-------------------|-------------------|
-| DPN Runtime | **DPNRuntime: VPIR→DPN compilation + actor execution** | — |
-| Benchmark | **Weather API Shim MVP (NL→VPIR→HoTT→Z3→DPN→Result)** | — |
-| Benchmark Harness | **BenchmarkRunner with per-stage timing and reports** | — |
-| SMT Verification | 10 properties | **14 properties (+noninterference, +progress, +deadlock freedom, +fairness)** |
-| IFC Formal Proofs | — | **Z3-backed noninterference (replaces tree-walk)** |
-| Covert Channel Analysis | — | **3-vector analysis (timing, memory, bridge grammar)** |
-| DPN Liveness | — | **Progress, deadlock freedom, fairness via bounded model checking** |
+| Component | Phase 6 Sprint 4 | Phase 6 Sprint 5 | Phase 6 Sprint 6 |
+|-----------|-------------------|-------------------|-------------------|
+| DPN Runtime | **DPNRuntime: VPIR→DPN compilation + actor execution** | — | — |
+| Benchmark | **Weather API Shim MVP (NL→VPIR→HoTT→Z3���DPN→Result)** | — | — |
+| Benchmark Harness | **BenchmarkRunner with per-stage timing and reports** | — | — |
+| SMT Verification | 10 properties | **14 properties (+noninterference, +progress, +deadlock freedom, +fairness)** | **15 properties (+univalence_axiom)** |
+| IFC Formal Proofs | — | **Z3-backed noninterference (replaces tree-walk)** | — |
+| Covert Channel Analysis | — | **3-vector analysis (timing, memory, bridge grammar)** | — |
+| DPN Liveness | — | **Progress, deadlock freedom, fairness via bounded model checking** | — |
+| HoTT Univalence | — | — | **Proper univalence encoding: equivalence↔path, transport, type families** |
+| LLMbda Semantic Foundation | — | — | **VPIR nodes carry lambdaSemantics; vpirNodeToLambda + annotateGraphWithSemantics** |
+| Architecture Decisions | — | — | **ADR: Typed LLMbda Calculus (IFC, Z3, LLM safety justification)** |
 
 ---
 
@@ -140,6 +143,7 @@ Following the Advisory Review Panel's alignment assessment (3/10), Phase 5 imple
 | Phase 6 Sprint 3 | 34 | 642 | ~12,600 |
 | Phase 6 Sprint 4 | 37 | 712 | ~14,200 |
 | Phase 6 Sprint 5 | 40 | 767 | ~15,400 |
+| Phase 6 Sprint 6 | 44 | 817 | ~16,400 |
 
 ---
 
@@ -180,6 +184,15 @@ Phase 6 shifts from "build each pillar" to "connect and validate the pillars tog
 - [x] **Covert Channel Analysis** — New `src/verification/covert-channel-analysis.ts` with structured analysis of three covert channel vectors: (1) timing channels in DPN (backpressure timing, process execution timing, channel close timing), (2) memory access patterns in Knowledge Graph (query pattern leakage, cache timing, node enumeration), (3) Bridge Grammar side channels (schema selection leakage, LLM response timing, validation error leakage). Produces `CovertChannelReport` with 9 identified risks, severity ratings, mitigations, and affected components. Configurable analysis with mitigation toggles. Addresses Myers's "covert channels unanalyzed" gap.
 - [x] **DPN Liveness/Progress/Fairness via Z3** — New `src/verification/z3-liveness.ts` with three Z3-verified properties using bounded model checking: `dpn_progress` (pending transfers complete within bounded steps), `dpn_deadlock_freedom` (no circular wait via topological ordering — detects cycles with DFS), `dpn_fairness` (every ready process executes within P steps under round-robin scheduling). Includes `buildDependencyGraph()` utility for channel dependency analysis. Addresses Agha's "no liveness/fairness verification" and de Moura's "verification depth" concerns.
 - [x] **Z3Context Extension** — Four new methods on `Z3Context` interface: `verifyNoninterference`, `verifyDPNProgress`, `verifyDPNDeadlockFreedom`, `verifyDPNFairness`. Total: **14 formally verified Z3 properties** (from 10).
+
+### Sprint 6: Type Identity — Univalence Axiom + LLMbda Decision (Complete)
+
+- [x] **Univalence Axiom Encoding** — New `src/hott/univalence.ts` implementing true HoTT univalence: `createTypeEquivalence` (validated A ≃ B from category morphisms), `equivalenceToPath` (the ua map: A ≃ B → A = B), `pathToEquivalence` (the inverse: A = B → A ≃ B), `verifyUnivalenceRoundTrip` (pathToEquiv(equivToPath(e)) ≡ e). `applyUnivalence` merges equivalent objects in a category (deduplication via union-find). `findTypeEquivalences` discovers round-trip morphism pairs. Addresses Voevodsky's "univalence axiom not encoded" gap — the "Homotopy" in HoTT is now meaningful.
+- [x] **Transport Along Paths** — New `src/hott/transport.ts` implementing the computational content of univalence. `transport(path, typeFamily, value)` moves values P(A) to P(B) along paths A = B. `transportVerificationResult` enables Z3 property transfer between equivalent VPIR graphs without re-verification. `createVerificationTypeFamily` builds type families from verification results. `transportAllVerificationResults` bulk-transports verified properties. This is refactoring correctness: restructuring a VPIR graph preserves all verified properties.
+- [x] **LLMbda as Semantic Foundation** — `vpirNodeToLambda()` converts each VPIR node type to its lambda denotation (observation → variable, inference → application, action → abstraction, assertion → predicate application, composition → nested application). `annotateGraphWithSemantics()` populates the new `lambdaSemantics` field on all VPIR nodes. Addresses Church's "calculus is a verification layer, not execution substrate" concern — LLMbda Calculus is now the *meaning* of VPIR.
+- [x] **Typed LLMbda Calculus ADR** — New `docs/decisions/typed-llmbda-calculus.md` formally justifying the typed departure from the master prompt's untyped specification. Four pillars: IFC requirement (Myers — compile-time security), Z3 integration (de Moura — decidable queries), LLM safety (Sutskever — boundary validation), subsumption (practical LLM outputs are always typeable). Addresses Church's concern about the typed/untyped decision.
+- [x] **Z3 Univalence Verification** — New `src/verification/z3-univalence.ts` encoding univalence as an SMT formula. `verifyUnivalenceAxiom()` on Z3Context checks that path↔equivalence round-trips hold for all equivalence pairs. New property: `univalence_axiom`. Total: **15 formally verified Z3 properties** (from 14).
+- [x] **Type Extensions** — `TypeEquivalence`, `PathTerm`, `TypeFamily`, `TypeFamilyValue`, `TransportResult` types in `src/types/hott.ts`. `lambdaSemantics?: LambdaTerm` optional field on `VPIRNode` in `src/types/vpir.ts`. `univalence_axiom` added to `VerificationProperty`.
 
 ---
 
@@ -258,11 +271,13 @@ pnxt/
 │   │   ├── constrained-output.ts  # LLM schema format converters
 │   │   ├── llm-vpir-generator.ts  # Claude API VPIR generation (Phase 6 Sprint 1)
 │   │   └── index.ts               # Re-exports
-│   ├── hott/              # HoTT Typed Tokenization (Phase 5 Sprint 5 + Phase 6 Sprint 2–3)
+│   ├── hott/              # HoTT Typed Tokenization (Phase 5 Sprint 5 + Phase 6 Sprint 2–3, 6)
 │   │   ├── category.ts        # Category operations (compose, identity, validate, addHigherPath, nPath validation)
 │   │   ├── vpir-bridge.ts     # VPIR-to-HoTT translation pipeline (+ refactoring equivalences)
 │   │   ├── higher-paths.ts    # 2-paths, groupoid structure, univalence (Phase 6 Sprint 2)
-│   │   └── n-paths.ts         # N-paths (arbitrary level), truncation, n-groupoid (Phase 6 Sprint 3)
+│   │   ├── n-paths.ts         # N-paths (arbitrary level), truncation, n-groupoid (Phase 6 Sprint 3)
+│   │   ├── univalence.ts      # Univalence axiom encoding, transport paths (Phase 6 Sprint 6)
+│   │   └── transport.ts       # Transport along paths, verification result transfer (Phase 6 Sprint 6)
 │   ├── knowledge-graph/   # Tree-sitter DKB Knowledge Graph (Phase 5 Sprint 5 + Phase 6 Sprint 1)
 │   │   ├── knowledge-graph.ts # Typed graph with traversal and HoTT conversion
 │   │   └── ts-parser.ts       # Tree-sitter TypeScript parser → KG (Phase 6 Sprint 1)
@@ -281,10 +296,11 @@ pnxt/
 │   ├── protocol/          # Natural Language Protocols (Phase 5 Sprint 3–4)
 │   │   ├── nl-protocol.ts       # Protocol state machines for agent communication
 │   │   └── protocol-channel.ts  # Protocol sessions over DPN channels (Sprint 4)
-│   ├── verification/      # Formal Verification (Phase 5 Sprint 2 + Phase 6 Sprint 5)
-│   │   ├── z3-invariants.ts          # Z3 SMT invariant verification (14 properties)
+│   ├── verification/      # Formal Verification (Phase 5 Sprint 2 + Phase 6 Sprint 5–6)
+│   │   ├── z3-invariants.ts          # Z3 SMT invariant verification (15 properties)
 │   │   ├── z3-noninterference.ts     # Z3 noninterference proof encoding (Phase 6 Sprint 5)
 │   │   ├── z3-liveness.ts            # Z3 DPN progress, deadlock, fairness (Phase 6 Sprint 5)
+│   │   ├── z3-univalence.ts          # Z3 univalence axiom verification (Phase 6 Sprint 6)
 │   │   ├── covert-channel-analysis.ts # 3-vector covert channel analysis (Phase 6 Sprint 5)
 │   │   └── index.ts                  # Re-exports
 │   ├── capability/        # Capability Negotiation
@@ -305,6 +321,8 @@ pnxt/
 │       ├── security-suite.ts          # Security test suite
 │       └── integration-pipeline.ts    # Code→KG→VPIR→HoTT→Z3 pipeline (Phase 6 Sprint 1)
 ├── docs/
+│   ├── decisions/
+│   │   └── typed-llmbda-calculus.md   # ADR: typed vs. untyped LLMbda Calculus (Phase 6 Sprint 6)
 │   └── research/
 │       ├── original-prompt.md
 │       ├── Designing Agent-Native Programming Paradigm.md

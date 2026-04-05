@@ -25,7 +25,7 @@ import type {
   Variable,
 } from '../types/lambda.js';
 import type { SecurityLabel } from '../types/ifc.js';
-import type { VPIRGraph, VPIRNode } from '../types/vpir.js';
+import type { VPIRGraph, VPIRNode, VPIRRef } from '../types/vpir.js';
 import { canFlowTo } from '../types/ifc.js';
 
 let idCounter = 0;
@@ -421,6 +421,152 @@ export function termToVPIR(term: LambdaTerm): VPIRGraph {
     roots: roots.length > 0 ? roots : [nodes[0].id],
     terminals: terminals.length > 0 ? terminals : [nodes[nodes.length - 1].id],
     createdAt: now,
+  };
+}
+
+// --- VPIR → Lambda denotation (semantic foundation) ---
+
+/**
+ * Convert a VPIR node to its lambda calculus denotation.
+ *
+ * Each VPIR node type maps to a lambda term:
+ * - observation → variable (data input)
+ * - inference  → application (function applied to inputs)
+ * - action     → abstraction with side-effect label
+ * - assertion  → application of predicate
+ * - composition → nested application (sub-graph)
+ *
+ * This positions the LLMbda Calculus as the *semantic foundation*
+ * of VPIR: every VPIR computation has a meaning as a lambda term.
+ */
+export function vpirNodeToLambda(node: VPIRNode): LambdaTerm {
+  const label = node.label;
+  const outputType = node.outputs[0]?.dataType ?? 'unknown';
+
+  switch (node.type) {
+    case 'observation': {
+      // Observation: reading a value → variable
+      return createVar(
+        node.id,
+        baseType(outputType),
+        label,
+      );
+    }
+    case 'inference': {
+      // Inference: derived from inputs → application
+      if (node.inputs.length === 0) {
+        // No inputs: constant function
+        return createVar(node.id, baseType(outputType), label);
+      }
+      // Model as: f(x1)(x2)...(xn) where f is the inference function
+      const inferFn = createVar(
+        `${node.id}_fn`,
+        buildArrowType(node.inputs, outputType),
+        label,
+      );
+      let result: LambdaTerm = inferFn;
+      for (const input of node.inputs) {
+        const argVar = createVar(
+          input.nodeId,
+          baseType(input.dataType),
+          label,
+        );
+        result = createApp(result, argVar);
+      }
+      return result;
+    }
+    case 'action': {
+      // Action: side-effecting operation → abstraction
+      const param = createVar(
+        `${node.id}_input`,
+        baseType(node.inputs[0]?.dataType ?? 'unit'),
+        label,
+      );
+      const bodyVar = createVar(
+        `${node.id}_effect`,
+        baseType(outputType),
+        label,
+      );
+      return createAbs(param, bodyVar);
+    }
+    case 'assertion': {
+      // Assertion: predicate application → application of predicate to input
+      const predicate = createVar(
+        `${node.id}_pred`,
+        arrowType(
+          baseType(node.inputs[0]?.dataType ?? 'unknown'),
+          baseType('Bool'),
+        ),
+        label,
+      );
+      if (node.inputs.length === 0) {
+        return predicate;
+      }
+      const input = createVar(
+        node.inputs[0].nodeId,
+        baseType(node.inputs[0].dataType),
+        label,
+      );
+      return createApp(predicate, input);
+    }
+    case 'composition': {
+      // Composition: nested application (sub-graph aggregation)
+      if (node.inputs.length === 0) {
+        return createVar(node.id, baseType(outputType), label);
+      }
+      const composeFn = createVar(
+        `${node.id}_compose`,
+        buildArrowType(node.inputs, outputType),
+        label,
+      );
+      let result: LambdaTerm = composeFn;
+      for (const input of node.inputs) {
+        const argVar = createVar(
+          input.nodeId,
+          baseType(input.dataType),
+          label,
+        );
+        result = createApp(result, argVar);
+      }
+      return result;
+    }
+  }
+}
+
+/**
+ * Build an arrow type from a list of inputs to an output type.
+ * E.g., [a, b] → c becomes a → (b → c)
+ */
+function buildArrowType(inputs: VPIRRef[], outputTypeName: string): LambdaType {
+  let result: LambdaType = baseType(outputTypeName);
+  for (let i = inputs.length - 1; i >= 0; i--) {
+    result = arrowType(baseType(inputs[i].dataType), result);
+  }
+  return result;
+}
+
+/**
+ * Annotate all nodes in a VPIR graph with their lambda calculus denotations.
+ *
+ * This populates the `lambdaSemantics` field on each node, positioning
+ * the LLMbda Calculus as the semantic foundation of VPIR.
+ *
+ * @returns A new graph with all nodes annotated (original graph is unchanged)
+ */
+export function annotateGraphWithSemantics(graph: VPIRGraph): VPIRGraph {
+  const annotatedNodes = new Map<string, VPIRNode>();
+
+  for (const [nodeId, node] of graph.nodes) {
+    const lambdaTerm = vpirNodeToLambda(node);
+    annotatedNodes.set(nodeId, {
+      ...node,
+      lambdaSemantics: lambdaTerm,
+    });
+  }
+
+  return {
+    ...graph,
+    nodes: annotatedNodes,
   };
 }
 
