@@ -85,7 +85,7 @@ export default defineConfig({
         {
           label: 'Roadmap',
           items: [
-            { label: 'Phase 4 Plan', slug: 'roadmap/phase-4' },
+            { label: 'Phase 4 Implementation', slug: 'roadmap/phase-4' },
             { label: 'Future Vision', slug: 'roadmap/future' },
           ],
         },
