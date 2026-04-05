@@ -84,6 +84,12 @@ export type TrustChangeReason =
   | 'manual_adjustment';
 
 /**
+ * Task difficulty levels for causal trust scoring.
+ * Harder tasks contribute more to trust on success and less penalty on failure.
+ */
+export type TaskDifficulty = 'trivial' | 'easy' | 'moderate' | 'hard' | 'expert';
+
+/**
  * Record of a trust-affecting event.
  */
 export interface TrustEvent {
@@ -91,4 +97,6 @@ export interface TrustEvent {
   reason: TrustChangeReason;
   timestamp: string;
   details?: string;
+  /** Task difficulty for causal trust scoring. */
+  difficulty?: TaskDifficulty;
 }

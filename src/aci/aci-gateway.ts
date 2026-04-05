@@ -18,7 +18,7 @@ import type {
 import { SIDE_EFFECT_TRUST_REQUIREMENTS } from '../types/aci.js';
 import type { TrustLevel } from '../types/agent.js';
 import type { SecurityLabel } from '../types/ifc.js';
-import { createLabel } from '../types/ifc.js';
+import { createLabel, canFlowTo } from '../types/ifc.js';
 
 export type ToolHandler = (input: unknown) => Promise<unknown>;
 
@@ -194,6 +194,41 @@ export class InMemoryACIGateway implements ACIGateway {
           error: {
             code: 'INSUFFICIENT_TRUST',
             message: `Insufficient trust level: agent has ${agentTrust}, requires ${requiredTrust}`,
+            retryable: false,
+          },
+          duration: 0,
+        };
+      }
+    }
+
+    // IFC label check on input data
+    if (invocation.requesterLabel) {
+      const requiredTrust = computeRequiredTrust(tool.registration);
+      const toolContextLabel: SecurityLabel = createLabel(
+        'system',
+        requiredTrust,
+        requiredTrust >= 3 ? 'confidential' : requiredTrust >= 1 ? 'internal' : 'public',
+      );
+
+      if (!canFlowTo(invocation.requesterLabel, toolContextLabel)) {
+        this.logAudit(
+          'permission',
+          invocation.agentId,
+          `invoke:${invocation.toolName}`,
+          invocation.requestId,
+          {
+            inputLabel: invocation.requesterLabel,
+            toolContextLabel,
+          },
+          'blocked',
+          `IFC violation: input label (trust ${invocation.requesterLabel.trustLevel}, ${invocation.requesterLabel.classification}) cannot flow to tool context (trust ${toolContextLabel.trustLevel}, ${toolContextLabel.classification})`,
+        );
+        return {
+          requestId: invocation.requestId,
+          success: false,
+          error: {
+            code: 'IFC_VIOLATION',
+            message: `IFC violation: input data label cannot flow to tool context`,
             retryable: false,
           },
           duration: 0,

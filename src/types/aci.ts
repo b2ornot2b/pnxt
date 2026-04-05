@@ -54,6 +54,9 @@ export interface ToolInvocation {
   input: unknown;
   agentId: string;
   requestId: string;
+  /** Optional IFC label on the input data. When present, the gateway checks
+   *  that the input label can flow to the tool's trust context. */
+  requesterLabel?: import('./ifc.js').SecurityLabel;
 }
 
 export interface ToolResult {

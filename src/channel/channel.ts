@@ -11,6 +11,7 @@
  */
 
 import type { ChannelConfig, ChannelInterface, ChannelState, ChannelStats } from '../types/channel.js';
+import type { SecurityLabel } from '../types/ifc.js';
 
 interface Waiter<T> {
   resolve: (value: T) => void;
@@ -28,6 +29,7 @@ interface Waiter<T> {
 export class Channel<T> implements ChannelInterface<T> {
   readonly id: string;
   readonly dataType: string;
+  readonly label?: SecurityLabel;
 
   private buffer: T[] = [];
   private readonly bufferSize: number;
@@ -45,6 +47,7 @@ export class Channel<T> implements ChannelInterface<T> {
     this.id = config.id;
     this.dataType = config.dataType;
     this.bufferSize = config.bufferSize ?? 16;
+    this.label = config.label;
 
     if (this.bufferSize < 1) {
       throw new Error('Channel buffer size must be at least 1');
