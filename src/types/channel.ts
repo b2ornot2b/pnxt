@@ -52,6 +52,10 @@ export interface ChannelConfig {
 
   /** Maximum buffer size. Sends block when full. Default: 16. */
   bufferSize?: number;
+
+  /** Optional IFC security label. When set, the channel enforces that
+   *  sent data's label can flow to this channel's label. */
+  label?: import('./ifc.js').SecurityLabel;
 }
 
 /**

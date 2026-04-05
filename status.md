@@ -1,12 +1,12 @@
 # pnxt Project Status
 
-> Last updated: 2026-04-05 (Phase 5 Sprint 1 in progress)
+> Last updated: 2026-04-05 (Phase 5 Sprint 2 complete)
 
 ---
 
 ## Current State
 
-The pnxt project has completed Phase 4 (infrastructure prototype) and is now in **Phase 5** — implementing the paradigm-defining components identified by the Advisory Review Panel. Phase 5 Sprint 1 focuses on Dataflow Process Networks, Information Flow Control, and VPIR reasoning chains.
+The pnxt project has completed Phase 5 Sprint 2, delivering the **paradigm's minimum viable differentiator**: Bridge Grammar constrained decoding, Z3 SMT formal verification, complete IFC label enforcement, and causal trust scoring. The project alignment with the foundational vision has advanced significantly from the Panel's 3/10 assessment after Phase 4.
 
 ### Completed Work
 
@@ -27,9 +27,7 @@ The pnxt project has completed Phase 4 (infrastructure prototype) and is now in 
 
 ---
 
-## Next Steps (Phase 4)
-
-Phase 4 transitions from research to **prototype implementation and empirical evaluation**.
+## Phase 4: Infrastructure Prototype (Complete)
 
 ### Priority 1: Core Infrastructure
 
@@ -55,39 +53,58 @@ Phase 4 transitions from research to **prototype implementation and empirical ev
 
 Following the Advisory Review Panel's alignment assessment (3/10), Phase 5 implements the core paradigm components that distinguish pnxt from conventional agent frameworks.
 
-### Sprint 1: DPN + IFC + VPIR (In Progress)
+### Sprint 1: DPN + IFC + VPIR (Complete)
 
-- [x] **Channel\<T\> and DPN primitives** — Typed async FIFO channels with backpressure, Process actors, DataflowGraph composition. Agents can now communicate via dataflow instead of RPC.
-- [x] **IFC security labels** — `SecurityLabel` type with lattice-based flow control. Memory entries carry trust-level provenance; queries enforce label boundaries (low-trust agents cannot read high-trust data). ACI gateway propagates labels on tool results.
-- [x] **VPIR node types and validator** — `VPIRNode`, `VPIRGraph` types define verifiable reasoning steps. Structural validator checks DAG property, reference resolution, and IFC label consistency across node boundaries.
-- [x] **Runtime integration** — AgentRuntime supports channel-based inter-agent communication alongside existing lifecycle management.
+- [x] **Channel\<T\> and DPN primitives** — Typed async FIFO channels with backpressure, Process actors, DataflowGraph composition. Agents communicate via dataflow instead of RPC.
+- [x] **IFC security labels** — `SecurityLabel` type with lattice-based flow control. Memory entries carry trust-level provenance; queries enforce label boundaries.
+- [x] **VPIR node types and validator** — `VPIRNode`, `VPIRGraph` types define verifiable reasoning steps. Structural validator checks DAG property, reference resolution, and IFC label consistency.
+- [x] **Runtime integration** — AgentRuntime supports channel-based inter-agent communication.
+
+### Sprint 2: Bridge Grammar + Formal Verification (Complete)
+
+- [x] **Bridge Grammar JSON Schema** — Constrained-decoding schemas (`VPIRNodeSchema`, `VPIRGraphSchema`, etc.) that force LLMs to output valid VPIR nodes via function calling, tool use, or structured output. Includes `parseVPIRNode`/`parseVPIRGraph` for runtime validation with JSON pointer error paths.
+- [x] **Constrained output formatters** — `toFunctionCallingSchema()`, `toAnthropicToolSchema()`, `toStructuredOutputSchema()` produce LLM-specific schema formats. Schema-only utilities, no API calls.
+- [x] **Z3 SMT integration** — Formal verification via z3-solver (z3-wasm). Four verified properties: capability grant consistency, trust transition monotonicity, IFC flow lattice, and side-effect trust requirements. Produces counterexamples on violation.
+- [x] **IFC label enforcement completion** — Extended IFC checking to ACI tool invocations (input label flow check) and Channel sends (label exposure for downstream enforcement). Backward compatible — unlabeled invocations/channels work as before.
+- [x] **Causal trust scoring** — Difficulty-weighted trust scoring (`computeCausalTrustScore`) where hard task successes contribute more and trivial task failures penalize more. `TaskDifficulty` type added to `TrustEvent`. Drop-in replacement for fixed-weight scorer.
 
 ### Advisory Review Panel Alignment
 
-| Component | Phase 4 | Phase 5 Sprint 1 |
-|-----------|---------|-------------------|
-| Dataflow Process Networks | Absent | Channel\<T\>, Process, DataflowGraph |
-| Information Flow Control | Absent | SecurityLabel lattice, memory/ACI enforcement |
-| VPIR | Absent | VPIRNode types, structural validator |
-| Bridge Grammar | Absent | Planned (Sprint 2) |
-| SMT Verification | Absent | Planned (Sprint 2) |
-| HoTT Typed Tokenization | Absent | Planned (future) |
+| Component | Phase 4 | Phase 5 Sprint 1 | Phase 5 Sprint 2 |
+|-----------|---------|-------------------|-------------------|
+| Dataflow Process Networks | Absent | Channel\<T\>, Process, DataflowGraph | — |
+| Information Flow Control | Absent | SecurityLabel lattice, memory enforcement | ACI + Channel enforcement |
+| VPIR | Absent | VPIRNode types, structural validator | — |
+| Bridge Grammar | Absent | — | JSON Schema constrained decoding |
+| SMT Verification | Absent | — | Z3 invariant verification (4 properties) |
+| Causal Trust | Fixed weights | — | Difficulty-weighted causal scoring |
+| HoTT Typed Tokenization | Absent | — | Planned (future) |
+
+---
+
+## Test Coverage
+
+| Sprint | Test Suites | Tests | LOC (tests) |
+|--------|------------|-------|-------------|
+| Phase 4 | 12 | 194 | 2,736 |
+| Sprint 1 | 14 | 194+ | — |
+| Sprint 2 | 17 | 292 | ~3,800 |
 
 ---
 
 ## Future Goals
 
-### Medium-Term
+### Medium-Term (Phase 5 Sprint 3+)
 
-- **Bridge Grammar implementation** — Constrained-decoding JSON schema for valid VPIR node generation
-- **Natural language protocol design** — Formalized communication patterns for agent-to-agent collaboration
-- **VPIR compiler/interpreter** — Execute Verifiable Programmatic Intermediate Representation
+- **VPIR compiler/interpreter** — Execute verified reasoning chains
+- **Natural language protocol design** — Formalized agent-to-agent communication patterns
 - **Tree-sitter DKB integration** — Knowledge graph-based codebase representation
+- **Enhanced visualization** — Node-graph decompiler for human oversight
 
-### Long-Term
+### Long-Term (Phase 6+)
 
-- **LLMbda Calculus runtime** — Lambda calculus with Information Flow Control for noninterference guarantees
-- **SMT solver integration** — Z3/CVC5 for constraint satisfaction and formal verification
+- **HoTT Typed Tokenization** — Code as categorical objects, morphisms, and paths
+- **Full LLMbda Calculus runtime** — Lambda calculus with noninterference guarantees
 - **Full Dataflow Process Network engine** — Actor-based execution with FIFO channel communication
 - **Multi-agent orchestration at scale** — Enterprise deployment topology with audit and governance
 - **Community and ecosystem** — Open specification, reference implementations, and adoption tooling
@@ -126,32 +143,43 @@ pnxt/
 │   │   ├── agent.ts       # Agent runtime types
 │   │   ├── aci.ts         # ACI Gateway types (with IFC label propagation)
 │   │   ├── capability.ts  # Capability negotiation types
-│   │   ├── trust.ts       # Trust engine types
+│   │   ├── trust.ts       # Trust engine types (with TaskDifficulty)
 │   │   ├── ifc.ts         # Information Flow Control types & lattice
-│   │   ├── channel.ts     # Dataflow Process Network types
+│   │   ├── channel.ts     # Dataflow Process Network types (with IFC label)
 │   │   ├── vpir.ts        # VPIR reasoning chain types
-│   │   └── json-schema.ts # JSON Schema utility type
+│   │   ├── bridge-grammar.ts  # Bridge Grammar result & error types
+│   │   ├── verification.ts    # Z3 verification result types
+│   │   └── json-schema.ts     # JSON Schema type (extended for constrained decoding)
 │   ├── memory/            # Memory Service
 │   │   ├── memory-service.ts  # Three-layer memory model with IFC enforcement
 │   │   └── storage-backend.ts # StorageBackend interface, InMemory & File impls
 │   ├── aci/               # ACI Gateway
-│   │   └── aci-gateway.ts     # ACI gateway with trust checking, audit, & IFC labels
+│   │   └── aci-gateway.ts     # ACI gateway with trust + IFC checking, audit logging
 │   ├── agent/             # Agent Runtime
 │   │   └── agent-runtime.ts   # Agent lifecycle management with channel support
+│   ├── bridge-grammar/    # Bridge Grammar (Phase 5 Sprint 2)
+│   │   ├── vpir-schema.ts         # JSON Schema definitions for VPIR constrained decoding
+│   │   ├── schema-validator.ts    # Parse/validate LLM JSON into typed VPIR nodes/graphs
+│   │   ├── constrained-output.ts  # LLM schema format converters
+│   │   └── index.ts               # Re-exports
 │   ├── channel/           # Dataflow Process Networks (Phase 5)
-│   │   ├── channel.ts         # Channel<T> — typed async FIFO with backpressure
+│   │   ├── channel.ts         # Channel<T> — typed async FIFO with backpressure & IFC
 │   │   ├── process.ts         # Process — actor with typed input/output ports
 │   │   └── dataflow-graph.ts  # DataflowGraph — process composition & wiring
 │   ├── vpir/              # Verifiable Reasoning (Phase 5)
 │   │   └── vpir-validator.ts  # Structural validation for VPIR nodes & graphs
+│   ├── verification/      # Formal Verification (Phase 5 Sprint 2)
+│   │   ├── z3-invariants.ts   # Z3 SMT invariant verification
+│   │   └── index.ts           # Re-exports
 │   ├── capability/        # Capability Negotiation
-│   │   └── capability-negotiation.ts  # Versioned capability discovery & contract negotiation
+│   │   └── capability-negotiation.ts  # Versioned capability discovery
 │   ├── trust/             # Trust Engine
-│   │   └── trust-engine.ts    # Graduated trust model with scoring & calibration
+│   │   ├── trust-engine.ts    # Graduated trust model with fixed-weight scoring
+│   │   └── causal-trust.ts    # Causal trust scorer with difficulty weighting
 │   └── evaluation/        # Validation & Evaluation
-│       ├── multi-agent-scenarios.ts   # Coordination scenarios & scenario runner
-│       ├── benchmark-suite.ts         # Benchmark framework & standard benchmarks
-│       └── security-suite.ts          # Security test suite & adversarial tests
+│       ├── multi-agent-scenarios.ts   # Coordination scenarios
+│       ├── benchmark-suite.ts         # Benchmark framework
+│       └── security-suite.ts          # Security test suite
 ├── docs/
 │   └── research/
 │       ├── original-prompt.md

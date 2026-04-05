@@ -7,3 +7,5 @@ export * from './json-schema.js';
 export * from './ifc.js';
 export * from './channel.js';
 export * from './vpir.js';
+export * from './bridge-grammar.js';
+export * from './verification.js';
