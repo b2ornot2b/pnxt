@@ -389,6 +389,12 @@ For the current project status, roadmap, and next steps, see [`status.md`](statu
 - Maintain persistent memory across sessions
 - Track project context and learned patterns
 
+### Advisory Review Panel
+
+The project maintains a **Dream Team Advisory Board** of 10 domain experts (historical and living) whose perspectives are simulated during design reviews. When the user requests an **"advisor review"**, the agent convenes this panel as a round-table discussion covering type theory, concurrency, security, LLM architecture, language design, and paradigm vision.
+
+See [`docs/advisory-review-panel.md`](docs/advisory-review-panel.md) for the full panel roster, domain coverage matrix, and review output format.
+
 ### Collaboration
 
 - Communicate in natural language
@@ -396,6 +402,7 @@ For the current project status, roadmap, and next steps, see [`status.md`](statu
 - Ask for clarification when requirements are ambiguous
 - Respect human decisions and constraints
 - **Always reference the original prompt when proposing research directions**
+- **Invoke the Advisory Review Panel when the user requests an "advisor review"**
 
 ### Memory Management
 
