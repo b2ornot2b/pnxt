@@ -1,12 +1,12 @@
 # pnxt Project Status
 
-> Last updated: 2026-04-04 (Phase 4 in progress)
+> Last updated: 2026-04-05 (Phase 5 Sprint 1 in progress)
 
 ---
 
 ## Current State
 
-The pnxt project is in the **research phase**, with comprehensive theoretical foundations and architectural specifications complete. No prototype implementation exists yet — the repository is documentation-focused.
+The pnxt project has completed Phase 4 (infrastructure prototype) and is now in **Phase 5** — implementing the paradigm-defining components identified by the Advisory Review Panel. Phase 5 Sprint 1 focuses on Dataflow Process Networks, Information Flow Control, and VPIR reasoning chains.
 
 ### Completed Work
 
@@ -48,6 +48,30 @@ Phase 4 transitions from research to **prototype implementation and empirical ev
 - [x] **Empirical evaluation** — Multi-agent coordination scenarios (delegation pattern, trust escalation, failure recovery) exercising full system integration (runtime + trust + ACI + capabilities + memory)
 - [x] **Benchmark development** — `BenchmarkSuite` framework with standardized benchmarks for agent registration, trust calibration, ACI invocation, capability negotiation, memory store/query, and agent lifecycle throughput
 - [x] **Security hardening** — `SecurityTestSuite` with adversarial tests across 5 categories: privilege escalation, trust manipulation, capability abuse, audit integrity, and resource exhaustion
+
+---
+
+## Phase 5: Paradigm Foundation (In Progress)
+
+Following the Advisory Review Panel's alignment assessment (3/10), Phase 5 implements the core paradigm components that distinguish pnxt from conventional agent frameworks.
+
+### Sprint 1: DPN + IFC + VPIR (In Progress)
+
+- [x] **Channel\<T\> and DPN primitives** — Typed async FIFO channels with backpressure, Process actors, DataflowGraph composition. Agents can now communicate via dataflow instead of RPC.
+- [x] **IFC security labels** — `SecurityLabel` type with lattice-based flow control. Memory entries carry trust-level provenance; queries enforce label boundaries (low-trust agents cannot read high-trust data). ACI gateway propagates labels on tool results.
+- [x] **VPIR node types and validator** — `VPIRNode`, `VPIRGraph` types define verifiable reasoning steps. Structural validator checks DAG property, reference resolution, and IFC label consistency across node boundaries.
+- [x] **Runtime integration** — AgentRuntime supports channel-based inter-agent communication alongside existing lifecycle management.
+
+### Advisory Review Panel Alignment
+
+| Component | Phase 4 | Phase 5 Sprint 1 |
+|-----------|---------|-------------------|
+| Dataflow Process Networks | Absent | Channel\<T\>, Process, DataflowGraph |
+| Information Flow Control | Absent | SecurityLabel lattice, memory/ACI enforcement |
+| VPIR | Absent | VPIRNode types, structural validator |
+| Bridge Grammar | Absent | Planned (Sprint 2) |
+| SMT Verification | Absent | Planned (Sprint 2) |
+| HoTT Typed Tokenization | Absent | Planned (future) |
 
 ---
 
@@ -98,19 +122,28 @@ pnxt/
 ├── src/
 │   ├── index.ts           # Package entry point
 │   ├── types/             # Shared type definitions
-│   │   ├── memory.ts      # Memory model types
+│   │   ├── memory.ts      # Memory model types (with IFC labels)
 │   │   ├── agent.ts       # Agent runtime types
-│   │   ├── aci.ts         # ACI Gateway types
+│   │   ├── aci.ts         # ACI Gateway types (with IFC label propagation)
 │   │   ├── capability.ts  # Capability negotiation types
 │   │   ├── trust.ts       # Trust engine types
+│   │   ├── ifc.ts         # Information Flow Control types & lattice
+│   │   ├── channel.ts     # Dataflow Process Network types
+│   │   ├── vpir.ts        # VPIR reasoning chain types
 │   │   └── json-schema.ts # JSON Schema utility type
 │   ├── memory/            # Memory Service
-│   │   ├── memory-service.ts  # Three-layer memory model with pluggable backend
+│   │   ├── memory-service.ts  # Three-layer memory model with IFC enforcement
 │   │   └── storage-backend.ts # StorageBackend interface, InMemory & File impls
 │   ├── aci/               # ACI Gateway
-│   │   └── aci-gateway.ts     # ACI gateway with trust checking & audit logging
+│   │   └── aci-gateway.ts     # ACI gateway with trust checking, audit, & IFC labels
 │   ├── agent/             # Agent Runtime
-│   │   └── agent-runtime.ts   # Agent lifecycle management
+│   │   └── agent-runtime.ts   # Agent lifecycle management with channel support
+│   ├── channel/           # Dataflow Process Networks (Phase 5)
+│   │   ├── channel.ts         # Channel<T> — typed async FIFO with backpressure
+│   │   ├── process.ts         # Process — actor with typed input/output ports
+│   │   └── dataflow-graph.ts  # DataflowGraph — process composition & wiring
+│   ├── vpir/              # Verifiable Reasoning (Phase 5)
+│   │   └── vpir-validator.ts  # Structural validation for VPIR nodes & graphs
 │   ├── capability/        # Capability Negotiation
 │   │   └── capability-negotiation.ts  # Versioned capability discovery & contract negotiation
 │   ├── trust/             # Trust Engine

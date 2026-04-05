@@ -1,0 +1,150 @@
+/**
+ * Verifiable Programmatic Intermediate Representation (VPIR) types.
+ *
+ * A VPIR graph is a DAG of reasoning steps, where each node represents
+ * a verifiable operation (inference, observation, action, assertion, or
+ * composition). Every node carries evidence and an IFC security label,
+ * enabling mechanically verifiable reasoning chains with provenance tracking.
+ *
+ * Based on:
+ * - docs/research/original-prompt.md (VPIR)
+ * - Advisory Review 2026-04-05 (Panel consensus: define VPIRNode type)
+ */
+
+import type { SecurityLabel } from './ifc.js';
+
+/**
+ * Types of VPIR reasoning steps.
+ */
+export type VPIRNodeType =
+  | 'inference'    // Derived conclusion from inputs
+  | 'observation'  // Raw data from external source
+  | 'action'       // Side-effecting operation
+  | 'assertion'    // Claimed invariant or postcondition
+  | 'composition'; // Aggregation of sub-nodes
+
+/**
+ * Evidence supporting a VPIR node's validity.
+ */
+export type EvidenceType = 'data' | 'rule' | 'model_output';
+
+export interface Evidence {
+  /** What kind of evidence this is. */
+  type: EvidenceType;
+
+  /** Source identifier (agent ID, tool name, data URL, rule name). */
+  source: string;
+
+  /** Confidence in this evidence (0–1). */
+  confidence: number;
+
+  /** Optional human-readable description. */
+  description?: string;
+}
+
+/**
+ * A typed reference to another VPIR node's output.
+ */
+export interface VPIRRef {
+  /** ID of the referenced node. */
+  nodeId: string;
+
+  /** Named output port on the referenced node. */
+  port: string;
+
+  /** Type identifier for the data carried by this reference. */
+  dataType: string;
+}
+
+/**
+ * A single verifiable reasoning step in the VPIR graph.
+ */
+export interface VPIRNode {
+  /** Unique identifier for this node. */
+  id: string;
+
+  /** What kind of reasoning step this represents. */
+  type: VPIRNodeType;
+
+  /** Human-readable description of the operation. */
+  operation: string;
+
+  /** References to input nodes (predecessors in the DAG). */
+  inputs: VPIRRef[];
+
+  /** Named outputs produced by this node. */
+  outputs: VPIROutput[];
+
+  /** Evidence supporting this node's validity. */
+  evidence: Evidence[];
+
+  /** IFC security label for provenance tracking. */
+  label: SecurityLabel;
+
+  /** Whether this step can be mechanically verified. */
+  verifiable: boolean;
+
+  /** When this node was created (ISO 8601). */
+  createdAt: string;
+
+  /** Optional: agent that produced this node. */
+  agentId?: string;
+}
+
+/**
+ * A named output produced by a VPIR node.
+ */
+export interface VPIROutput {
+  /** Port name for this output. */
+  port: string;
+
+  /** Type identifier for the data produced. */
+  dataType: string;
+
+  /** Optional: the actual value (for concrete nodes). */
+  value?: unknown;
+}
+
+/**
+ * A directed acyclic graph of VPIR nodes representing a complete reasoning chain.
+ */
+export interface VPIRGraph {
+  /** Unique identifier for this graph. */
+  id: string;
+
+  /** Human-readable name. */
+  name: string;
+
+  /** All nodes in the graph, keyed by node ID. */
+  nodes: Map<string, VPIRNode>;
+
+  /** Root node IDs (nodes with no inputs — starting points). */
+  roots: string[];
+
+  /** Terminal node IDs (nodes whose outputs are not consumed). */
+  terminals: string[];
+
+  /** When this graph was created (ISO 8601). */
+  createdAt: string;
+}
+
+/**
+ * Result of validating a VPIR node or graph.
+ */
+export interface VPIRValidationResult {
+  valid: boolean;
+  errors: VPIRValidationError[];
+  warnings: VPIRValidationWarning[];
+}
+
+export interface VPIRValidationError {
+  nodeId: string;
+  code: string;
+  message: string;
+}
+
+export interface VPIRValidationWarning {
+  nodeId: string;
+  code: string;
+  message: string;
+}
