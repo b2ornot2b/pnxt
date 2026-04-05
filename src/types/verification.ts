@@ -17,7 +17,9 @@ export type VerificationProperty =
   | 'ifc_flow_lattice'
   | 'side_effect_trust_requirements'
   | 'morphism_composition_associativity'
-  | 'identity_morphism_laws';
+  | 'identity_morphism_laws'
+  | 'groupoid_inverse_law'
+  | 'higher_path_consistency';
 
 /**
  * Result of a Z3 verification check.

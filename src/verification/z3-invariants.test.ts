@@ -266,4 +266,127 @@ describe('Z3 SMT Invariant Verification', () => {
       expect(result.verified).toBe(true);
     });
   });
+
+  describe('verifyGroupoidInverseLaw', () => {
+    it('should verify a valid groupoid (well-formed inverses)', async () => {
+      const { createCategory, addObject, addMorphism } = await import('../hott/category.js');
+      const { buildGroupoidStructure } = await import('../hott/higher-paths.js');
+
+      const cat = createCategory('c1', 'Test');
+      addObject(cat, { id: 'A', kind: 'term', label: 'A' });
+      addObject(cat, { id: 'B', kind: 'term', label: 'B' });
+      addMorphism(cat, { id: 'f', sourceId: 'A', targetId: 'B', label: 'f', properties: [] });
+
+      const structure = buildGroupoidStructure(cat);
+      const result = await ctx.verifyGroupoidInverseLaw(cat, structure);
+
+      expect(result.verified).toBe(true);
+      expect(result.property).toBe('groupoid_inverse_law');
+    });
+
+    it('should verify a category with identity morphisms', async () => {
+      const { createCategory, addObject, addMorphism, identity } = await import('../hott/category.js');
+      const { buildGroupoidStructure } = await import('../hott/higher-paths.js');
+
+      const cat = createCategory('c1', 'Test');
+      addObject(cat, { id: 'A', kind: 'term', label: 'A' });
+      addMorphism(cat, identity('A'));
+
+      const structure = buildGroupoidStructure(cat);
+      const result = await ctx.verifyGroupoidInverseLaw(cat, structure);
+
+      expect(result.verified).toBe(true);
+    });
+
+    it('should detect broken groupoid (mismatched inverse)', async () => {
+      const { createCategory, addObject, addMorphism } = await import('../hott/category.js');
+
+      const cat = createCategory('c1', 'Test');
+      addObject(cat, { id: 'A', kind: 'term', label: 'A' });
+      addObject(cat, { id: 'B', kind: 'term', label: 'B' });
+      addObject(cat, { id: 'C', kind: 'term', label: 'C' });
+      addMorphism(cat, { id: 'f', sourceId: 'A', targetId: 'B', label: 'f', properties: [] });
+
+      // Create a broken structure where inverse of f goes to C instead of A
+      const brokenStructure = {
+        categoryId: cat.id,
+        inverses: new Map([
+          ['f', { id: 'inv_f', sourceId: 'B', targetId: 'C', label: 'broken', properties: ['isomorphism' as const] }],
+        ]),
+        pathInverses: new Map(),
+      };
+
+      const result = await ctx.verifyGroupoidInverseLaw(cat, brokenStructure);
+      expect(result.verified).toBe(false);
+      expect(result.counterexample).toBeDefined();
+    });
+
+    it('should verify empty category groupoid', async () => {
+      const { createCategory } = await import('../hott/category.js');
+      const { buildGroupoidStructure } = await import('../hott/higher-paths.js');
+
+      const cat = createCategory('empty', 'Empty');
+      const structure = buildGroupoidStructure(cat);
+      const result = await ctx.verifyGroupoidInverseLaw(cat, structure);
+
+      expect(result.verified).toBe(true);
+    });
+  });
+
+  describe('verifyHigherPathConsistency', () => {
+    it('should verify consistent higher paths', async () => {
+      const { createCategory, addObject, addMorphism, addPath, addHigherPath } = await import('../hott/category.js');
+
+      const cat = createCategory('c1', 'Test');
+      addObject(cat, { id: 'A', kind: 'term', label: 'A' });
+      addObject(cat, { id: 'B', kind: 'term', label: 'B' });
+      addMorphism(cat, { id: 'f', sourceId: 'A', targetId: 'B', label: 'f', properties: [] });
+      addMorphism(cat, { id: 'g', sourceId: 'A', targetId: 'B', label: 'g', properties: [] });
+      addMorphism(cat, { id: 'h', sourceId: 'A', targetId: 'B', label: 'h', properties: [] });
+      addPath(cat, { id: 'p1', leftId: 'f', rightId: 'g', witness: 'r1' });
+      addPath(cat, { id: 'p2', leftId: 'g', rightId: 'h', witness: 'r2' });
+      addHigherPath(cat, {
+        id: 'hp1', leftPathId: 'p1', rightPathId: 'p2', level: 2, witness: 'test',
+      });
+
+      const result = await ctx.verifyHigherPathConsistency(cat);
+      expect(result.verified).toBe(true);
+      expect(result.property).toBe('higher_path_consistency');
+    });
+
+    it('should verify category without higher paths', async () => {
+      const { createCategory, addObject } = await import('../hott/category.js');
+
+      const cat = createCategory('c1', 'Test');
+      addObject(cat, { id: 'A', kind: 'term', label: 'A' });
+
+      const result = await ctx.verifyHigherPathConsistency(cat);
+      expect(result.verified).toBe(true);
+    });
+
+    it('should detect inconsistent higher path (different morphism endpoints)', async () => {
+      const { createCategory, addObject, addMorphism, addPath } = await import('../hott/category.js');
+
+      const cat = createCategory('c1', 'Test');
+      addObject(cat, { id: 'A', kind: 'term', label: 'A' });
+      addObject(cat, { id: 'B', kind: 'term', label: 'B' });
+      addObject(cat, { id: 'C', kind: 'term', label: 'C' });
+      addMorphism(cat, { id: 'f', sourceId: 'A', targetId: 'B', label: 'f', properties: [] });
+      addMorphism(cat, { id: 'g', sourceId: 'A', targetId: 'B', label: 'g', properties: [] });
+      addMorphism(cat, { id: 'h', sourceId: 'A', targetId: 'C', label: 'h', properties: [] });
+      addMorphism(cat, { id: 'k', sourceId: 'A', targetId: 'C', label: 'k', properties: [] });
+      addPath(cat, { id: 'p1', leftId: 'f', rightId: 'g', witness: 'r1' }); // A->B
+      addPath(cat, { id: 'p2', leftId: 'h', rightId: 'k', witness: 'r2' }); // A->C
+
+      // Manually add an inconsistent higher path connecting paths with different endpoints
+      cat.higherPaths = new Map();
+      cat.higherPaths.set('hp_bad', {
+        id: 'hp_bad', leftPathId: 'p1', rightPathId: 'p2', level: 2, witness: 'bad',
+      });
+
+      const result = await ctx.verifyHigherPathConsistency(cat);
+      expect(result.verified).toBe(false);
+      expect(result.counterexample).toBeDefined();
+    });
+  });
 });

@@ -16,8 +16,6 @@ export type AgentState =
   | 'suspended'
   | 'terminated';
 
-export type BehaviorStyle = 'cautious' | 'balanced' | 'exploratory';
-export type Verbosity = 'minimal' | 'normal' | 'detailed';
 export type UncertaintyResponse = 'ask' | 'best_effort' | 'refuse';
 export type TrustLevel = 0 | 1 | 2 | 3 | 4;
 
@@ -27,8 +25,6 @@ export interface AgentConfig {
   type: AgentType;
 
   behavior: {
-    style: BehaviorStyle;
-    verbosity: Verbosity;
     uncertainty_response: UncertaintyResponse;
     instructions: string;
   };

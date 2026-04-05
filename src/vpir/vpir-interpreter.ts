@@ -22,6 +22,7 @@ import type {
   VPIRExecutionOptions,
 } from '../types/vpir-execution.js';
 import { validateGraph } from './vpir-validator.js';
+import { ACIError, AssertionError, HandlerError, SubGraphError } from '../errors/vpir-errors.js';
 import { canFlowTo } from '../types/ifc.js';
 import { analyzeParallelism, createInputHash, Semaphore } from './vpir-optimizer.js';
 
@@ -580,31 +581,4 @@ function categorizeError(
   return 'HANDLER_ERROR';
 }
 
-// Custom error classes for categorization.
-class AssertionError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'AssertionError';
-  }
-}
-
-class ACIError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'ACIError';
-  }
-}
-
-class SubGraphError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'SubGraphError';
-  }
-}
-
-class HandlerError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'HandlerError';
-  }
-}
+// Error classes imported from '../errors/vpir-errors.js'

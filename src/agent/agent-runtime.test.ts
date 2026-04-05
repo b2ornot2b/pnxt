@@ -7,8 +7,6 @@ function makeConfig(overrides: Partial<AgentConfig> = {}): AgentConfig {
     name: 'Test Agent',
     type: 'coding',
     behavior: {
-      style: 'balanced',
-      verbosity: 'normal',
       uncertainty_response: 'ask',
       instructions: 'You are a test agent.',
     },
