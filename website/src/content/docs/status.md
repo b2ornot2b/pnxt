@@ -1,3 +1,8 @@
+---
+title: Project Status
+description: Current state, completed milestones, and roadmap for pnxt.
+---
+
 # pnxt Project Status
 
 > Last updated: 2026-04-05 (Phase 6 complete — all 9 sprints)
@@ -49,7 +54,7 @@ The pnxt project has completed **Phase 6** (all 9 sprints), delivering the full 
 
 ---
 
-## Phase 5: Paradigm Foundation (In Progress)
+## Phase 5: Paradigm Foundation (Complete)
 
 Following the Advisory Review Panel's alignment assessment (3/10), Phase 5 implements the core paradigm components that distinguish pnxt from conventional agent frameworks.
 
@@ -90,8 +95,10 @@ Following the Advisory Review Panel's alignment assessment (3/10), Phase 5 imple
 
 ### Advisory Review Panel Alignment
 
-| Component | Phase 4 | Phase 5 Sprint 1 | Phase 5 Sprint 2 | Phase 5 Sprint 3 | Phase 5 Sprint 4 | Phase 5 Sprint 5 |
-|-----------|---------|-------------------|-------------------|-------------------|-------------------|-------------------|
+### Advisory Review Panel Alignment (Phase 5)
+
+| Component | Phase 4 | Sprint 1 | Sprint 2 | Sprint 3 | Sprint 4 | Sprint 5 |
+|-----------|---------|----------|----------|----------|----------|----------|
 | Dataflow Process Networks | Absent | Channel\<T\>, Process, DataflowGraph | — | — | Protocol-Channel integration | — |
 | Information Flow Control | Absent | SecurityLabel lattice, memory enforcement | ACI + Channel enforcement | Protocol message enforcement | Channel-bound IFC on protocol sessions | KG node labels + HoTT object labels + pipeline propagation |
 | VPIR | Absent | VPIRNode types, structural validator | — | Interpreter (execution) + Renderer (visualization) | Parallel wave execution + result caching | Categorical interpretation via HoTT bridge |
@@ -101,6 +108,41 @@ Following the Advisory Review Panel's alignment assessment (3/10), Phase 5 imple
 | Causal Trust | Fixed weights | — | Difficulty-weighted causal scoring | — | — | — |
 | HoTT Typed Tokenization | Absent | — | — | — | — | **Category, Morphism, Path types + VPIR bridge + KG conversion** |
 | Tree-sitter DKB | Absent | — | — | — | — | **Knowledge graph with typed edges, traversal, HoTT conversion** |
+
+---
+
+## Phase 6: Integration & Deepening (Complete — 9 Sprints)
+
+Phase 6 focused on connecting and validating the paradigm pillars together with real-world inputs.
+
+### Sprint 6: Type Identity — Univalence Axiom + LLMbda Decision (Complete)
+
+- [x] **Univalence Axiom Encoding** — True HoTT univalence: `createTypeEquivalence`, `equivalenceToPath` (ua map), `pathToEquivalence` (inverse), `verifyUnivalenceRoundTrip`. Applies univalence to merge equivalent objects via union-find.
+- [x] **Transport Along Paths** — `transport(path, typeFamily, value)` moves values P(A) to P(B) along paths. Enables Z3 property transfer between equivalent VPIR graphs without re-verification.
+- [x] **LLMbda as Semantic Foundation** — `vpirNodeToLambda()` converts VPIR nodes to lambda denotations. LLMbda Calculus is now the *meaning* of VPIR.
+- [x] **Typed LLMbda Calculus ADR** — Formal justification for typed departure from master prompt's untyped specification.
+- [x] **Z3 Univalence Verification** — New `univalence_axiom` SMT property. Total: **15 formally verified Z3 properties**.
+
+### Sprint 7: Verification Maturity — User-Program Verification + Bisimulation (Complete)
+
+- [x] **User-Program Property Verification** — `ProgramVerifier` binds VPIR node attributes to Z3 constants. Supports preconditions, postconditions, invariants, and assertions. SMT-LIB2 formula parser.
+- [x] **CVC5 Integration** — CVC5 as alternative solver via subprocess. `MultiSolverVerifier` orchestrates Z3 + CVC5 with graceful degradation.
+- [x] **DPN Bisimulation Checking** — `buildLTS()` constructs Labelled Transition Systems. `checkStrongBisimulation()` via partition refinement. Bisimulation results convert to HoTT paths via univalence.
+- [x] **Multi-Agent Delegation Benchmark** — Three agents (researcher, assistant, reviewer) coordinating with trust boundaries and IFC enforcement.
+- [x] **Secure Data Pipeline Benchmark** — Data flows through classification, redaction, and declassification with IFC analysis and PII verification.
+
+### Sprint 8: Neurosymbolic Bridge — P-ASP + Active Inference (Complete)
+
+- [x] **P-ASP Integration Prototype** — Probabilistic ASP for VPIR node confidence scoring based on structural validity, semantic coherence, historical accuracy, and constraint satisfaction.
+- [x] **Active Inference Engine** — Free-energy minimization for iterative VPIR graph patching with oscillation detection.
+- [x] **Refinement Pipeline** — Combines P-ASP confidence scoring with Active Inference patching in an iterative loop. Configurable convergence thresholds.
+
+### Sprint 9: Categorical Frontier — Native Tokenization + Self-Hosting Vision (Complete)
+
+- [x] **Categorical Tokenization Experiment** — 42-token vocabulary covering 7 categories with 23 morphism composition rules. Three-approach comparison (baseline JSON, categorical, hybrid).
+- [x] **Self-Hosting Proof of Concept** — pnxt describes its own 6-stage pipeline as VPIR, then validates, categorizes (HoTT), and executes (DPN) the self-description. Milestone M1 of paradigm transition.
+- [x] **Paradigm Transition Roadmap** — M1-M5 milestones from self-description to self-hosting.
+- [x] **Advisory Review Alignment Package** — All 10 advisor concerns addressed. Per-advisor score trajectory from 7.5 to 9.2.
 
 ---
 
@@ -114,22 +156,31 @@ Following the Advisory Review Panel's alignment assessment (3/10), Phase 5 imple
 | Sprint 3 | 20 | 355 | ~5,200 |
 | Sprint 4 | 22 | ~415 | ~6,600 |
 | Sprint 5 | 26 | 479 | ~8,200 |
+| Sprint 6 | 30 | 557 | ~9,400 |
+| Sprint 7 | 49 | 882 | — |
+| Sprint 8 | 53 | ~932 | — |
+| Sprint 9 | 55 | 974+ | — |
 
 ---
 
 ## Future Goals
 
-### Medium-Term (Phase 5 Sprint 6+)
+### Phase 7: Paradigm Transition (Planned)
 
-- **Tree-sitter parser integration** — Connect knowledge graph to actual Tree-sitter AST parsing for automatic codebase ingestion
-- **Enhanced visualization** — Graphical node-graph decompiler for web-based oversight
-- **HoTT higher paths** — 2-paths, groupoid structure, and univalence axiom for deeper refactoring proofs
+See `docs/roadmap/paradigm-transition.md` for the complete transition roadmap.
 
-### Long-Term (Phase 6+)
+- **M2: External Task Expression** — Real-world tasks expressed entirely in VPIR, no TypeScript required
+- **M3: LLM-Native Programming** — LLMs solve problems end-to-end through pnxt pipeline
+- **M4: Self-Modification** — pnxt modifies its own pipeline through VPIR
+- **Web-based visualization frontend** — Interactive node-graph renderer consuming the JSON export format
+- **Multi-language Tree-sitter parsers** — Extend KG parsing beyond TypeScript to Python, Rust, Go
+- **Categorical token embeddings** — Transformer fine-tuning with morphism-structured embeddings
 
+### Long-Term (Phase 8+)
+
+- **M5: Self-Hosting** — pnxt's core components expressed in pnxt
 - **Full LLMbda Calculus runtime** — Lambda calculus with noninterference guarantees
-- **Full Dataflow Process Network engine** — Actor-based execution with FIFO channel communication
-- **Multi-agent orchestration at scale** — Enterprise deployment topology with audit and governance
+- **Distributed DPN** — Multi-node actor execution for scale
 - **Community and ecosystem** — Open specification, reference implementations, and adoption tooling
 
 ---
@@ -149,6 +200,7 @@ Following the Advisory Review Panel's alignment assessment (3/10), Phase 5 imple
 pnxt/
 ├── AGENTS.md              # Agent development guidelines (CLAUDE.md symlinks here)
 ├── README.md              # Project overview
+├── QuickStart.md          # Hands-on getting started guide
 ├── status.md              # This file — project status and roadmap
 ├── package.json           # Node.js project configuration
 ├── tsconfig.json          # TypeScript compiler configuration
@@ -161,68 +213,30 @@ pnxt/
 │   └── validate-website.yml
 ├── src/
 │   ├── index.ts           # Package entry point
-│   ├── types/             # Shared type definitions
-│   │   ├── memory.ts      # Memory model types (with IFC labels)
-│   │   ├── agent.ts       # Agent runtime types
-│   │   ├── aci.ts         # ACI Gateway types (with IFC label propagation)
-│   │   ├── capability.ts  # Capability negotiation types
-│   │   ├── trust.ts       # Trust engine types (with TaskDifficulty)
-│   │   ├── ifc.ts         # Information Flow Control types & lattice
-│   │   ├── channel.ts     # Dataflow Process Network types (with IFC label)
-│   │   ├── vpir.ts        # VPIR reasoning chain types
-│   │   ├── bridge-grammar.ts  # Bridge Grammar result & error types
-│   │   ├── verification.ts    # Z3 verification result types
-│   │   ├── json-schema.ts     # JSON Schema type (extended for constrained decoding)
-│   │   ├── vpir-execution.ts     # VPIR execution context, result, and optimizer types (Sprint 3–4)
-│   │   ├── protocol.ts          # NL protocol message & conversation types (Phase 5 Sprint 3)
-│   │   ├── protocol-channel.ts  # Protocol-channel binding types (Phase 5 Sprint 4)
-│   │   ├── hott.ts              # HoTT types (Object, Morphism, Path, Category) (Sprint 5)
-│   │   └── knowledge-graph.ts   # Knowledge graph types (KGNode, KGEdge, KGQuery) (Sprint 5)
-│   ├── memory/            # Memory Service
-│   │   ├── memory-service.ts  # Three-layer memory model with IFC enforcement
-│   │   └── storage-backend.ts # StorageBackend interface, InMemory & File impls
-│   ├── aci/               # ACI Gateway
-│   │   └── aci-gateway.ts     # ACI gateway with trust + IFC checking, audit logging
-│   ├── agent/             # Agent Runtime
-│   │   └── agent-runtime.ts   # Agent lifecycle management with channel support
-│   ├── bridge-grammar/    # Bridge Grammar (Phase 5 Sprint 2)
-│   │   ├── vpir-schema.ts         # JSON Schema definitions for VPIR constrained decoding
-│   │   ├── schema-validator.ts    # Parse/validate LLM JSON into typed VPIR nodes/graphs
-│   │   ├── constrained-output.ts  # LLM schema format converters
-│   │   └── index.ts               # Re-exports
-│   ├── hott/              # HoTT Typed Tokenization (Phase 5 Sprint 5)
-│   │   ├── category.ts        # Category operations (compose, identity, validate)
-│   │   └── vpir-bridge.ts     # VPIR-to-HoTT translation pipeline
-│   ├── knowledge-graph/   # Tree-sitter DKB Knowledge Graph (Phase 5 Sprint 5)
-│   │   └── knowledge-graph.ts # Typed graph with traversal and HoTT conversion
-│   ├── channel/           # Dataflow Process Networks (Phase 5)
-│   │   ├── channel.ts         # Channel<T> — typed async FIFO with backpressure & IFC
-│   │   ├── process.ts         # Process — actor with typed input/output ports
-│   │   └── dataflow-graph.ts  # DataflowGraph — process composition & wiring
-│   ├── vpir/              # Verifiable Reasoning (Phase 5)
-│   │   ├── vpir-validator.ts    # Structural validation for VPIR nodes & graphs
-│   │   ├── vpir-interpreter.ts  # VPIR graph execution engine (parallel + cache support)
-│   │   ├── vpir-optimizer.ts    # Wave-based parallelism, input hashing, result cache (Sprint 4)
-│   │   └── vpir-renderer.ts     # Text-based VPIR visualization (Phase 5 Sprint 3)
-│   ├── protocol/          # Natural Language Protocols (Phase 5 Sprint 3–4)
-│   │   ├── nl-protocol.ts       # Protocol state machines for agent communication
-│   │   └── protocol-channel.ts  # Protocol sessions over DPN channels (Sprint 4)
-│   ├── verification/      # Formal Verification (Phase 5 Sprint 2)
-│   │   ├── z3-invariants.ts   # Z3 SMT invariant verification
-│   │   └── index.ts           # Re-exports
-│   ├── capability/        # Capability Negotiation
-│   │   └── capability-negotiation.ts  # Versioned capability discovery
-│   ├── trust/             # Trust Engine
-│   │   ├── trust-engine.ts    # Graduated trust model with fixed-weight scoring
-│   │   └── causal-trust.ts    # Causal trust scorer with difficulty weighting
-│   └── evaluation/        # Validation & Evaluation
-│       ├── multi-agent-scenarios.ts   # Coordination scenarios
-│       ├── benchmark-suite.ts         # Benchmark framework
-│       └── security-suite.ts          # Security test suite
+│   ├── types/             # Shared type definitions (18 files)
+│   ├── memory/            # Memory Service — three-layer model with IFC
+│   ├── aci/               # ACI Gateway — trust + IFC checking, audit logging
+│   ├── agent/             # Agent Runtime — lifecycle management
+│   ├── capability/        # Capability Negotiation — 3-phase handshake
+│   ├── trust/             # Trust Engine — 5-level graduated trust, causal scoring
+│   ├── vpir/              # VPIR — validator, interpreter, optimizer, renderer, export
+│   ├── bridge-grammar/    # Bridge Grammar — JSON Schema + Claude API integration
+│   ├── channel/           # DPN — channels, processes, DPN runtime, bisimulation
+│   ├── hott/              # HoTT — categories, higher paths, univalence, transport
+│   ├── knowledge-graph/   # Tree-sitter DKB — typed graph + TypeScript parser
+│   ├── lambda/            # LLMbda Calculus — typed lambda with IFC, VPIR bridge
+│   ├── protocol/          # NL Protocols — state machines over DPN channels
+│   ├── verification/      # Formal Verification — Z3, noninterference, liveness, CVC5
+│   ├── benchmarks/        # Benchmarks — weather API, multi-agent delegation, pipeline
+│   ├── evaluation/        # Evaluation — integration scenarios, security tests
+│   ├── neurosymbolic/     # Neurosymbolic — P-ASP, Active Inference, refinement
+│   ├── experiments/       # Experiments — categorical tokenizer, self-hosting PoC
+│   └── errors/            # Error hierarchy
 ├── docs/
-│   └── research/
-│       ├── original-prompt.md
-│       ├── Designing Agent-Native Programming Paradigm.md
-│       └── phase-3/          # Phase 3 research deliverables
+│   ├── research/          # Research documents (original prompt, Phase 3)
+│   ├── decisions/         # Architecture Decision Records
+│   ├── reviews/           # Advisory panel reviews
+│   ├── roadmap/           # Paradigm transition roadmap (M1-M5)
+│   └── sprints/           # Sprint documentation (4-9)
 └── website/               # Astro Starlight documentation site
 ```
