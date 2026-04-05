@@ -1,12 +1,12 @@
 # pnxt Project Status
 
-> Last updated: 2026-04-05 (Phase 5 Sprint 3 complete)
+> Last updated: 2026-04-05 (Phase 5 Sprint 4 complete)
 
 ---
 
 ## Current State
 
-The pnxt project has completed Phase 5 Sprint 3, delivering **end-to-end VPIR execution**, **formalized agent-to-agent NL protocols**, and **text-based VPIR visualization** for human oversight. VPIR reasoning chains can now be produced by LLMs (via Bridge Grammar), validated, executed, and rendered — closing the core execution loop.
+The pnxt project has completed Phase 5 Sprint 4, delivering **protocol-channel integration** (NL protocols over DPN channels) and **VPIR compiler optimizations** (parallel wave-based execution and result caching). Agent conversations now flow over typed async FIFO channels with backpressure and IFC enforcement, and VPIR graphs can execute independent branches concurrently.
 
 ### Completed Work
 
@@ -74,18 +74,24 @@ Following the Advisory Review Panel's alignment assessment (3/10), Phase 5 imple
 - [x] **Natural Language Protocol Design** — Formalized agent-to-agent communication via state machines over DPN channels. Three protocols: task-delegation (`request → accept/reject → confirm`), capability-negotiation (`query → inform → propose → accept/reject`), conflict-resolution (`inform → propose → accept/reject/escalate`). IFC label enforcement on all messages. Transition validation prevents invalid message sequences.
 - [x] **VPIR Visualization (Text-Based)** — Human-readable rendering of VPIR graphs (ASCII DAG with node types, labels, connections) and execution traces (step-by-step table with timing, status, and error highlighting). No external dependencies.
 
+### Sprint 4: Protocol-Channel Integration + VPIR Optimizations (Complete)
+
+- [x] **Protocol-Channel Integration** — Bidirectional protocol channels (`ProtocolChannelPair`) wrapping two `Channel<ProtocolMessage>` instances for real dataflow transport. `ProtocolChannelSession` class validates protocol transitions on every send, enforces IFC labels against channel labels, supports async iteration over inbound messages, and provides `createProtocolSessionPair()` convenience factory for matched initiator/responder sessions.
+- [x] **VPIR Parallel Execution** — Wave-based execution planner (`analyzeParallelism()`) groups DAG nodes into parallel waves using modified Kahn's algorithm. `executeGraph()` now accepts optional `VPIRExecutionOptions` with `parallel`, `cache`, and `maxConcurrency` settings. Parallel execution uses a `Semaphore` for concurrency control, preserving IFC enforcement and timeout support.
+- [x] **VPIR Result Caching** — `VPIRResultCache` interface with `InMemoryResultCache` implementation. Deterministic nodes (observation, inference) are cached by node ID + input hash. Action nodes are never cached. `createInputHash()` produces stable, order-independent hashes for cache keying.
+
 ### Advisory Review Panel Alignment
 
-| Component | Phase 4 | Phase 5 Sprint 1 | Phase 5 Sprint 2 | Phase 5 Sprint 3 |
-|-----------|---------|-------------------|-------------------|-------------------|
-| Dataflow Process Networks | Absent | Channel\<T\>, Process, DataflowGraph | — | — |
-| Information Flow Control | Absent | SecurityLabel lattice, memory enforcement | ACI + Channel enforcement | Protocol message enforcement |
-| VPIR | Absent | VPIRNode types, structural validator | — | Interpreter (execution) + Renderer (visualization) |
-| Bridge Grammar | Absent | — | JSON Schema constrained decoding | — |
-| SMT Verification | Absent | — | Z3 invariant verification (4 properties) | — |
-| NL Protocols | Absent | — | — | 3 protocol state machines (delegation, negotiation, resolution) |
-| Causal Trust | Fixed weights | — | Difficulty-weighted causal scoring | — |
-| HoTT Typed Tokenization | Absent | — | Planned (future) | Planned (future) |
+| Component | Phase 4 | Phase 5 Sprint 1 | Phase 5 Sprint 2 | Phase 5 Sprint 3 | Phase 5 Sprint 4 |
+|-----------|---------|-------------------|-------------------|-------------------|-------------------|
+| Dataflow Process Networks | Absent | Channel\<T\>, Process, DataflowGraph | — | — | Protocol-Channel integration |
+| Information Flow Control | Absent | SecurityLabel lattice, memory enforcement | ACI + Channel enforcement | Protocol message enforcement | Channel-bound IFC on protocol sessions |
+| VPIR | Absent | VPIRNode types, structural validator | — | Interpreter (execution) + Renderer (visualization) | Parallel wave execution + result caching |
+| Bridge Grammar | Absent | — | JSON Schema constrained decoding | — | — |
+| SMT Verification | Absent | — | Z3 invariant verification (4 properties) | — | — |
+| NL Protocols | Absent | — | — | 3 protocol state machines (delegation, negotiation, resolution) | Channel transport binding |
+| Causal Trust | Fixed weights | — | Difficulty-weighted causal scoring | — | — |
+| HoTT Typed Tokenization | Absent | — | Planned (future) | Planned (future) | Planned (future) |
 
 ---
 
@@ -97,17 +103,16 @@ Following the Advisory Review Panel's alignment assessment (3/10), Phase 5 imple
 | Sprint 1 | 14 | 194+ | — |
 | Sprint 2 | 17 | 292 | ~3,800 |
 | Sprint 3 | 20 | 355 | ~5,200 |
+| Sprint 4 | 22 | ~415 | ~6,600 |
 
 ---
 
 ## Future Goals
 
-### Medium-Term (Phase 5 Sprint 4+)
+### Medium-Term (Phase 5 Sprint 5+)
 
 - **Tree-sitter DKB integration** — Knowledge graph-based codebase representation
-- **VPIR compiler optimizations** — Parallel execution of independent branches, caching
 - **Enhanced visualization** — Graphical node-graph decompiler for web-based oversight
-- **Protocol channels integration** — Bind NL protocol conversations to DPN channel transport
 
 ### Long-Term (Phase 6+)
 
@@ -158,8 +163,9 @@ pnxt/
 │   │   ├── bridge-grammar.ts  # Bridge Grammar result & error types
 │   │   ├── verification.ts    # Z3 verification result types
 │   │   ├── json-schema.ts     # JSON Schema type (extended for constrained decoding)
-│   │   ├── vpir-execution.ts  # VPIR execution context & result types (Phase 5 Sprint 3)
-│   │   └── protocol.ts       # NL protocol message & conversation types (Phase 5 Sprint 3)
+│   │   ├── vpir-execution.ts     # VPIR execution context, result, and optimizer types (Sprint 3–4)
+│   │   ├── protocol.ts          # NL protocol message & conversation types (Phase 5 Sprint 3)
+│   │   └── protocol-channel.ts  # Protocol-channel binding types (Phase 5 Sprint 4)
 │   ├── memory/            # Memory Service
 │   │   ├── memory-service.ts  # Three-layer memory model with IFC enforcement
 │   │   └── storage-backend.ts # StorageBackend interface, InMemory & File impls
@@ -177,11 +183,13 @@ pnxt/
 │   │   ├── process.ts         # Process — actor with typed input/output ports
 │   │   └── dataflow-graph.ts  # DataflowGraph — process composition & wiring
 │   ├── vpir/              # Verifiable Reasoning (Phase 5)
-│   │   ├── vpir-validator.ts  # Structural validation for VPIR nodes & graphs
-│   │   ├── vpir-interpreter.ts  # VPIR graph execution engine (Phase 5 Sprint 3)
-│   │   └── vpir-renderer.ts    # Text-based VPIR visualization (Phase 5 Sprint 3)
-│   ├── protocol/          # Natural Language Protocols (Phase 5 Sprint 3)
-│   │   └── nl-protocol.ts     # Protocol state machines for agent communication
+│   │   ├── vpir-validator.ts    # Structural validation for VPIR nodes & graphs
+│   │   ├── vpir-interpreter.ts  # VPIR graph execution engine (parallel + cache support)
+│   │   ├── vpir-optimizer.ts    # Wave-based parallelism, input hashing, result cache (Sprint 4)
+│   │   └── vpir-renderer.ts     # Text-based VPIR visualization (Phase 5 Sprint 3)
+│   ├── protocol/          # Natural Language Protocols (Phase 5 Sprint 3–4)
+│   │   ├── nl-protocol.ts       # Protocol state machines for agent communication
+│   │   └── protocol-channel.ts  # Protocol sessions over DPN channels (Sprint 4)
 │   ├── verification/      # Formal Verification (Phase 5 Sprint 2)
 │   │   ├── z3-invariants.ts   # Z3 SMT invariant verification
 │   │   └── index.ts           # Re-exports
