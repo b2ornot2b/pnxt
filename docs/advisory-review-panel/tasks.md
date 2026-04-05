@@ -10,7 +10,7 @@ This file tracks the prioritized list of topics for the Advisory Review Panel to
 
 | # | Topic | Status | Date Reviewed |
 |---|-------|--------|---------------|
-| 1 | [Bridge Grammar & VPIR Specification](#1-bridge-grammar--vpir-specification) | Pending | -- |
+| 1 | [Bridge Grammar & VPIR Specification](#1-bridge-grammar--vpir-specification) | Complete | 2026-04-05 |
 | 2 | [Memory Architecture: From Keyword to Semantic](#2-memory-architecture-from-keyword-to-semantic) | Pending | -- |
 | 3 | [Trust Model Refinement](#3-trust-model-refinement) | Pending | -- |
 
@@ -37,7 +37,7 @@ This file tracks the prioritized list of topics for the Advisory Review Panel to
 
 ### 1. Bridge Grammar & VPIR Specification
 
-**Priority**: Foundational | **Status**: Pending
+**Priority**: Foundational | **Status**: Complete (2026-04-05)
 
 The linchpin connecting LLMs to the paradigm. The entire system depends on LLMs outputting valid typed graph nodes via constrained decoding.
 
@@ -48,6 +48,8 @@ The linchpin connecting LLMs to the paradigm. The entire system depends on LLMs 
 - How should mechanical verification be scoped?
 
 **Primary advisors**: Sutskever (LLM feasibility), de Moura (verification), Milner (process semantics)
+
+**Review outcome**: See [`reviews/01-bridge-grammar-vpir.md`](reviews/01-bridge-grammar-vpir.md)
 
 ---
 
@@ -197,4 +199,21 @@ Enterprise deployment topologies, governance, and federation.
 
 ## Completed Reviews
 
-_No reviews completed yet._
+### Review #1: Bridge Grammar & VPIR Specification (2026-04-05)
+
+**Key decisions**:
+- Two-tier VPIR: Process layer (CCS/pi-calculus) + Value layer (typed lambda calculus)
+- IFC security labels inferred from data sources, represented in type system, verified by Z3
+- MVP scope: ~20 node types, 2-level IFC lattice, weather API benchmark
+- Two-pass LLM generation: natural language plan, then constrained JSON
+- SMT verification scoped to local type checking + IFC label checking (not full program verification)
+- Provenance/causality metadata on every node
+- JSON serialization for MVP; abstract syntax separated from concrete
+
+**Key tensions resolved**:
+- Lambda vs. process calculus → two-tier design accommodates both
+- LLM-generated vs. inferred labels → infer from sources, check via Z3
+- Full HoTT vs. simple types → simple types for MVP, extensible to path types
+- Conventional vs. paradigm-breaking → conventional MVP + parallel experiment with conversational verification
+
+**Full review**: [`reviews/01-bridge-grammar-vpir.md`](reviews/01-bridge-grammar-vpir.md)
