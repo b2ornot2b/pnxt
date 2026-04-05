@@ -7,3 +7,9 @@ export {
   InMemoryResultCache,
   Semaphore,
 } from './vpir-optimizer.js';
+export {
+  exportGraphToJSON,
+  exportCategoryToJSON,
+  exportPipelineToJSON,
+  exportTraceToJSON,
+} from './vpir-graph-export.js';

@@ -230,8 +230,6 @@ async function executeTask(
 export function makeAgentConfig(overrides: Partial<AgentConfig> & { id: string; name: string; type: AgentConfig['type'] }): AgentConfig {
   return {
     behavior: {
-      style: 'balanced',
-      verbosity: 'normal',
       uncertainty_response: 'ask',
       instructions: '',
     },

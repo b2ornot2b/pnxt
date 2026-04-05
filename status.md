@@ -1,12 +1,12 @@
 # pnxt Project Status
 
-> Last updated: 2026-04-05 (Phase 6 Sprint 1 complete)
+> Last updated: 2026-04-05 (Phase 6 Sprint 2 complete)
 
 ---
 
 ## Current State
 
-The pnxt project has completed Phase 6 Sprint 1, delivering **Tree-sitter AST parser integration** (automatic TypeScript codebase ingestion into Knowledge Graphs), **LLM-driven VPIR generation** (Claude API integration with Bridge Grammar constrained decoding), and **end-to-end Code-to-Verified-Reasoning pipeline** (Code → Tree-sitter → KG → VPIR → HoTT → Z3). Phase 6 focuses on integration and real-world validation — connecting the seven paradigm pillars into a working whole.
+The pnxt project has completed Phase 6 Sprint 2, delivering **HoTT higher paths** (2-paths, groupoid structure, univalence axiom for provably-correct refactoring), **structured JSON visualization** (web-renderable graph export for VPIR/HoTT/pipeline/traces), **Z3 groupoid verification** (2 new formally verified properties: groupoid inverse law and higher path consistency), and **code quality cleanup** (dead abstraction removal, shared error hierarchy). Phase 6 focuses on integration and deepening — connecting and validating the paradigm pillars together with real-world inputs.
 
 ### Completed Work
 
@@ -99,8 +99,18 @@ Following the Advisory Review Panel's alignment assessment (3/10), Phase 5 imple
 | SMT Verification | Absent | — | Z3 invariant verification (4 properties) | — | — | + 2 categorical properties (6 total) |
 | NL Protocols | Absent | — | — | 3 protocol state machines (delegation, negotiation, resolution) | Channel transport binding | — |
 | Causal Trust | Fixed weights | — | Difficulty-weighted causal scoring | — | — | — |
-| HoTT Typed Tokenization | Absent | — | — | — | — | **Category, Morphism, Path types + VPIR bridge + KG conversion** |
-| Tree-sitter DKB | Absent | — | — | — | — | **Knowledge graph with typed edges, traversal, HoTT conversion** |
+| HoTT Typed Tokenization | Absent | — | — | — | — | Category, Morphism, Path types + VPIR bridge + KG conversion |
+| Tree-sitter DKB | Absent | — | — | — | — | Knowledge graph with typed edges, traversal, HoTT conversion |
+
+| Component | Phase 6 Sprint 1 | Phase 6 Sprint 2 |
+|-----------|-------------------|-------------------|
+| Tree-sitter Integration | TypeScript parser → KG | — |
+| LLM-Driven VPIR | Claude API + Bridge Grammar | — |
+| Integration Pipeline | Code→KG→VPIR→HoTT→Z3 | JSON export option |
+| HoTT Typed Tokenization | — | **2-paths, groupoid structure, univalence, refactoring equivalences** |
+| SMT Verification | 6 properties | **8 properties (+groupoid inverse, +higher path consistency)** |
+| Visualization | — | **Structured JSON export (graph, category, pipeline, trace)** |
+| Code Quality | — | **Dead abstraction removal, shared error hierarchy** |
 
 ---
 
@@ -115,6 +125,7 @@ Following the Advisory Review Panel's alignment assessment (3/10), Phase 5 imple
 | Sprint 4 | 22 | ~415 | ~6,600 |
 | Sprint 5 | 26 | 479 | ~8,200 |
 | Phase 6 Sprint 1 | 29 | ~530 | ~9,600 |
+| Phase 6 Sprint 2 | 31 | 570 | ~10,800 |
 
 ---
 
@@ -128,15 +139,22 @@ Phase 6 shifts from "build each pillar" to "connect and validate the pillars tog
 - [x] **LLM-Driven VPIR Generation** — Claude API integration via `@anthropic-ai/sdk` using Bridge Grammar schemas as tool definitions. `generateVPIRGraph()` sends task descriptions, validates responses through `parseVPIRGraph()`, with retry logic for invalid outputs. Mock client for testing, live API tests gated behind `ANTHROPIC_API_KEY`. Addresses Sutskever's advisory concern about Bridge Grammar practicality.
 - [x] **Integrated Code-to-Verified-Reasoning Pipeline** — End-to-end `runIntegrationPipeline()`: Code → Tree-sitter → KG → VPIR → HoTT → Z3. Five-stage pipeline with structured reporting, IFC label propagation, categorical validation at each stage, and timing metrics. Proves paradigm pillars work together on real TypeScript source code.
 
+### Sprint 2: HoTT Higher Paths + Visualization + Cleanup + Z3 Groupoid (Complete)
+
+- [x] **HoTT Higher Paths & Groupoid Structure** — `HigherPath` (2-paths) witnessing equivalences between 1-paths, `inversePath`/`inverseMorphism` for groupoid inverses, `buildGroupoidStructure` and `validateGroupoid` for groupoid law verification, `checkUnivalence` for the univalence axiom (equivalent categories are equal), `Functor` and `CategoryEquivalence` types, `findRefactoringEquivalences` for 3-way refactoring proofs via 2-paths. Category type extended with optional `higherPaths` field (backward compatible). Addresses Voevodsky's "need 2-paths, groupoid structure, univalence" feedback.
+- [x] **Structured JSON Visualization** — `exportGraphToJSON` (VPIR graph with topological layer positioning), `exportCategoryToJSON` (HoTT category with objects, morphisms, 1-paths, 2-paths), `exportPipelineToJSON` (pipeline stage flow with connections), `exportTraceToJSON` (execution trace with timeline entries). Web-renderable structured data replacing ASCII-only output. Addresses Kay/Liskov "move beyond ASCII" feedback.
+- [x] **Z3 Groupoid Law Verification** — Two new SMT-verified properties: `groupoid_inverse_law` (verifies f∘f⁻¹ = id and f⁻¹∘f = id for all morphisms) and `higher_path_consistency` (verifies 2-paths connect valid 1-paths with matching endpoints). Total: 8 formally verified properties.
+- [x] **Code Quality Cleanup** — Removed dead `BehaviorStyle` and `Verbosity` types (set but never branched on). Extracted VPIR error classes (`ACIError`, `AssertionError`, `SubGraphError`, `HandlerError`) from local definitions in `vpir-interpreter.ts` to shared `src/errors/vpir-errors.ts` module.
+
 ---
 
 ## Future Goals
 
-### Medium-Term (Phase 6 Sprint 2+)
+### Medium-Term (Phase 6 Sprint 3+)
 
-- **HoTT higher paths** — 2-paths, groupoid structure, and univalence axiom for deeper refactoring proofs
-- **Enhanced visualization** — Graphical node-graph decompiler for web-based oversight
-- **Code quality cleanup** — Dead abstraction audit (BehaviorStyle/Verbosity), ACIError hierarchy
+- **Web-based visualization frontend** — Interactive node-graph renderer consuming the JSON export format (D3.js/Cytoscape.js)
+- **HoTT n-paths** — Generalize from 2-paths to arbitrary n-paths for deeper homotopy structure
+- **Pipeline LLM integration** — Connect integration pipeline to live Claude API for end-to-end automated verification
 
 ### Long-Term (Phase 7+)
 
@@ -204,9 +222,10 @@ pnxt/
 │   │   ├── constrained-output.ts  # LLM schema format converters
 │   │   ├── llm-vpir-generator.ts  # Claude API VPIR generation (Phase 6 Sprint 1)
 │   │   └── index.ts               # Re-exports
-│   ├── hott/              # HoTT Typed Tokenization (Phase 5 Sprint 5)
-│   │   ├── category.ts        # Category operations (compose, identity, validate)
-│   │   └── vpir-bridge.ts     # VPIR-to-HoTT translation pipeline
+│   ├── hott/              # HoTT Typed Tokenization (Phase 5 Sprint 5 + Phase 6 Sprint 2)
+│   │   ├── category.ts        # Category operations (compose, identity, validate, addHigherPath)
+│   │   ├── vpir-bridge.ts     # VPIR-to-HoTT translation pipeline (+ refactoring equivalences)
+│   │   └── higher-paths.ts    # 2-paths, groupoid structure, univalence (Phase 6 Sprint 2)
 │   ├── knowledge-graph/   # Tree-sitter DKB Knowledge Graph (Phase 5 Sprint 5 + Phase 6 Sprint 1)
 │   │   ├── knowledge-graph.ts # Typed graph with traversal and HoTT conversion
 │   │   └── ts-parser.ts       # Tree-sitter TypeScript parser → KG (Phase 6 Sprint 1)
@@ -214,11 +233,12 @@ pnxt/
 │   │   ├── channel.ts         # Channel<T> — typed async FIFO with backpressure & IFC
 │   │   ├── process.ts         # Process — actor with typed input/output ports
 │   │   └── dataflow-graph.ts  # DataflowGraph — process composition & wiring
-│   ├── vpir/              # Verifiable Reasoning (Phase 5)
+│   ├── vpir/              # Verifiable Reasoning (Phase 5 + Phase 6 Sprint 2)
 │   │   ├── vpir-validator.ts    # Structural validation for VPIR nodes & graphs
 │   │   ├── vpir-interpreter.ts  # VPIR graph execution engine (parallel + cache support)
 │   │   ├── vpir-optimizer.ts    # Wave-based parallelism, input hashing, result cache (Sprint 4)
-│   │   └── vpir-renderer.ts     # Text-based VPIR visualization (Phase 5 Sprint 3)
+│   │   ├── vpir-renderer.ts     # Text-based VPIR visualization (Phase 5 Sprint 3)
+│   │   └── vpir-graph-export.ts # Structured JSON export for web visualization (Phase 6 Sprint 2)
 │   ├── protocol/          # Natural Language Protocols (Phase 5 Sprint 3–4)
 │   │   ├── nl-protocol.ts       # Protocol state machines for agent communication
 │   │   └── protocol-channel.ts  # Protocol sessions over DPN channels (Sprint 4)
@@ -230,6 +250,8 @@ pnxt/
 │   ├── trust/             # Trust Engine
 │   │   ├── trust-engine.ts    # Graduated trust model with fixed-weight scoring
 │   │   └── causal-trust.ts    # Causal trust scorer with difficulty weighting
+│   ├── errors/            # Shared error classes (Phase 6 Sprint 2)
+│   │   └── vpir-errors.ts     # VPIR execution error hierarchy
 │   └── evaluation/        # Validation & Evaluation
 │       ├── multi-agent-scenarios.ts   # Coordination scenarios
 │       ├── benchmark-suite.ts         # Benchmark framework

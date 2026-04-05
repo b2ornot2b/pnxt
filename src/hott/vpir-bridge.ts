@@ -13,8 +13,15 @@
  */
 
 import type { VPIRGraph, VPIRNode } from '../types/vpir.js';
-import type { Category, CategoryValidationResult, HoTTObject, Morphism } from '../types/hott.js';
-import type { HoTTObjectKind } from '../types/hott.js';
+import type {
+  Category,
+  CategoryValidationResult,
+  HigherPath,
+  HoTTObject,
+  HoTTObjectKind,
+  HoTTPath,
+  Morphism,
+} from '../types/hott.js';
 import { validateCategory } from './category.js';
 
 /**
@@ -191,5 +198,121 @@ export function findEquivalentPaths(
     }
   }
 
+  // Discover 2-paths: when two different 1-paths connect the same morphism pair,
+  // create a higher path witnessing their equivalence
+  const pathsByEndpoints = new Map<string, HoTTPath[]>();
+  for (const path of merged.paths.values()) {
+    const key = `${path.leftId}:${path.rightId}`;
+    const reverseKey = `${path.rightId}:${path.leftId}`;
+    // Group paths that connect the same pair of morphisms (in either direction)
+    const existing = pathsByEndpoints.get(key) ?? pathsByEndpoints.get(reverseKey) ?? [];
+    const useKey = pathsByEndpoints.has(reverseKey) ? reverseKey : key;
+    existing.push(path);
+    pathsByEndpoints.set(useKey, existing);
+  }
+
+  const higherPaths = new Map<string, HigherPath>();
+  for (const paths of pathsByEndpoints.values()) {
+    if (paths.length < 2) continue;
+    for (let i = 0; i < paths.length - 1; i++) {
+      const hp: HigherPath = {
+        id: `hp_${paths[i].id}_${paths[i + 1].id}`,
+        leftPathId: paths[i].id,
+        rightPathId: paths[i + 1].id,
+        level: 2,
+        witness: `structural_equivalence_2path(${paths[i].id}, ${paths[i + 1].id})`,
+      };
+      higherPaths.set(hp.id, hp);
+    }
+  }
+
+  if (higherPaths.size > 0) {
+    merged.higherPaths = higherPaths;
+  }
+
   return { equivalences, category: merged };
+}
+
+/**
+ * Given three versions of a computation (original, refactored A, refactored B),
+ * find 2-paths proving that the two refactoring paths lead to equivalent results.
+ *
+ * This enables proofs that: if original → refactoredA and original → refactoredB
+ * are both valid refactorings, the two refactoring paths are themselves equivalent.
+ *
+ * @returns Array of HigherPath equivalences discovered
+ */
+export function findRefactoringEquivalences(
+  original: VPIRGraph,
+  refactoredA: VPIRGraph,
+  refactoredB: VPIRGraph,
+): { higherPaths: HigherPath[]; category: Category } {
+  // Find 1-path equivalences between original↔A and original↔B
+  const { category: catOA } = findEquivalentPaths(original, refactoredA);
+  const { category: catOB } = findEquivalentPaths(original, refactoredB);
+
+  const merged: Category = {
+    id: `cat_refactoring_${original.id}`,
+    name: `Refactoring(${original.name})`,
+    objects: new Map(),
+    morphisms: new Map(),
+    paths: new Map(),
+    higherPaths: new Map(),
+  };
+
+  // Copy catOA (which has original 'a_' and refactoredA 'b_' prefixed)
+  for (const [id, obj] of catOA.objects) {
+    merged.objects.set(`oa_${id}`, { ...obj, id: `oa_${id}` });
+  }
+  for (const [id, m] of catOA.morphisms) {
+    merged.morphisms.set(`oa_${id}`, {
+      ...m,
+      id: `oa_${id}`,
+      sourceId: `oa_${m.sourceId}`,
+      targetId: `oa_${m.targetId}`,
+    });
+  }
+  for (const [id, p] of catOA.paths) {
+    merged.paths.set(`oa_${id}`, {
+      ...p,
+      id: `oa_${id}`,
+      leftId: `oa_${p.leftId}`,
+      rightId: `oa_${p.rightId}`,
+    });
+  }
+
+  // Copy catOB paths (represents original↔refactoredB equivalences)
+  for (const [id, p] of catOB.paths) {
+    merged.paths.set(`ob_${id}`, {
+      ...p,
+      id: `ob_${id}`,
+      leftId: `ob_${p.leftId}`,
+      rightId: `ob_${p.rightId}`,
+    });
+  }
+
+  // Find 2-paths: where both original→A and original→B have equivalent morphisms,
+  // construct a higher path witnessing that the two refactoring paths are equivalent
+  const higherPaths: HigherPath[] = [];
+  const oaPaths = Array.from(catOA.paths.values());
+  const obPaths = Array.from(catOB.paths.values());
+
+  for (const oaPath of oaPaths) {
+    for (const obPath of obPaths) {
+      // If both paths witness the same structural equivalence
+      if (oaPath.witness === obPath.witness) {
+        const hp: HigherPath = {
+          id: `hp_refactoring_${oaPath.id}_${obPath.id}`,
+          leftPathId: `oa_${oaPath.id}`,
+          rightPathId: `ob_${obPath.id}`,
+          level: 2,
+          witness: `refactoring_equivalence(${oaPath.witness})`,
+        };
+        higherPaths.push(hp);
+        merged.higherPaths!.set(hp.id, hp);
+      }
+    }
+  }
+
+  return { higherPaths, category: merged };
 }

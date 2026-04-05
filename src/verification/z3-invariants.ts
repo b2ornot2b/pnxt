@@ -16,7 +16,7 @@
 import type { VerificationResult } from '../types/verification.js';
 import type { VPIRGraph } from '../types/vpir.js';
 import type { TrustLevel } from '../types/agent.js';
-import type { Category } from '../types/hott.js';
+import type { Category, GroupoidStructure } from '../types/hott.js';
 
 /**
  * Z3 context wrapper. Create once and reuse — initialization is heavyweight (~30MB WASM).
@@ -52,6 +52,17 @@ export interface Z3Context {
 
   /** Verify identity morphism laws for a category. */
   verifyIdentityLaws(
+    category: Category,
+  ): Promise<VerificationResult>;
+
+  /** Verify groupoid inverse law: f∘f⁻¹ = id and f⁻¹∘f = id for all morphisms. */
+  verifyGroupoidInverseLaw(
+    category: Category,
+    structure: GroupoidStructure,
+  ): Promise<VerificationResult>;
+
+  /** Verify higher path consistency: all 2-paths connect valid 1-paths with matching endpoints. */
+  verifyHigherPathConsistency(
     category: Category,
   ): Promise<VerificationResult>;
 }
@@ -523,6 +534,208 @@ export async function createZ3Context(): Promise<Z3Context> {
         solver: 'z3',
         duration: performance.now() - start,
         property: 'identity_morphism_laws',
+      };
+    },
+
+    async verifyGroupoidInverseLaw(
+      category: Category,
+      structure: GroupoidStructure,
+    ): Promise<VerificationResult> {
+      const start = performance.now();
+      const solver = new z3.Solver();
+
+      // For every morphism f with inverse f⁻¹, verify:
+      //   compose(f, f⁻¹) endpoints = (f.source, f.source) — identity on source
+      //   compose(f⁻¹, f) endpoints = (f.target, f.target) — identity on target
+      const objectIds = Array.from(category.objects.keys());
+      const objIndex = new Map(objectIds.map((id: string, i: number) => [id, i]));
+
+      const fSrc = z3.Int.const('fSrc');
+      const fTgt = z3.Int.const('fTgt');
+      const invSrc = z3.Int.const('invSrc');
+      const invTgt = z3.Int.const('invTgt');
+      const pairIdx = z3.Int.const('pairIdx');
+
+      const violations: any[] = [];
+      let idx = 0;
+
+      for (const [morphismId, morphism] of category.morphisms) {
+        const inv = structure.inverses.get(morphismId);
+        if (!inv) {
+          // Missing inverse — violation
+          violations.push(z3.And(pairIdx.eq(idx), fSrc.eq(-1), fTgt.eq(-1)));
+          idx++;
+          continue;
+        }
+
+        const fS = objIndex.get(morphism.sourceId) ?? -1;
+        const fT = objIndex.get(morphism.targetId) ?? -1;
+        const iS = objIndex.get(inv.sourceId) ?? -1;
+        const iT = objIndex.get(inv.targetId) ?? -1;
+
+        // compose(f, inv): f.target must equal inv.source (composability)
+        // Result endpoints: (f.source, inv.target) — should be (fS, fS) for identity on A
+        if (fT !== iS || iT !== fS) {
+          violations.push(
+            z3.And(
+              pairIdx.eq(idx),
+              fSrc.eq(fS), fTgt.eq(fT),
+              invSrc.eq(iS), invTgt.eq(iT),
+            ),
+          );
+        }
+
+        // compose(inv, f): inv.target must equal f.source (composability)
+        // Result endpoints: (inv.source, f.target) — should be (fT, fT) for identity on B
+        if (iT !== fS || iS !== fT) {
+          violations.push(
+            z3.And(
+              pairIdx.eq(idx + 1000),
+              fSrc.eq(fS), fTgt.eq(fT),
+              invSrc.eq(iS), invTgt.eq(iT),
+            ),
+          );
+        }
+
+        idx++;
+      }
+
+      const duration = performance.now() - start;
+
+      if (violations.length === 0) {
+        return {
+          verified: true,
+          solver: 'z3',
+          duration,
+          property: 'groupoid_inverse_law',
+        };
+      }
+
+      solver.add(z3.Or(...violations));
+      const result = await solver.check();
+
+      if (result === 'unsat') {
+        return { verified: true, solver: 'z3', duration: performance.now() - start, property: 'groupoid_inverse_law' };
+      }
+
+      const model = solver.model();
+      return {
+        verified: false,
+        counterexample: {
+          pairIndex: Number(model.eval(pairIdx).toString()),
+          fSource: Number(model.eval(fSrc).toString()),
+          fTarget: Number(model.eval(fTgt).toString()),
+          invSource: Number(model.eval(invSrc).toString()),
+          invTarget: Number(model.eval(invTgt).toString()),
+        },
+        solver: 'z3',
+        duration: performance.now() - start,
+        property: 'groupoid_inverse_law',
+      };
+    },
+
+    async verifyHigherPathConsistency(category: Category): Promise<VerificationResult> {
+      const start = performance.now();
+      const solver = new z3.Solver();
+
+      if (!category.higherPaths || category.higherPaths.size === 0) {
+        return {
+          verified: true,
+          solver: 'z3',
+          duration: performance.now() - start,
+          property: 'higher_path_consistency',
+        };
+      }
+
+      // For every 2-path, verify that the referenced 1-paths exist
+      // and connect morphisms with the same source/target endpoints.
+      const objectIds = Array.from(category.objects.keys());
+      const objIndex = new Map(objectIds.map((id: string, i: number) => [id, i]));
+
+      const leftSrc = z3.Int.const('leftSrc');
+      const leftTgt = z3.Int.const('leftTgt');
+      const rightSrc = z3.Int.const('rightSrc');
+      const rightTgt = z3.Int.const('rightTgt');
+      const hpIdx = z3.Int.const('hpIdx');
+
+      const violations: any[] = [];
+      let idx = 0;
+
+      for (const hp of category.higherPaths.values()) {
+        const leftPath = category.paths.get(hp.leftPathId);
+        const rightPath = category.paths.get(hp.rightPathId);
+
+        if (!leftPath || !rightPath) {
+          // Missing 1-path reference — violation
+          violations.push(
+            z3.And(hpIdx.eq(idx), leftSrc.eq(-1), leftTgt.eq(-1)),
+          );
+          idx++;
+          continue;
+        }
+
+        // Get the morphisms the 1-paths connect
+        const leftMorphL = category.morphisms.get(leftPath.leftId);
+        const rightMorphL = category.morphisms.get(rightPath.leftId);
+
+        if (!leftMorphL || !rightMorphL) {
+          violations.push(
+            z3.And(hpIdx.eq(idx), leftSrc.eq(-2), leftTgt.eq(-2)),
+          );
+          idx++;
+          continue;
+        }
+
+        const lS = objIndex.get(leftMorphL.sourceId) ?? -1;
+        const lT = objIndex.get(leftMorphL.targetId) ?? -1;
+        const rS = objIndex.get(rightMorphL.sourceId) ?? -1;
+        const rT = objIndex.get(rightMorphL.targetId) ?? -1;
+
+        // Both 1-paths should connect morphisms with the same endpoints
+        if (lS !== rS || lT !== rT) {
+          violations.push(
+            z3.And(
+              hpIdx.eq(idx),
+              leftSrc.eq(lS), leftTgt.eq(lT),
+              rightSrc.eq(rS), rightTgt.eq(rT),
+            ),
+          );
+        }
+
+        idx++;
+      }
+
+      const duration = performance.now() - start;
+
+      if (violations.length === 0) {
+        return {
+          verified: true,
+          solver: 'z3',
+          duration,
+          property: 'higher_path_consistency',
+        };
+      }
+
+      solver.add(z3.Or(...violations));
+      const result = await solver.check();
+
+      if (result === 'unsat') {
+        return { verified: true, solver: 'z3', duration: performance.now() - start, property: 'higher_path_consistency' };
+      }
+
+      const model = solver.model();
+      return {
+        verified: false,
+        counterexample: {
+          higherPathIndex: Number(model.eval(hpIdx).toString()),
+          leftSource: Number(model.eval(leftSrc).toString()),
+          leftTarget: Number(model.eval(leftTgt).toString()),
+          rightSource: Number(model.eval(rightSrc).toString()),
+          rightTarget: Number(model.eval(rightTgt).toString()),
+        },
+        solver: 'z3',
+        duration: performance.now() - start,
+        property: 'higher_path_consistency',
       };
     },
   };

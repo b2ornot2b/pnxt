@@ -14,3 +14,4 @@ export * from './protocol.js';
 export * from './protocol-channel.js';
 export * from './hott.js';
 export * from './knowledge-graph.js';
+export * from './visualization.js';

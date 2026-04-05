@@ -14,6 +14,7 @@ import type {
   Category,
   CategoryValidationResult,
   CategoryViolation,
+  HigherPath,
   HoTTObject,
   HoTTPath,
   Morphism,
@@ -119,6 +120,43 @@ export function addPath(category: Category, path: HoTTPath): void {
     );
   }
   category.paths.set(path.id, path);
+}
+
+/**
+ * Add a higher path (2-path) between two 1-paths.
+ * @throws If the 1-paths don't exist or don't share the same morphism endpoints.
+ */
+export function addHigherPath(category: Category, higherPath: HigherPath): void {
+  if (!category.higherPaths) {
+    category.higherPaths = new Map();
+  }
+  if (category.higherPaths.has(higherPath.id)) {
+    throw new Error(`Higher path '${higherPath.id}' already exists in category '${category.id}'`);
+  }
+  const left = category.paths.get(higherPath.leftPathId);
+  const right = category.paths.get(higherPath.rightPathId);
+  if (!left) {
+    throw new Error(
+      `Left 1-path '${higherPath.leftPathId}' not found in category '${category.id}'`,
+    );
+  }
+  if (!right) {
+    throw new Error(
+      `Right 1-path '${higherPath.rightPathId}' not found in category '${category.id}'`,
+    );
+  }
+  // Both 1-paths must connect morphisms with the same source/target endpoints
+  const leftLeft = category.morphisms.get(left.leftId);
+  const rightLeft = category.morphisms.get(right.leftId);
+  if (
+    leftLeft && rightLeft &&
+    (leftLeft.sourceId !== rightLeft.sourceId || leftLeft.targetId !== rightLeft.targetId)
+  ) {
+    throw new Error(
+      `Higher path endpoint mismatch: 1-paths connect morphisms with different endpoints`,
+    );
+  }
+  category.higherPaths.set(higherPath.id, higherPath);
 }
 
 /**
@@ -242,6 +280,26 @@ export function validateCategory(category: Category): CategoryValidationResult {
             morphismIds: [f.id, g.id, h.id],
           });
         }
+      }
+    }
+  }
+
+  // Check higher path validity: endpoints must reference existing 1-paths
+  if (category.higherPaths) {
+    for (const hp of category.higherPaths.values()) {
+      if (!category.paths.has(hp.leftPathId)) {
+        violations.push({
+          law: 'higher_path',
+          message: `Higher path '${hp.id}' references missing left 1-path '${hp.leftPathId}'`,
+          morphismIds: [hp.id],
+        });
+      }
+      if (!category.paths.has(hp.rightPathId)) {
+        violations.push({
+          law: 'higher_path',
+          message: `Higher path '${hp.id}' references missing right 1-path '${hp.rightPathId}'`,
+          morphismIds: [hp.id],
+        });
       }
     }
   }

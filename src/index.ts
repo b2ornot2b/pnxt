@@ -12,3 +12,4 @@ export * from './hott/index.js';
 export * from './knowledge-graph/index.js';
 export * from './bridge-grammar/index.js';
 export * from './verification/index.js';
+export * from './errors/index.js';

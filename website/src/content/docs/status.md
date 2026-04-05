@@ -1,12 +1,12 @@
 # pnxt Project Status
 
-> Last updated: 2026-04-05 (Phase 5 Sprint 5 complete)
+> Last updated: 2026-04-05 (Phase 6 Sprint 2 complete)
 
 ---
 
 ## Current State
 
-The pnxt project has completed Phase 5 Sprint 5, delivering **HoTT typed tokenization foundations** (Category, Morphism, Path types with categorical law validation), **Tree-sitter DKB Knowledge Graph** (typed code entity graph with multi-hop traversal and HoTT conversion), **VPIR-to-HoTT bridge** (VPIR reasoning chains as categorical structures with path equivalences), and **end-to-end pipeline integration** (KG → VPIR → HoTT → Z3 with IFC enforcement at every boundary). All seven paradigm pillars now have foundational implementations.
+The pnxt project has completed Phase 6 Sprint 2, delivering **HoTT higher paths** (2-paths, groupoid structure, univalence axiom for provably-correct refactoring), **structured JSON visualization** (web-renderable graph export for VPIR/HoTT/pipeline/traces), **Z3 groupoid verification** (2 new formally verified properties: groupoid inverse law and higher path consistency), and **code quality cleanup** (dead abstraction removal, shared error hierarchy). Phase 6 focuses on integration and deepening — connecting and validating the paradigm pillars together with real-world inputs.
 
 ### Completed Work
 
