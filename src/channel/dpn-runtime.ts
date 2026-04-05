@@ -27,6 +27,7 @@ import type {
   ReadableChannel,
   WritableChannel,
 } from '../types/channel.js';
+import type { ToolRegistry } from '../aci/tool-registry.js';
 import { validateGraph } from '../vpir/vpir-validator.js';
 import { canFlowTo } from '../types/ifc.js';
 import { Channel } from './channel.js';
@@ -48,6 +49,13 @@ export interface DPNRuntimeOptions {
 
   /** Enable channel-level tracing. Default: true. */
   enableTracing?: boolean;
+
+  /**
+   * Optional tool registry for resolving action node operations.
+   * When provided, action nodes first check the registry before
+   * falling back to the ACI gateway.
+   */
+  toolRegistry?: ToolRegistry;
 }
 
 export interface DPNExecutionError {
@@ -78,6 +86,7 @@ export class DPNRuntime {
   private readonly timeout: number;
   private readonly bufferSize: number;
   private readonly enableTracing: boolean;
+  private readonly toolRegistry: ToolRegistry | undefined;
 
   private vpirGraph: VPIRGraph | null = null;
   private processes = new Map<string, Process>();
@@ -91,6 +100,7 @@ export class DPNRuntime {
     this.timeout = options.timeout ?? 30_000;
     this.bufferSize = options.channelBufferSize ?? 16;
     this.enableTracing = options.enableTracing ?? true;
+    this.toolRegistry = options.toolRegistry;
   }
 
   /**
@@ -466,17 +476,39 @@ export class DPNRuntime {
 
       case 'inference': {
         const handler = context.handlers.get(node.operation);
-        if (!handler) {
-          throw new HandlerError(
-            `No inference handler registered for operation "${node.operation}"`,
-          );
+        if (handler) {
+          return handler(inputs);
         }
-        return handler(inputs);
+        // Fall back to tool registry for inference handlers
+        if (this.toolRegistry) {
+          const resolved = this.toolRegistry.resolve(node.operation);
+          if (resolved) {
+            const input = inputs.size === 1
+              ? inputs.values().next().value
+              : Object.fromEntries(inputs);
+            return resolved.handler(input);
+          }
+        }
+        throw new HandlerError(
+          `No inference handler registered for operation "${node.operation}"`,
+        );
       }
 
       case 'action': {
+        // Try tool registry first for action nodes
+        if (this.toolRegistry) {
+          const resolved = this.toolRegistry.resolve(node.operation);
+          if (resolved) {
+            const input = inputs.size === 1
+              ? inputs.values().next().value
+              : Object.fromEntries(inputs);
+            return resolved.handler(input);
+          }
+        }
+
+        // Fall back to ACI gateway
         if (!context.aciGateway) {
-          throw new ACIError('No ACI gateway provided for action node execution');
+          throw new ACIError('No ACI gateway or tool registry provided for action node execution');
         }
         const input = inputs.size === 1
           ? inputs.values().next().value

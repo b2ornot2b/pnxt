@@ -118,3 +118,29 @@ After each sprint:
 4. Conduct advisory panel review checkpoint targeting the sprint's specific advisors
 5. Update `status.md` with sprint deliverables and test metrics
 6. Document any deviations from the plan with rationale
+
+---
+
+## Phase 7: Self-Hosting Paradigm (S10-S15)
+
+> **Baseline**: Phase 6 Sprint 9 — Advisory Panel Score 9.2/10
+> **Target**: 9.5+/10 full advisory panel alignment
+> **Milestones**: M2 (External Task Expression), M3 (LLM-Native Programming), M4 (Self-Modification)
+
+### Sprint Index
+
+| Sprint | Name | Priority | Primary Advisors | Score Target | Milestone |
+|--------|------|----------|-----------------|-------------|-----------|
+| [S10](./sprint-10-handler-library-tool-registry.md) | Handler Library + Tool Registry | P0 | Kay, Liskov, Milner | 9.2 → 9.25 | M2 foundation |
+| S11 | VPIR Authoring + External Tasks | P0 | Kay, Liskov, Agha | 9.25 → 9.3 | **M2 complete** |
+| S12 | Reliable Bridge Grammar + Error Recovery | P1 | Sutskever, Pearl, de Moura | 9.3 → 9.35 | M3 foundation |
+| S13 | Autonomous LLM Pipeline | P1 | Sutskever, Pearl, Kay | 9.35 → 9.4 | **M3 complete** |
+| S14 | VPIR Diff/Patch + Self-Mutation | P2 | Voevodsky, Kay, de Moura | 9.4 → 9.45 | M4 foundation |
+| S15 | Verified Self-Modification + Research Frontier | P2/P3 | All | 9.45 → 9.5+ | **M4 complete** |
+
+### Phase 7 Score Progression
+
+```
+ S9 ██████████████████████████████████████████████████  9.2/10 (baseline)
+S10 ██████████████████████████████████████████████████  9.25/10
+```
