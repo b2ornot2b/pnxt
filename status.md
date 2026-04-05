@@ -1,6 +1,6 @@
 # pnxt Project Status
 
-> Last updated: 2026-04-05 (Phase 6 Sprint 7 complete)
+> Last updated: 2026-04-05 (Phase 6 Sprint 8 complete)
 
 ---
 
