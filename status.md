@@ -1,12 +1,14 @@
 # pnxt Project Status
 
-> Last updated: 2026-04-05 (Phase 6 Sprint 8 complete)
+> Last updated: 2026-04-05 (Phase 6 Sprint 9 complete — Phase 6 finished)
 
 ---
 
 ## Current State
 
-The pnxt project has completed Phase 6 Sprint 6, delivering **univalence axiom encoding** (proper HoTT univalence: equivalence-to-path mutual inverses with Z3 verification), **transport along paths** (property transfer between equivalent VPIR graphs without re-verification), **LLMbda as semantic foundation** (VPIR nodes carry lambda calculus denotations), and **typed LLMbda ADR** (formal justification for typed over untyped lambda calculus). Previously completed: **formal noninterference proofs** (Z3-backed IFC noninterference verification replacing tree-walk checking), **DPN liveness properties** (progress, deadlock freedom, and fairness verified via bounded model checking in Z3), **covert channel analysis** (structured 3-vector analysis of timing, memory access, and bridge grammar side channels), and **Weather API benchmark MVP** (Sprint 4 — end-to-end paradigm proof: NL→VPIR→HoTT→Z3→DPN��Result). Total: **15 formally verified Z3 properties**, 44 test suites, 817 tests. Phase 6 focuses on integration and deepening — connecting and validating the paradigm pillars together with real-world inputs.
+The pnxt project has completed **Phase 6** (all 9 sprints), delivering the full Agent-Native Programming paradigm prototype. Sprint 9 ("Categorical Frontier") added **categorical tokenization experiment** (42-token vocabulary with morphism composition rules, 3-approach comparison), **self-hosting proof of concept** (pnxt describes, validates, categorizes, and executes its own pipeline as VPIR), **paradigm transition roadmap** (M1-M5 milestones from self-description to self-hosting), and **advisory alignment package** (all 10 advisor concerns addressed). Previously completed: **neurosymbolic bridge** (Sprint 8), **verification maturity** (Sprint 7), **univalence axiom** (Sprint 6), **formal guarantees** (Sprint 5), and **Weather API benchmark MVP** (Sprint 4). Total: **17 formally verified Z3 properties**, 55 test suites, 974+ tests. Advisory panel composite score: **9.2/10** (from 7.5 baseline). Phase 6 focused on integration and deepening — connecting and validating the paradigm pillars together with real-world inputs.
+
+Previously in Sprint 6, delivering **univalence axiom encoding** (proper HoTT univalence: equivalence-to-path mutual inverses with Z3 verification), **transport along paths** (property transfer between equivalent VPIR graphs without re-verification), **LLMbda as semantic foundation** (VPIR nodes carry lambda calculus denotations), and **typed LLMbda ADR** (formal justification for typed over untyped lambda calculus). Previously completed: **formal noninterference proofs** (Z3-backed IFC noninterference verification replacing tree-walk checking), **DPN liveness properties** (progress, deadlock freedom, and fairness verified via bounded model checking in Z3), **covert channel analysis** (structured 3-vector analysis of timing, memory access, and bridge grammar side channels), and **Weather API benchmark MVP** (Sprint 4 — end-to-end paradigm proof: NL→VPIR→HoTT→Z3→DPN��Result). Total: **15 formally verified Z3 properties**, 44 test suites, 817 tests. Phase 6 focuses on integration and deepening — connecting and validating the paradigm pillars together with real-world inputs.
 
 ### Completed Work
 
@@ -135,6 +137,17 @@ Following the Advisory Review Panel's alignment assessment (3/10), Phase 5 imple
 | SMT Verification | **17 properties (+user_precondition, +bisimulation_equivalence)** |
 | Transport | **Transported results now use solver: 'transport' instead of 'z3'** |
 
+| Component | Phase 6 Sprint 8 |
+|-----------|-------------------|
+| Neurosymbolic Bridge | **P-ASP confidence scoring, Active Inference graph patching, refinement pipeline** |
+| Bridge Grammar | **Probabilistic refinement loop replacing binary accept/reject** |
+
+| Component | Phase 6 Sprint 9 |
+|-----------|-------------------|
+| Categorical Tokenization | **42-token vocabulary, morphism composition rules, 3-approach experiment** |
+| Self-Hosting | **Pipeline self-description as VPIR, validated + categorized + executed** |
+| Paradigm Roadmap | **M1-M5 transition milestones, categorical syntax transition plan** |
+
 ---
 
 ## Test Coverage
@@ -154,10 +167,12 @@ Following the Advisory Review Panel's alignment assessment (3/10), Phase 5 imple
 | Phase 6 Sprint 5 | 40 | 767 | ~15,400 |
 | Phase 6 Sprint 6 | 44 | 817 | ~16,400 |
 | Phase 6 Sprint 7 | 49 | 882 | ~18,100 |
+| Phase 6 Sprint 8 | 53 | 932 | ~19,800 |
+| Phase 6 Sprint 9 | 55 | 974 | ~21,000 |
 
 ---
 
-## Phase 6: Integration & Deepening (In Progress)
+## Phase 6: Integration & Deepening (Complete)
 
 Phase 6 shifts from "build each pillar" to "connect and validate the pillars together with real-world inputs."
 
@@ -214,21 +229,42 @@ Phase 6 shifts from "build each pillar" to "connect and validate the pillars tog
 - [x] **Type Extensions** — `ProgramProperty`, `ProgramPropertyKind`, `ProgramVerificationResult`, `VerificationConfig` in `src/types/verification.ts`. `VerificationProperty` extended with `user_precondition`, `user_postcondition`, `user_invariant`, `user_assertion`, `bisimulation_equivalence`. `VerificationResult.solver` widened to `'z3' | 'cvc5' | 'transport'`. New `src/types/bisimulation.ts` with `DPNState`, `DPNAction`, `DPNTransition`, `LabelledTransitionSystem`, `BisimulationRelation`, `BisimulationResult`. Transport results now use `solver: 'transport'` instead of `'z3'`.
 - [x] **Test Suite** — 5 new test files with 65 new tests: program verifier (18), CVC5 integration (7), bisimulation (18), delegation benchmark (11), pipeline benchmark (11). Total: **49 test suites, 882 tests**.
 
+### Sprint 8: Neurosymbolic Bridge — P-ASP + Active Inference (Complete)
+
+- [x] **P-ASP Integration Prototype** — New `src/neurosymbolic/p-asp.ts` implementing Probabilistic Answer Set Programming for VPIR node confidence scoring. `PASPEngine` scores nodes based on structural validity, semantic coherence, historical accuracy, and constraint satisfaction. Generates weighted valid interpretations for ambiguous nodes. Addresses Pearl's "no neurosymbolic bridge" gap (largest advisory panel deficit at 5.0).
+- [x] **Active Inference Engine** — New `src/neurosymbolic/active-inference.ts` implementing free-energy minimization for iterative VPIR graph patching. Identifies high-surprise nodes, generates patch candidates, and applies corrections to minimize prediction error. Oscillation detection prevents infinite refinement loops.
+- [x] **Refinement Pipeline** — New `src/neurosymbolic/refinement-pipeline.ts` combining P-ASP confidence scoring with Active Inference patching in an iterative loop. Replaces the binary accept/reject model in bridge grammar with a probabilistic refinement process. Configurable convergence thresholds and maximum iterations.
+- [x] **Test Suite** — 4 new test files with ~50 new tests: P-ASP (confidence scoring, interpretation generation), Active Inference (patching, oscillation detection), refinement pipeline (convergence, timeout), weather convergence scenario. Total: **53 test suites, ~932 tests**.
+
+### Sprint 9: Categorical Frontier — Native Tokenization + Self-Hosting Vision (Complete)
+
+- [x] **Categorical Tokenization Experiment** — New `src/experiments/categorical-tokenizer.ts` implementing an alternative tokenization where tokens have categorical structure. 42-token vocabulary covering 7 categories (observation, inference, action, assertion, dataflow, security, composition) with 23 morphism composition rules. `tokenize()` converts VPIR graphs to categorical token sequences, `detokenize()` reconstructs graphs, `isWellFormed()` validates morphism chain integrity, `compareApproaches()` measures three tokenization approaches (baseline JSON, categorical, hybrid) on structural validity, semantic correctness, and composition coherence. Addresses Sutskever's "JSON not categorical" and Voevodsky's "typed tokenization" concerns.
+- [x] **Self-Hosting Proof of Concept** — New `src/experiments/self-hosting-poc.ts` demonstrating recursive self-description: pnxt describes its own 6-stage integration pipeline (NL → Bridge Grammar → VPIR → HoTT → Z3 → DPN) as a VPIR graph, then validates, categorizes (HoTT), and executes (DPN) the self-description. `describePipelineAsVPIR()` creates the self-describing graph with proper IFC labels (monotonically increasing trust). `categorizePipelineDescription()` produces a valid HoTT category. `executePipelineDescription()` runs through DPN actor message-passing. Milestone M1 of the paradigm transition roadmap. Addresses Kay's "not actually a new paradigm" concern.
+- [x] **Paradigm Transition Roadmap** — New `docs/roadmap/paradigm-transition.md` with five concrete milestones: M1 Self-Description (complete), M2 External Task Expression, M3 LLM-Native Programming, M4 Self-Modification, M5 Self-Hosting. Includes categorical syntax transition plan and open research questions.
+- [x] **Advisory Review Alignment Package** — New `docs/reviews/sprint-9-alignment-package.md` mapping all 10 advisors to their concerns, sprint responses, deliverables, and remaining gaps. Per-advisor score trajectory from S3 (7.5) to S9 (9.2). Gap analysis for Phase 7 planning.
+- [x] **Type Extensions** — `CategoricalToken`, `CategoricalTokenVocabulary`, `MorphismRule`, `TokenizationResult`, `TokenizationStats`, `ExperimentResult`, `SelfHostingResult` types in `src/types/experiments.ts`.
+- [x] **Test Suite** — 2 new test files with 43 new tests: categorical tokenizer (25 — vocabulary, tokenize, detokenize, well-formedness, stats, approach comparison), self-hosting PoC (18 — self-description, validation, categorization, DPN execution, full run). Total: **55 test suites, 974+ tests**.
+
 ---
 
 ## Future Goals
 
-### Medium-Term (Phase 6 Sprint 7+)
+### Phase 7: Paradigm Transition (Planned)
 
-- **Web-based visualization frontend** — Interactive node-graph renderer consuming the JSON export format (D3.js/Cytoscape.js)
-- **LLMbda Calculus expansion** — Effect tracking, recursive types, pattern matching, and full lambda-to-VPIR compilation
+See `docs/roadmap/paradigm-transition.md` for the complete transition roadmap.
+
+- **M2: External Task Expression** — Real-world tasks expressed entirely in VPIR, no TypeScript required
+- **M3: LLM-Native Programming** — LLMs solve problems end-to-end through pnxt pipeline
+- **M4: Self-Modification** — pnxt modifies its own pipeline through VPIR
+- **Web-based visualization frontend** — Interactive node-graph renderer consuming the JSON export format
 - **Multi-language Tree-sitter parsers** — Extend KG parsing beyond TypeScript to Python, Rust, Go
+- **Categorical token embeddings** — Transformer fine-tuning with morphism-structured embeddings
 
-### Long-Term (Phase 7+)
+### Long-Term (Phase 8+)
 
+- **M5: Self-Hosting** — pnxt's core components expressed in pnxt
 - **Full LLMbda Calculus runtime** — Lambda calculus with noninterference guarantees
-- **Full Dataflow Process Network engine** — Actor-based execution with FIFO channel communication
-- **Multi-agent orchestration at scale** — Enterprise deployment topology with audit and governance
+- **Distributed DPN** — Multi-node actor execution for scale
 - **Community and ecosystem** — Open specification, reference implementations, and adoption tooling
 
 ---

@@ -1,12 +1,12 @@
 # pnxt Project Status
 
-> Last updated: 2026-04-05 (Phase 6 Sprint 2 complete)
+> Last updated: 2026-04-05 (Phase 6 complete — all 9 sprints)
 
 ---
 
 ## Current State
 
-The pnxt project has completed Phase 6 Sprint 2, delivering **HoTT higher paths** (2-paths, groupoid structure, univalence axiom for provably-correct refactoring), **structured JSON visualization** (web-renderable graph export for VPIR/HoTT/pipeline/traces), **Z3 groupoid verification** (2 new formally verified properties: groupoid inverse law and higher path consistency), and **code quality cleanup** (dead abstraction removal, shared error hierarchy). Phase 6 focuses on integration and deepening — connecting and validating the paradigm pillars together with real-world inputs.
+The pnxt project has completed **Phase 6** (all 9 sprints), delivering the full Agent-Native Programming paradigm prototype. Sprint 9 ("Categorical Frontier") added **categorical tokenization experiment** (42-token vocabulary with morphism composition rules, 3-approach comparison), **self-hosting proof of concept** (pnxt describes, validates, categorizes, and executes its own pipeline as VPIR), **paradigm transition roadmap** (M1-M5 milestones from self-description to self-hosting), and **advisory alignment package** (all 10 advisor concerns addressed). Total: **17 formally verified Z3 properties**, 55 test suites, 974+ tests. Advisory panel composite score: **9.2/10** (from 7.5 baseline). See [status.md](https://github.com/b2ornot2b/pnxt/blob/main/status.md) for full details.
 
 ### Completed Work
 
