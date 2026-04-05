@@ -6,12 +6,16 @@
  */
 
 import type { AgentConfig, AgentState } from '../types/agent.js';
+import type { ChannelConfig } from '../types/channel.js';
+import { Channel } from '../channel/channel.js';
 
 export interface AgentInstance {
   config: AgentConfig;
   state: AgentState;
   createdAt: string;
   updatedAt: string;
+  /** Named channels for inter-agent communication. */
+  channels: Map<string, Channel<unknown>>;
 }
 
 export interface AgentRuntime {
@@ -24,6 +28,17 @@ export interface AgentRuntime {
   transition(id: string, to: AgentState): Promise<void>;
 
   terminate(id: string): Promise<void>;
+
+  /**
+   * Create a typed channel between two agents.
+   * Returns the channel, which is also stored on both agent instances.
+   */
+  createChannel<T>(
+    channelName: string,
+    fromAgentId: string,
+    toAgentId: string,
+    config?: Partial<ChannelConfig>,
+  ): Channel<T>;
 }
 
 const VALID_TRANSITIONS: Record<AgentState, AgentState[]> = {
@@ -53,6 +68,7 @@ export class InMemoryAgentRuntime implements AgentRuntime {
       state: 'created',
       createdAt: now,
       updatedAt: now,
+      channels: new Map(),
     };
 
     this.agents.set(config.id, instance);
@@ -102,5 +118,36 @@ export class InMemoryAgentRuntime implements AgentRuntime {
 
     agent.state = 'terminated';
     agent.updatedAt = new Date().toISOString();
+
+    // Close all channels on termination.
+    for (const channel of agent.channels.values()) {
+      channel.close();
+    }
+  }
+
+  createChannel<T>(
+    channelName: string,
+    fromAgentId: string,
+    toAgentId: string,
+    config?: Partial<ChannelConfig>,
+  ): Channel<T> {
+    const fromAgent = this.agents.get(fromAgentId);
+    const toAgent = this.agents.get(toAgentId);
+
+    if (!fromAgent) throw new Error(`Agent not found: ${fromAgentId}`);
+    if (!toAgent) throw new Error(`Agent not found: ${toAgentId}`);
+
+    const channelId = config?.id ?? `ch_${fromAgentId}_${toAgentId}_${channelName}`;
+    const channel = new Channel<T>({
+      id: channelId,
+      dataType: config?.dataType ?? 'unknown',
+      bufferSize: config?.bufferSize ?? 16,
+    });
+
+    // Store on both agents under the channel name.
+    fromAgent.channels.set(channelName, channel as Channel<unknown>);
+    toAgent.channels.set(channelName, channel as Channel<unknown>);
+
+    return channel;
   }
 }

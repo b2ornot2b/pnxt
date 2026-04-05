@@ -13,6 +13,7 @@ import type {
   ConsolidationParams,
   ConsolidationReport,
 } from '../types/memory.js';
+import { canFlowTo } from '../types/ifc.js';
 
 import type { StorageBackend, StoredMemoryRecord } from './storage-backend.js';
 import { InMemoryStorageBackend } from './storage-backend.js';
@@ -93,6 +94,15 @@ export class InMemoryMemoryService implements MemoryService {
     for (const [id, stored] of this.memories) {
       if (params.memory_type && stored.entry.type !== params.memory_type) {
         continue;
+      }
+
+      // IFC enforcement: if requester has a label, check that the entry's
+      // label allows flow to the requester's context. Data at a higher trust
+      // level cannot flow to a lower-trust requester.
+      if (params.requesterLabel && stored.entry.metadata.label) {
+        if (!canFlowTo(stored.entry.metadata.label, params.requesterLabel)) {
+          continue;
+        }
       }
 
       // Simple keyword-based relevance scoring for the prototype.

@@ -17,6 +17,8 @@ export interface MemoryEntry {
     topics: string[];
     entities: string[];
     timestamp: string;
+    /** IFC security label for information flow tracking. */
+    label?: import('./ifc.js').SecurityLabel;
   };
 }
 
@@ -34,6 +36,8 @@ export interface MemoryQueryParams {
   recency_weight?: number;
   limit?: number;
   min_relevance?: number;
+  /** Trust level of the requesting agent. When set, IFC label enforcement applies. */
+  requesterLabel?: import('./ifc.js').SecurityLabel;
 }
 
 export interface ConsolidationParams {

@@ -17,6 +17,8 @@ import type {
 } from '../types/aci.js';
 import { SIDE_EFFECT_TRUST_REQUIREMENTS } from '../types/aci.js';
 import type { TrustLevel } from '../types/agent.js';
+import type { SecurityLabel } from '../types/ifc.js';
+import { createLabel } from '../types/ifc.js';
 
 export type ToolHandler = (input: unknown) => Promise<unknown>;
 
@@ -223,11 +225,22 @@ export class InMemoryACIGateway implements ACIGateway {
         'success',
       );
 
+      // IFC: label the result with the tool's trust requirement level.
+      // This ensures data produced by high-trust tools carries a high label,
+      // preventing it from flowing to low-trust contexts without explicit check.
+      const requiredTrust = computeRequiredTrust(tool.registration);
+      const resultLabel: SecurityLabel = createLabel(
+        invocation.agentId,
+        requiredTrust,
+        requiredTrust >= 3 ? 'confidential' : requiredTrust >= 1 ? 'internal' : 'public',
+      );
+
       return {
         requestId: invocation.requestId,
         success: true,
         output,
         duration,
+        resultLabel,
       };
     } catch (error) {
       const duration = Date.now() - start;

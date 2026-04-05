@@ -66,6 +66,8 @@ export interface ToolResult {
     retryable: boolean;
   };
   duration: number;
+  /** IFC label on the result, derived from the tool's trust requirements. */
+  resultLabel?: import('./ifc.js').SecurityLabel;
 }
 
 /** Audit event categories per the trust/governance framework. */
