@@ -9,7 +9,7 @@ This page reflects the current state of the pnxt project. It is derived from [st
 
 ## Current State
 
-The pnxt project has completed **Phase 4 — prototype implementation and empirical evaluation**. All core infrastructure, agent runtime, and validation components are implemented and tested. The project now has working prototypes of the foundational ANP systems designed in Phases 1–3.
+The pnxt project has completed **Phase 5 Sprint 3**, delivering **end-to-end VPIR execution**, **formalized agent-to-agent NL protocols**, and **text-based VPIR visualization** for human oversight. VPIR reasoning chains can now be produced by LLMs (via Bridge Grammar), validated, executed, and rendered — closing the core execution loop.
 
 ## Completed Work
 
@@ -19,6 +19,7 @@ The pnxt project has completed **Phase 4 — prototype implementation and empiri
 | Phase 2 | Bridge Layer & Mathematical Spec | Mathematical formalization, bridge grammar spec |
 | Phase 3 | Deep analysis of pillars, patterns, and architecture | Six research documents covering ACI, memory, coordination, trust, comparative analysis, and reference architecture |
 | Phase 4 | Prototype implementation & empirical evaluation | Core infrastructure, agent runtime, validation & benchmarks |
+| Phase 5 | Paradigm foundation | DPN channels, IFC labels, VPIR types, Bridge Grammar, Z3 verification, NL protocols, VPIR execution & visualization |
 
 ### Phase 3 Deliverables
 
@@ -41,7 +42,7 @@ The pnxt project has completed **Phase 4 — prototype implementation and empiri
 
 - [x] **Agent runtime environment** — Agent lifecycle management (registration, execution, teardown)
 - [x] **Capability negotiation** — Versioned capability discovery with 3-phase handshake, semantic versioning, trust-based constraint tightening, revocation, and expiry support
-- [x] **Trust engine** — Graduated trust model (5 levels) with multi-dimensional trust, observable metric-based scoring (0–100), automatic calibration, per-dimension overrides, and trust reset/manual adjustment
+- [x] **Trust engine** — Graduated trust model (5 levels) with multi-dimensional trust, observable metric-based scoring (0-100), automatic calibration, per-dimension overrides, and trust reset/manual adjustment
 
 #### Priority 3: Validation and Evaluation
 
@@ -49,21 +50,53 @@ The pnxt project has completed **Phase 4 — prototype implementation and empiri
 - [x] **Benchmark development** — `BenchmarkSuite` framework with standardized benchmarks for agent registration, trust calibration, ACI invocation, capability negotiation, memory store/query, and agent lifecycle throughput
 - [x] **Security hardening** — `SecurityTestSuite` with adversarial tests across 5 categories: privilege escalation, trust manipulation, capability abuse, audit integrity, and resource exhaustion
 
+### Phase 5 Deliverables
+
+#### Sprint 1: DPN + IFC + VPIR
+
+- [x] **Channel\<T\> and DPN primitives** — Typed async FIFO channels with backpressure, Process actors, DataflowGraph composition
+- [x] **IFC security labels** — SecurityLabel type with lattice-based flow control, memory enforcement
+- [x] **VPIR node types and validator** — VPIRNode, VPIRGraph types with structural validation (DAG, references, IFC)
+
+#### Sprint 2: Bridge Grammar + Formal Verification
+
+- [x] **Bridge Grammar JSON Schema** — Constrained-decoding schemas for VPIR nodes via function calling, tool use, or structured output
+- [x] **Z3 SMT integration** — Formal verification of 4 properties: capability grants, trust monotonicity, IFC lattice, side-effect trust
+- [x] **IFC enforcement completion** — Extended to ACI tool invocations and Channel sends
+- [x] **Causal trust scoring** — Difficulty-weighted trust scoring
+
+#### Sprint 3: VPIR Execution + NL Protocols + Visualization
+
+- [x] **VPIR Interpreter** — Executes validated VPIR graphs in topological order with IFC enforcement, ACI integration, timeout support, and sub-graph recursion
+- [x] **Natural Language Protocol Design** — Three protocol state machines (task-delegation, capability-negotiation, conflict-resolution) with transition validation and IFC enforcement
+- [x] **VPIR Visualization** — Text-based rendering of VPIR graphs (ASCII DAG) and execution traces (step-by-step table with timing and status)
+
+---
+
+## Test Coverage
+
+| Sprint | Test Suites | Tests |
+|--------|------------|-------|
+| Phase 4 | 12 | 194 |
+| Sprint 1 | 14 | 194+ |
+| Sprint 2 | 17 | 292 |
+| Sprint 3 | 20 | 355 |
+
 ---
 
 ## Future Goals
 
-### Medium-Term
+### Medium-Term (Sprint 4+)
 
-- Bridge Grammar implementation (constrained-decoding JSON schema)
-- Natural language protocol design
-- VPIR compiler/interpreter
-- Tree-sitter DKB integration
+- Tree-sitter DKB integration (knowledge graph-based codebase representation)
+- VPIR compiler optimizations (parallel execution, caching)
+- Enhanced visualization (graphical node-graph decompiler)
+- Protocol channels integration (bind NL protocols to DPN transport)
 
-### Long-Term
+### Long-Term (Phase 6+)
 
+- HoTT Typed Tokenization — code as categorical objects
 - LLMbda Calculus runtime with IFC guarantees
-- SMT solver integration (Z3/CVC5)
 - Full Dataflow Process Network engine
 - Multi-agent orchestration at enterprise scale
 - Community ecosystem and open specification

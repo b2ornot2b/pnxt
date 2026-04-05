@@ -7,3 +7,4 @@ export * from './trust/index.js';
 export * from './evaluation/index.js';
 export * from './channel/index.js';
 export * from './vpir/index.js';
+export * from './protocol/index.js';
