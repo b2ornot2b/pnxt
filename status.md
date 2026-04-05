@@ -45,9 +45,9 @@ Phase 4 transitions from research to **prototype implementation and empirical ev
 
 ### Priority 3: Validation and Evaluation
 
-- [ ] **Empirical evaluation** — Test multi-agent coordination patterns on real development tasks
-- [ ] **Benchmark development** — Standardized benchmarks for evaluating ANP implementations
-- [ ] **Security hardening** — Adversarial testing of trust and sandboxing mechanisms
+- [x] **Empirical evaluation** — Multi-agent coordination scenarios (delegation pattern, trust escalation, failure recovery) exercising full system integration (runtime + trust + ACI + capabilities + memory)
+- [x] **Benchmark development** — `BenchmarkSuite` framework with standardized benchmarks for agent registration, trust calibration, ACI invocation, capability negotiation, memory store/query, and agent lifecycle throughput
+- [x] **Security hardening** — `SecurityTestSuite` with adversarial tests across 5 categories: privilege escalation, trust manipulation, capability abuse, audit integrity, and resource exhaustion
 
 ---
 
@@ -113,8 +113,12 @@ pnxt/
 │   │   └── agent-runtime.ts   # Agent lifecycle management
 │   ├── capability/        # Capability Negotiation
 │   │   └── capability-negotiation.ts  # Versioned capability discovery & contract negotiation
-│   └── trust/             # Trust Engine
-│       └── trust-engine.ts    # Graduated trust model with scoring & calibration
+│   ├── trust/             # Trust Engine
+│   │   └── trust-engine.ts    # Graduated trust model with scoring & calibration
+│   └── evaluation/        # Validation & Evaluation
+│       ├── multi-agent-scenarios.ts   # Coordination scenarios & scenario runner
+│       ├── benchmark-suite.ts         # Benchmark framework & standard benchmarks
+│       └── security-suite.ts          # Security test suite & adversarial tests
 ├── docs/
 │   └── research/
 │       ├── original-prompt.md
