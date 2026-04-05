@@ -6,7 +6,9 @@
 
 ## Current State
 
-The pnxt project has entered **Phase 7** ("Self-Hosting Paradigm"), targeting milestones M2 (External Task Expression), M3 (LLM-Native Programming), and M4 (Self-Modification). Sprint 10 ("Handler Library + Tool Registry") delivered **Standard Handler Library** (8 pre-built tool handlers: http-fetch, json-transform, file-read, file-write, string-format, math-eval, data-validate, unit-convert), **Declarative Tool Registry** (operation-to-handler mapping with auto-registration, discovery API, and trust pre-validation), **DPN Supervisor** (supervisor actor pattern with bounded restarts, priority mailbox, one-for-one and all-for-one strategies), and **DPN Runtime tool registry integration** (action/inference nodes resolve handlers from registry with ACI gateway fallback). Total: **17 formally verified Z3 properties**, 58 test suites, 1073+ tests. Advisory panel composite score: **9.25/10** (from 9.2 baseline). Phase 7 transitions pnxt from verified prototype to self-modifying, LLM-programmable system.
+The pnxt project has entered **Phase 7** ("Self-Hosting Paradigm"), targeting milestones M2 (External Task Expression), M3 (LLM-Native Programming), and M4 (Self-Modification). Sprint 11 ("VPIR Authoring + External Tasks") delivered **VPIR Graph Builder** (fluent API and `fromJSON()` for constructing validated graphs from pure JSON — the M2 bridge from LLM output to executable graphs), **External Task Runner** (JSON spec → build → verify → DPN execute pipeline with automatic handler resolution), **Task-Aware Bridge Grammar** (enhanced LLM prompting with handler-library documentation and post-generation validation), and **External Task Benchmarks** (temperature conversion and math expression pipelines — real tasks expressed and executed entirely in VPIR without TypeScript). **Milestone M2 (External Task Expression) is now complete.** Total: **17 formally verified Z3 properties**, 62 test suites, 1128+ tests. Advisory panel composite score: **9.3/10** (from 9.25 baseline). Phase 7 transitions pnxt from verified prototype to self-modifying, LLM-programmable system.
+
+Previously completed Sprint 10 ("Handler Library + Tool Registry"): **Standard Handler Library** (8 pre-built tool handlers: http-fetch, json-transform, file-read, file-write, string-format, math-eval, data-validate, unit-convert), **Declarative Tool Registry** (operation-to-handler mapping with auto-registration, discovery API, and trust pre-validation), **DPN Supervisor** (supervisor actor pattern with bounded restarts, priority mailbox, one-for-one and all-for-one strategies), and **DPN Runtime tool registry integration** (action/inference nodes resolve handlers from registry with ACI gateway fallback).
 
 Previously completed **Phase 6** (9 sprints): categorical tokenization experiment (Sprint 9), neurosymbolic bridge (Sprint 8), verification maturity (Sprint 7), univalence axiom (Sprint 6), formal guarantees (Sprint 5), Weather API benchmark MVP (Sprint 4). Advisory panel score: 7.5 → 9.2 across Phase 6.
 
@@ -171,6 +173,37 @@ Following the Advisory Review Panel's alignment assessment (3/10), Phase 5 imple
 | Phase 6 Sprint 7 | 49 | 882 | ~18,100 |
 | Phase 6 Sprint 8 | 53 | 932 | ~19,800 |
 | Phase 6 Sprint 9 | 55 | 974 | ~21,000 |
+| Phase 7 Sprint 10 | 58 | 1073+ | ~23,000 |
+| Phase 7 Sprint 11 | 62 | 1128+ | ~25,000 |
+
+---
+
+## Phase 7: Self-Hosting Paradigm (In Progress)
+
+### Sprint 10: Handler Library + Tool Registry (Complete)
+
+- [x] **Standard Handler Library** — 8 pre-built tool handlers (http-fetch, json-transform, file-read, file-write, string-format, math-eval, data-validate, unit-convert) with matching ToolRegistrations
+- [x] **Declarative Tool Registry** — Operation-to-handler mapping with alias support, auto-registration, discovery API, trust pre-validation
+- [x] **DPN Supervisor** — Supervisor actor pattern with bounded restart strategies, priority mailbox (high > normal > low), full event log
+- [x] **DPN Runtime Integration** — Tool registry support in inference and action nodes; backward compatible
+
+### Sprint 11: VPIR Authoring + External Tasks — **M2 Complete** (Complete)
+
+- [x] **VPIR Graph Builder** — Fluent API (`addObservation`, `addInference`, `addAction`, `addAssertion`, `addComposition`) and `fromJSON()` static for constructing validated `VPIRGraph` from pure JSON. Auto-computes roots/terminals, runs structural validation, validates tool availability via registry. The M2 bridge: LLM output → `fromJSON()` → executable graph.
+- [x] **External Task Runner** — `TaskRunner` class orchestrating JSON spec → `fromJSON()` → tool discovery → trust validation → DPN compile → DPN execute → `TaskExecutionResult`. Accepts raw JSON or pre-built `VPIRGraph`. Returns outputs, timing, errors, and full DPN execution trace.
+- [x] **Task-Aware Bridge Grammar** — `generateTaskVPIRGraph()` with enhanced system prompt listing all available handlers and their input schemas. Post-generation validation rejects graphs referencing non-existent handlers, retries with error feedback.
+- [x] **External Task Benchmarks** — Two M2 validation benchmarks as pure JSON specs: Temperature Conversion (98.6°F → 37°C via unit-convert) and Math Expression (2*(3+4)-1 = 13 via math-eval). Both execute end-to-end through DPN runtime with correct results.
+
+| Component | Phase 7 Sprint 10 | Phase 7 Sprint 11 |
+|-----------|-------------------|-------------------|
+| Handler Library | **8 standard handlers with ToolRegistrations** | — |
+| Tool Registry | **Declarative registry with auto-registration, discovery, trust validation** | — |
+| DPN Supervisor | **Supervisor actor pattern, priority mailbox, bounded restarts** | — |
+| DPN Runtime | **Tool registry integration in action/inference nodes** | — |
+| VPIR Authoring | — | **Graph Builder (fluent API + fromJSON), auto roots/terminals** |
+| External Tasks | — | **TaskRunner: JSON → build → verify → DPN execute pipeline** |
+| Bridge Grammar | — | **Task-aware LLM generation with handler documentation** |
+| Benchmarks | 3 (weather, delegation, pipeline) | **+2 (temp conversion, math expression)** |
 
 ---
 
@@ -251,11 +284,11 @@ Phase 6 shifts from "build each pillar" to "connect and validate the pillars tog
 
 ## Future Goals
 
-### Phase 7: Paradigm Transition (Planned)
+### Phase 7: Paradigm Transition (In Progress)
 
 See `docs/roadmap/paradigm-transition.md` for the complete transition roadmap.
 
-- **M2: External Task Expression** — Real-world tasks expressed entirely in VPIR, no TypeScript required
+- **M2: External Task Expression** — ✅ Complete (Sprint 11). Real-world tasks expressed and executed entirely in VPIR.
 - **M3: LLM-Native Programming** — LLMs solve problems end-to-end through pnxt pipeline
 - **M4: Self-Modification** — pnxt modifies its own pipeline through VPIR
 - **Web-based visualization frontend** — Interactive node-graph renderer consuming the JSON export format
@@ -319,8 +352,11 @@ pnxt/
 │   ├── memory/            # Memory Service
 │   │   ├── memory-service.ts  # Three-layer memory model with IFC enforcement
 │   │   └── storage-backend.ts # StorageBackend interface, InMemory & File impls
-│   ├── aci/               # ACI Gateway
-│   │   └── aci-gateway.ts     # ACI gateway with trust + IFC checking, audit logging
+│   ├── aci/               # ACI Gateway + Tool Infrastructure
+│   │   ├── aci-gateway.ts     # ACI gateway with trust + IFC checking, audit logging
+│   │   ├── handler-library.ts # Standard handler library (8 handlers) (Phase 7 Sprint 10)
+│   │   ├── tool-registry.ts   # Declarative tool registry (Phase 7 Sprint 10)
+│   │   └── task-runner.ts     # External task runner (Phase 7 Sprint 11)
 │   ├── agent/             # Agent Runtime
 │   │   └── agent-runtime.ts   # Agent lifecycle management with channel support
 │   ├── bridge-grammar/    # Bridge Grammar (Phase 5 Sprint 2 + Phase 6 Sprint 1)
@@ -328,6 +364,7 @@ pnxt/
 │   │   ├── schema-validator.ts    # Parse/validate LLM JSON into typed VPIR nodes/graphs
 │   │   ├── constrained-output.ts  # LLM schema format converters
 │   │   ├── llm-vpir-generator.ts  # Claude API VPIR generation (Phase 6 Sprint 1)
+│   │   ├── task-vpir-generator.ts # Task-aware VPIR generation with handler docs (Phase 7 Sprint 11)
 │   │   └── index.ts               # Re-exports
 │   ├── hott/              # HoTT Typed Tokenization (Phase 5 Sprint 5 + Phase 6 Sprint 2–3, 6)
 │   │   ├── category.ts        # Category operations (compose, identity, validate, addHigherPath, nPath validation)
@@ -344,13 +381,15 @@ pnxt/
 │   │   ├── process.ts         # Process — actor with typed input/output ports
 │   │   ├── dataflow-graph.ts  # DataflowGraph — process composition & wiring
 │   │   ├── dpn-runtime.ts     # DPNRuntime — VPIR→DPN compilation + actor execution (Phase 6 Sprint 4)
+│   │   ├── dpn-supervisor.ts  # DPN Supervisor — actor supervision, priority mailbox (Phase 7 Sprint 10)
 │   │   └── tracing-channel.ts # TracingChannel — channel decorator for execution observability
 │   ├── vpir/              # Verifiable Reasoning (Phase 5 + Phase 6 Sprint 2)
 │   │   ├── vpir-validator.ts    # Structural validation for VPIR nodes & graphs
 │   │   ├── vpir-interpreter.ts  # VPIR graph execution engine (parallel + cache support)
 │   │   ├── vpir-optimizer.ts    # Wave-based parallelism, input hashing, result cache (Sprint 4)
 │   │   ├── vpir-renderer.ts     # Text-based VPIR visualization (Phase 5 Sprint 3)
-│   │   └── vpir-graph-export.ts # Structured JSON export for web visualization (Phase 6 Sprint 2)
+│   │   ├── vpir-graph-export.ts # Structured JSON export for web visualization (Phase 6 Sprint 2)
+│   │   └── vpir-graph-builder.ts # VPIR Graph Builder — fluent API + fromJSON (Phase 7 Sprint 11)
 │   ├── protocol/          # Natural Language Protocols (Phase 5 Sprint 3–4)
 │   │   ├── nl-protocol.ts       # Protocol state machines for agent communication
 │   │   └── protocol-channel.ts  # Protocol sessions over DPN channels (Sprint 4)

@@ -47,3 +47,10 @@ export type {
   StageResult,
   PipelineSummary,
 } from './integration-pipeline.js';
+export {
+  createTemperatureConversionSpec,
+  createMathExpressionSpec,
+  runBenchmark,
+  runAllBenchmarks,
+} from './external-task-benchmark.js';
+export type { ExternalTaskBenchmarkResult } from './external-task-benchmark.js';
