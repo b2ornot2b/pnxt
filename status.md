@@ -1,12 +1,12 @@
 # pnxt Project Status
 
-> Last updated: 2026-04-05 (Phase 5 Sprint 4 complete)
+> Last updated: 2026-04-05 (Phase 5 Sprint 5 complete)
 
 ---
 
 ## Current State
 
-The pnxt project has completed Phase 5 Sprint 4, delivering **protocol-channel integration** (NL protocols over DPN channels) and **VPIR compiler optimizations** (parallel wave-based execution and result caching). Agent conversations now flow over typed async FIFO channels with backpressure and IFC enforcement, and VPIR graphs can execute independent branches concurrently.
+The pnxt project has completed Phase 5 Sprint 5, delivering **HoTT typed tokenization foundations** (Category, Morphism, Path types with categorical law validation), **Tree-sitter DKB Knowledge Graph** (typed code entity graph with multi-hop traversal and HoTT conversion), **VPIR-to-HoTT bridge** (VPIR reasoning chains as categorical structures with path equivalences), and **end-to-end pipeline integration** (KG → VPIR → HoTT → Z3 with IFC enforcement at every boundary). All seven paradigm pillars now have foundational implementations.
 
 ### Completed Work
 
@@ -80,18 +80,27 @@ Following the Advisory Review Panel's alignment assessment (3/10), Phase 5 imple
 - [x] **VPIR Parallel Execution** — Wave-based execution planner (`analyzeParallelism()`) groups DAG nodes into parallel waves using modified Kahn's algorithm. `executeGraph()` now accepts optional `VPIRExecutionOptions` with `parallel`, `cache`, and `maxConcurrency` settings. Parallel execution uses a `Semaphore` for concurrency control, preserving IFC enforcement and timeout support.
 - [x] **VPIR Result Caching** — `VPIRResultCache` interface with `InMemoryResultCache` implementation. Deterministic nodes (observation, inference) are cached by node ID + input hash. Action nodes are never cached. `createInputHash()` produces stable, order-independent hashes for cache keying.
 
+### Sprint 5: HoTT Foundations + Knowledge Graph + End-to-End Pipeline (Complete)
+
+- [x] **HoTT Type Foundations** — `HoTTObject`, `Morphism`, `HoTTPath`, and `Category` types implementing categorical structure for typed tokenization. Operations: `compose` (morphism composition with associativity), `identity` (identity morphisms), `addPath` (homotopy equivalences), `validateCategory` (identity law, associativity, source/target integrity). Addresses Voevodsky's "critical misalignment" verdict.
+- [x] **Tree-sitter DKB Knowledge Graph** — `KGNode` (8 code entity kinds), `KGEdge` (8 typed relations), `KnowledgeGraphDefinition` with graph operations: `addNode`/`addEdge`/`removeNode`, `query` (configurable BFS traversal with depth, direction, kind/relation filters), `findPaths` (multi-hop BFS), `subgraph` (induced subgraph extraction), `toHoTTCategory` (bridge to categorical structure). Addresses Pearl's "memory is flat, not graphical" criticism.
+- [x] **VPIR-to-HoTT Bridge** — `vpirGraphToCategory` converts VPIR reasoning DAGs into HoTT categories (nodes → objects, dependency edges → morphisms, security labels propagated). `validateCategoricalStructure` checks VPIR graphs satisfy categorical laws. `findEquivalentPaths` discovers homotopy equivalences between structurally similar VPIR graphs (basis for proving refactoring correctness). Fulfills original prompt Phase 2 requirement for "mathematical translation pipeline."
+- [x] **Z3 Categorical Verification** — Two new SMT properties: `morphism_composition_associativity` (verifies (h∘g)∘f = h∘(g∘f) for all composable triples) and `identity_morphism_laws` (verifies id∘f = f = f∘id). Total: 6 formally verified properties.
+- [x] **End-to-End Pipeline Scenarios** — Three integration scenarios: (1) KG→VPIR→HoTT roundtrip with categorical validation, (2) labeled pipeline with IFC label propagation through every boundary, (3) diamond-shaped parallel VPIR preserving categorical structure.
+
 ### Advisory Review Panel Alignment
 
-| Component | Phase 4 | Phase 5 Sprint 1 | Phase 5 Sprint 2 | Phase 5 Sprint 3 | Phase 5 Sprint 4 |
-|-----------|---------|-------------------|-------------------|-------------------|-------------------|
-| Dataflow Process Networks | Absent | Channel\<T\>, Process, DataflowGraph | — | — | Protocol-Channel integration |
-| Information Flow Control | Absent | SecurityLabel lattice, memory enforcement | ACI + Channel enforcement | Protocol message enforcement | Channel-bound IFC on protocol sessions |
-| VPIR | Absent | VPIRNode types, structural validator | — | Interpreter (execution) + Renderer (visualization) | Parallel wave execution + result caching |
-| Bridge Grammar | Absent | — | JSON Schema constrained decoding | — | — |
-| SMT Verification | Absent | — | Z3 invariant verification (4 properties) | — | — |
-| NL Protocols | Absent | — | — | 3 protocol state machines (delegation, negotiation, resolution) | Channel transport binding |
-| Causal Trust | Fixed weights | — | Difficulty-weighted causal scoring | — | — |
-| HoTT Typed Tokenization | Absent | — | Planned (future) | Planned (future) | Planned (future) |
+| Component | Phase 4 | Phase 5 Sprint 1 | Phase 5 Sprint 2 | Phase 5 Sprint 3 | Phase 5 Sprint 4 | Phase 5 Sprint 5 |
+|-----------|---------|-------------------|-------------------|-------------------|-------------------|-------------------|
+| Dataflow Process Networks | Absent | Channel\<T\>, Process, DataflowGraph | — | — | Protocol-Channel integration | — |
+| Information Flow Control | Absent | SecurityLabel lattice, memory enforcement | ACI + Channel enforcement | Protocol message enforcement | Channel-bound IFC on protocol sessions | KG node labels + HoTT object labels + pipeline propagation |
+| VPIR | Absent | VPIRNode types, structural validator | — | Interpreter (execution) + Renderer (visualization) | Parallel wave execution + result caching | Categorical interpretation via HoTT bridge |
+| Bridge Grammar | Absent | — | JSON Schema constrained decoding | — | — | — |
+| SMT Verification | Absent | — | Z3 invariant verification (4 properties) | — | — | + 2 categorical properties (6 total) |
+| NL Protocols | Absent | — | — | 3 protocol state machines (delegation, negotiation, resolution) | Channel transport binding | — |
+| Causal Trust | Fixed weights | — | Difficulty-weighted causal scoring | — | — | — |
+| HoTT Typed Tokenization | Absent | — | — | — | — | **Category, Morphism, Path types + VPIR bridge + KG conversion** |
+| Tree-sitter DKB | Absent | — | — | — | — | **Knowledge graph with typed edges, traversal, HoTT conversion** |
 
 ---
 
@@ -104,19 +113,20 @@ Following the Advisory Review Panel's alignment assessment (3/10), Phase 5 imple
 | Sprint 2 | 17 | 292 | ~3,800 |
 | Sprint 3 | 20 | 355 | ~5,200 |
 | Sprint 4 | 22 | ~415 | ~6,600 |
+| Sprint 5 | 26 | 479 | ~8,200 |
 
 ---
 
 ## Future Goals
 
-### Medium-Term (Phase 5 Sprint 5+)
+### Medium-Term (Phase 5 Sprint 6+)
 
-- **Tree-sitter DKB integration** — Knowledge graph-based codebase representation
+- **Tree-sitter parser integration** — Connect knowledge graph to actual Tree-sitter AST parsing for automatic codebase ingestion
 - **Enhanced visualization** — Graphical node-graph decompiler for web-based oversight
+- **HoTT higher paths** — 2-paths, groupoid structure, and univalence axiom for deeper refactoring proofs
 
 ### Long-Term (Phase 6+)
 
-- **HoTT Typed Tokenization** — Code as categorical objects, morphisms, and paths
 - **Full LLMbda Calculus runtime** — Lambda calculus with noninterference guarantees
 - **Full Dataflow Process Network engine** — Actor-based execution with FIFO channel communication
 - **Multi-agent orchestration at scale** — Enterprise deployment topology with audit and governance
@@ -165,7 +175,9 @@ pnxt/
 │   │   ├── json-schema.ts     # JSON Schema type (extended for constrained decoding)
 │   │   ├── vpir-execution.ts     # VPIR execution context, result, and optimizer types (Sprint 3–4)
 │   │   ├── protocol.ts          # NL protocol message & conversation types (Phase 5 Sprint 3)
-│   │   └── protocol-channel.ts  # Protocol-channel binding types (Phase 5 Sprint 4)
+│   │   ├── protocol-channel.ts  # Protocol-channel binding types (Phase 5 Sprint 4)
+│   │   ├── hott.ts              # HoTT types (Object, Morphism, Path, Category) (Sprint 5)
+│   │   └── knowledge-graph.ts   # Knowledge graph types (KGNode, KGEdge, KGQuery) (Sprint 5)
 │   ├── memory/            # Memory Service
 │   │   ├── memory-service.ts  # Three-layer memory model with IFC enforcement
 │   │   └── storage-backend.ts # StorageBackend interface, InMemory & File impls
@@ -178,6 +190,11 @@ pnxt/
 │   │   ├── schema-validator.ts    # Parse/validate LLM JSON into typed VPIR nodes/graphs
 │   │   ├── constrained-output.ts  # LLM schema format converters
 │   │   └── index.ts               # Re-exports
+│   ├── hott/              # HoTT Typed Tokenization (Phase 5 Sprint 5)
+│   │   ├── category.ts        # Category operations (compose, identity, validate)
+│   │   └── vpir-bridge.ts     # VPIR-to-HoTT translation pipeline
+│   ├── knowledge-graph/   # Tree-sitter DKB Knowledge Graph (Phase 5 Sprint 5)
+│   │   └── knowledge-graph.ts # Typed graph with traversal and HoTT conversion
 │   ├── channel/           # Dataflow Process Networks (Phase 5)
 │   │   ├── channel.ts         # Channel<T> — typed async FIFO with backpressure & IFC
 │   │   ├── process.ts         # Process — actor with typed input/output ports

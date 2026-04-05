@@ -15,7 +15,9 @@ export type VerificationProperty =
   | 'capability_grant_consistency'
   | 'trust_transition_monotonicity'
   | 'ifc_flow_lattice'
-  | 'side_effect_trust_requirements';
+  | 'side_effect_trust_requirements'
+  | 'morphism_composition_associativity'
+  | 'identity_morphism_laws';
 
 /**
  * Result of a Z3 verification check.

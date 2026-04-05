@@ -31,3 +31,8 @@ export type {
   SecurityTestResult,
   SecurityReport,
 } from './security-suite.js';
+export {
+  runKGToHoTTRoundtrip,
+  runLabeledPipeline,
+  runParallelCategoricalPreservation,
+} from './pipeline-scenarios.js';
