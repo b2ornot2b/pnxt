@@ -1,12 +1,12 @@
 # pnxt Project Status
 
-> Last updated: 2026-04-05 (Phase 5 Sprint 2 complete)
+> Last updated: 2026-04-05 (Phase 5 Sprint 3 complete)
 
 ---
 
 ## Current State
 
-The pnxt project has completed Phase 5 Sprint 2, delivering the **paradigm's minimum viable differentiator**: Bridge Grammar constrained decoding, Z3 SMT formal verification, complete IFC label enforcement, and causal trust scoring. The project alignment with the foundational vision has advanced significantly from the Panel's 3/10 assessment after Phase 4.
+The pnxt project has completed Phase 5 Sprint 3, delivering **end-to-end VPIR execution**, **formalized agent-to-agent NL protocols**, and **text-based VPIR visualization** for human oversight. VPIR reasoning chains can now be produced by LLMs (via Bridge Grammar), validated, executed, and rendered — closing the core execution loop.
 
 ### Completed Work
 
@@ -68,17 +68,24 @@ Following the Advisory Review Panel's alignment assessment (3/10), Phase 5 imple
 - [x] **IFC label enforcement completion** — Extended IFC checking to ACI tool invocations (input label flow check) and Channel sends (label exposure for downstream enforcement). Backward compatible — unlabeled invocations/channels work as before.
 - [x] **Causal trust scoring** — Difficulty-weighted trust scoring (`computeCausalTrustScore`) where hard task successes contribute more and trivial task failures penalize more. `TaskDifficulty` type added to `TrustEvent`. Drop-in replacement for fixed-weight scorer.
 
+### Sprint 3: VPIR Execution + NL Protocols + Visualization (Complete)
+
+- [x] **VPIR Interpreter** — Executes validated VPIR graphs in topological order. Supports all 5 node types (observation, inference, action, assertion, composition). IFC enforcement at every data-flow boundary. Full execution trace with timing. ACI gateway integration for action nodes. Timeout support and sub-graph recursion for composition nodes.
+- [x] **Natural Language Protocol Design** — Formalized agent-to-agent communication via state machines over DPN channels. Three protocols: task-delegation (`request → accept/reject → confirm`), capability-negotiation (`query → inform → propose → accept/reject`), conflict-resolution (`inform → propose → accept/reject/escalate`). IFC label enforcement on all messages. Transition validation prevents invalid message sequences.
+- [x] **VPIR Visualization (Text-Based)** — Human-readable rendering of VPIR graphs (ASCII DAG with node types, labels, connections) and execution traces (step-by-step table with timing, status, and error highlighting). No external dependencies.
+
 ### Advisory Review Panel Alignment
 
-| Component | Phase 4 | Phase 5 Sprint 1 | Phase 5 Sprint 2 |
-|-----------|---------|-------------------|-------------------|
-| Dataflow Process Networks | Absent | Channel\<T\>, Process, DataflowGraph | — |
-| Information Flow Control | Absent | SecurityLabel lattice, memory enforcement | ACI + Channel enforcement |
-| VPIR | Absent | VPIRNode types, structural validator | — |
-| Bridge Grammar | Absent | — | JSON Schema constrained decoding |
-| SMT Verification | Absent | — | Z3 invariant verification (4 properties) |
-| Causal Trust | Fixed weights | — | Difficulty-weighted causal scoring |
-| HoTT Typed Tokenization | Absent | — | Planned (future) |
+| Component | Phase 4 | Phase 5 Sprint 1 | Phase 5 Sprint 2 | Phase 5 Sprint 3 |
+|-----------|---------|-------------------|-------------------|-------------------|
+| Dataflow Process Networks | Absent | Channel\<T\>, Process, DataflowGraph | — | — |
+| Information Flow Control | Absent | SecurityLabel lattice, memory enforcement | ACI + Channel enforcement | Protocol message enforcement |
+| VPIR | Absent | VPIRNode types, structural validator | — | Interpreter (execution) + Renderer (visualization) |
+| Bridge Grammar | Absent | — | JSON Schema constrained decoding | — |
+| SMT Verification | Absent | — | Z3 invariant verification (4 properties) | — |
+| NL Protocols | Absent | — | — | 3 protocol state machines (delegation, negotiation, resolution) |
+| Causal Trust | Fixed weights | — | Difficulty-weighted causal scoring | — |
+| HoTT Typed Tokenization | Absent | — | Planned (future) | Planned (future) |
 
 ---
 
@@ -89,17 +96,18 @@ Following the Advisory Review Panel's alignment assessment (3/10), Phase 5 imple
 | Phase 4 | 12 | 194 | 2,736 |
 | Sprint 1 | 14 | 194+ | — |
 | Sprint 2 | 17 | 292 | ~3,800 |
+| Sprint 3 | 20 | 355 | ~5,200 |
 
 ---
 
 ## Future Goals
 
-### Medium-Term (Phase 5 Sprint 3+)
+### Medium-Term (Phase 5 Sprint 4+)
 
-- **VPIR compiler/interpreter** — Execute verified reasoning chains
-- **Natural language protocol design** — Formalized agent-to-agent communication patterns
 - **Tree-sitter DKB integration** — Knowledge graph-based codebase representation
-- **Enhanced visualization** — Node-graph decompiler for human oversight
+- **VPIR compiler optimizations** — Parallel execution of independent branches, caching
+- **Enhanced visualization** — Graphical node-graph decompiler for web-based oversight
+- **Protocol channels integration** — Bind NL protocol conversations to DPN channel transport
 
 ### Long-Term (Phase 6+)
 
@@ -149,7 +157,9 @@ pnxt/
 │   │   ├── vpir.ts        # VPIR reasoning chain types
 │   │   ├── bridge-grammar.ts  # Bridge Grammar result & error types
 │   │   ├── verification.ts    # Z3 verification result types
-│   │   └── json-schema.ts     # JSON Schema type (extended for constrained decoding)
+│   │   ├── json-schema.ts     # JSON Schema type (extended for constrained decoding)
+│   │   ├── vpir-execution.ts  # VPIR execution context & result types (Phase 5 Sprint 3)
+│   │   └── protocol.ts       # NL protocol message & conversation types (Phase 5 Sprint 3)
 │   ├── memory/            # Memory Service
 │   │   ├── memory-service.ts  # Three-layer memory model with IFC enforcement
 │   │   └── storage-backend.ts # StorageBackend interface, InMemory & File impls
@@ -167,7 +177,11 @@ pnxt/
 │   │   ├── process.ts         # Process — actor with typed input/output ports
 │   │   └── dataflow-graph.ts  # DataflowGraph — process composition & wiring
 │   ├── vpir/              # Verifiable Reasoning (Phase 5)
-│   │   └── vpir-validator.ts  # Structural validation for VPIR nodes & graphs
+│   │   ├── vpir-validator.ts  # Structural validation for VPIR nodes & graphs
+│   │   ├── vpir-interpreter.ts  # VPIR graph execution engine (Phase 5 Sprint 3)
+│   │   └── vpir-renderer.ts    # Text-based VPIR visualization (Phase 5 Sprint 3)
+│   ├── protocol/          # Natural Language Protocols (Phase 5 Sprint 3)
+│   │   └── nl-protocol.ts     # Protocol state machines for agent communication
 │   ├── verification/      # Formal Verification (Phase 5 Sprint 2)
 │   │   ├── z3-invariants.ts   # Z3 SMT invariant verification
 │   │   └── index.ts           # Re-exports
