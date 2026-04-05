@@ -39,6 +39,7 @@ export default defineConfig({
           label: 'Welcome',
           items: [
             { label: 'Introduction', slug: 'introduction' },
+            { label: 'Quick Start', slug: 'quickstart' },
             { label: 'Project Status', slug: 'status' },
           ],
         },

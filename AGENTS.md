@@ -377,7 +377,9 @@ The project designs a **net-new programming paradigm built exclusively for LLMs*
 | Phase 1 | Core Architecture, State Separation & FFI | Complete (external) |
 | Phase 2 | Bridge Layer & Mathematical Spec | Complete (external) |
 | Phase 3 | Deep analysis of pillars, patterns, and architecture | Complete |
-| Phase 4 | Prototype implementation & empirical evaluation | Planned |
+| Phase 4 | Infrastructure prototype & empirical evaluation | Complete |
+| Phase 5 | Paradigm Foundation (DPN, VPIR, Bridge Grammar, HoTT, Z3) | Complete |
+| Phase 6 | Integration & Deepening (9 sprints — categorical tokenization, self-hosting) | Complete |
 
 ### Project Status
 
@@ -433,19 +435,25 @@ See [`docs/advisory-review-panel.md`](docs/advisory-review-panel.md) for the ful
 
 ```
 src/
-├── components/     # Reusable UI components
-├── features/       # Feature-specific modules
-├── hooks/          # Custom React hooks
-├── lib/            # Third-party integrations
-├── services/       # Business logic and API clients
-├── stores/         # Global state management
-├── types/          # Shared type definitions
-└── utils/          # Pure utility functions
-
-tests/
-├── e2e/            # End-to-end tests
-├── integration/    # Integration tests
-└── unit/           # Unit tests
+├── types/             # Shared type definitions (18 files)
+├── memory/            # Memory Service — three-layer model with IFC
+├── aci/               # ACI Gateway �� trust + IFC checking, audit logging
+├── agent/             # Agent Runtime — lifecycle management
+├── capability/        # Capability Negotiation — 3-phase handshake
+├── trust/             # Trust Engine — 5-level graduated trust, causal scoring
+├── vpir/              # VPIR ��� validator, interpreter, optimizer, renderer, export
+├── bridge-grammar/    # Bridge Grammar — JSON Schema + Claude API integration
+├── channel/           # DPN — channels, processes, DPN runtime, bisimulation
+├── hott/              # HoTT — categories, higher paths, univalence, transport
+├── knowledge-graph/   # Tree-sitter DKB — typed graph + TypeScript parser
+├── lambda/            # LLMbda Calculus — typed lambda with IFC, VPIR bridge
+├── protocol/          # NL Protocols — state machines over DPN channels
+├── verification/      # Formal Verification — Z3, noninterference, liveness, CVC5
+├── benchmarks/        # Benchmarks — weather API, multi-agent delegation, pipeline
+├── evaluation/        # Evaluation — integration scenarios, security tests
+├── neurosymbolic/     # Neurosymbolic — P-ASP, Active Inference, refinement
+├── experiments/       # Experiments — categorical tokenizer, self-hosting PoC
+└���─ errors/            # Error hierarchy
 ```
 
 ---
@@ -464,6 +472,7 @@ website/
 │   ├── content/docs/             # All page content (Markdown/MDX)
 │   │   ├── index.mdx             # Landing page (splash hero)
 │   │   ├── introduction.mdx      # Project introduction
+│   │   ├── quickstart.md         # Quick start guide (mirrors QuickStart.md)
 │   │   ├── status.md             # Project status (mirrors status.md)
 │   │   ├── concepts/             # Core concepts (pillars, foundations)
 │   │   ├── research/             # Research summaries
@@ -480,10 +489,11 @@ website/
 The website is designed to reference source documents dynamically. When updating documentation:
 
 1. **When editing `status.md`**: Also update `website/src/content/docs/status.md` to reflect changes
-2. **When editing research docs in `docs/research/phase-3/`**: Update the corresponding summary page in `website/src/content/docs/research/phase-3/`
-3. **When adding new research phases**: Add new sidebar entries in `website/astro.config.mjs` and create corresponding content pages
-4. **When updating `README.md`**: Review `website/src/content/docs/index.mdx` and `introduction.mdx` for consistency
-5. **When updating `AGENTS.md`**: Review `website/src/content/docs/contributing/guidelines.md` for consistency
+2. **When editing `QuickStart.md`**: Also update `website/src/content/docs/quickstart.md` to reflect changes
+3. **When editing research docs in `docs/research/phase-3/`**: Update the corresponding summary page in `website/src/content/docs/research/phase-3/`
+4. **When adding new research phases**: Add new sidebar entries in `website/astro.config.mjs` and create corresponding content pages
+5. **When updating `README.md`**: Review `website/src/content/docs/index.mdx` and `introduction.mdx` for consistency
+6. **When updating `AGENTS.md`**: Review `website/src/content/docs/contributing/guidelines.md` for consistency
 
 Each website page includes a tip/note linking to its source document in the repository, so readers can always find the authoritative version.
 
