@@ -133,7 +133,7 @@ After each sprint:
 |--------|------|----------|-----------------|-------------|-----------|
 | [S10](./sprint-10-handler-library-tool-registry.md) | Handler Library + Tool Registry | P0 | Kay, Liskov, Milner | 9.2 → 9.25 | M2 foundation |
 | [S11](./sprint-11-vpir-authoring-external-tasks.md) | VPIR Authoring + External Tasks | P0 | Kay, Liskov, Agha | 9.25 → 9.3 | **M2 complete** |
-| S12 | Reliable Bridge Grammar + Error Recovery | P1 | Sutskever, Pearl, de Moura | 9.3 → 9.35 | M3 foundation |
+| [S12](./sprint-12-reliable-bridge-grammar.md) | Reliable Bridge Grammar + Error Recovery | P1 | Sutskever, Pearl, de Moura | 9.3 → 9.35 | M3 foundation |
 | S13 | Autonomous LLM Pipeline | P1 | Sutskever, Pearl, Kay | 9.35 → 9.4 | **M3 complete** |
 | S14 | VPIR Diff/Patch + Self-Mutation | P2 | Voevodsky, Kay, de Moura | 9.4 → 9.45 | M4 foundation |
 | S15 | Verified Self-Modification + Research Frontier | P2/P3 | All | 9.45 → 9.5+ | **M4 complete** |
@@ -144,4 +144,5 @@ After each sprint:
  S9 ██████████████████████████████████████████████████  9.2/10 (baseline)
 S10 ██████████████████████████████████████████████████  9.25/10
 S11 ██████████████████████████████████████████████████  9.3/10 (M2 complete)
+S12 ██████████████████████████████████████████████████  9.35/10 (M3 foundation)
 ```

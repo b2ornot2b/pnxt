@@ -1,12 +1,12 @@
 # pnxt Project Status
 
-> Last updated: 2026-04-05 (Phase 7 Sprint 10 complete)
+> Last updated: 2026-04-05 (Phase 7 Sprint 12 complete)
 
 ---
 
 ## Current State
 
-The pnxt project has entered **Phase 7** ("Self-Hosting Paradigm"), targeting milestones M2 (External Task Expression), M3 (LLM-Native Programming), and M4 (Self-Modification). Sprint 11 ("VPIR Authoring + External Tasks") delivered **VPIR Graph Builder** (fluent API and `fromJSON()` for constructing validated graphs from pure JSON — the M2 bridge from LLM output to executable graphs), **External Task Runner** (JSON spec → build → verify → DPN execute pipeline with automatic handler resolution), **Task-Aware Bridge Grammar** (enhanced LLM prompting with handler-library documentation and post-generation validation), and **External Task Benchmarks** (temperature conversion and math expression pipelines — real tasks expressed and executed entirely in VPIR without TypeScript). **Milestone M2 (External Task Expression) is now complete.** Total: **17 formally verified Z3 properties**, 62 test suites, 1128+ tests. Advisory panel composite score: **9.3/10** (from 9.25 baseline). Phase 7 transitions pnxt from verified prototype to self-modifying, LLM-programmable system.
+The pnxt project has entered **Phase 7** ("Self-Hosting Paradigm"), targeting milestones M2 (External Task Expression), M3 (LLM-Native Programming), and M4 (Self-Modification). Sprint 12 ("Reliable Bridge Grammar + Error Recovery") delivered **Bridge Grammar Error Taxonomy** (typed error hierarchy with 6 categories, repair hints, and structured LLM feedback), **Auto-Repair Engine** (automatic correction of truncated JSON, missing fields, wrong enums, duplicate IDs, and missing roots/terminals), **Confidence Scorer** (P-ASP-inspired 4-dimensional scoring: structural, semantic, handler coverage, topological), **Z3 Graph Pre-Verification** (4 formal properties: acyclicity, input completeness, IFC monotonicity, handler trust), **Reliable Generation Pipeline** (multi-stage orchestration: generate → diagnose → repair → re-validate → score → verify), and **Error Recovery Benchmark** (7 scenarios covering all error categories). **M3 foundation is now complete.** Total: **21 formally verified Z3 properties**, 68 test suites, 1220+ tests. Advisory panel composite score: **9.35/10** (from 9.3 baseline). Phase 7 transitions pnxt from verified prototype to self-modifying, LLM-programmable system.
 
 Previously completed Sprint 10 ("Handler Library + Tool Registry"): **Standard Handler Library** (8 pre-built tool handlers: http-fetch, json-transform, file-read, file-write, string-format, math-eval, data-validate, unit-convert), **Declarative Tool Registry** (operation-to-handler mapping with auto-registration, discovery API, and trust pre-validation), **DPN Supervisor** (supervisor actor pattern with bounded restarts, priority mailbox, one-for-one and all-for-one strategies), and **DPN Runtime tool registry integration** (action/inference nodes resolve handlers from registry with ACI gateway fallback).
 
@@ -175,6 +175,7 @@ Following the Advisory Review Panel's alignment assessment (3/10), Phase 5 imple
 | Phase 6 Sprint 9 | 55 | 974 | ~21,000 |
 | Phase 7 Sprint 10 | 58 | 1073+ | ~23,000 |
 | Phase 7 Sprint 11 | 62 | 1128+ | ~25,000 |
+| Phase 7 Sprint 12 | 68 | 1220+ | ~27,000 |
 
 ---
 
@@ -204,6 +205,24 @@ Following the Advisory Review Panel's alignment assessment (3/10), Phase 5 imple
 | External Tasks | — | **TaskRunner: JSON → build → verify → DPN execute pipeline** |
 | Bridge Grammar | — | **Task-aware LLM generation with handler documentation** |
 | Benchmarks | 3 (weather, delegation, pipeline) | **+2 (temp conversion, math expression)** |
+
+### Sprint 12: Reliable Bridge Grammar + Error Recovery — **M3 Foundation** (Complete)
+
+- [x] **Bridge Grammar Error Taxonomy** — `BridgeErrorCategory` enum (schema, semantic, handler, topology, truncation, confidence), `BridgeError` with repair hints and severity, `BridgeDiagnosis` with repairable detection, `formatDiagnosisForLLM()` for structured retry feedback.
+- [x] **Auto-Repair Engine** — `repairBridgeOutput()` with 6 repair strategies: truncated JSON closure, missing field injection, fuzzy enum matching (Levenshtein), duplicate ID renaming, auto-computed roots/terminals, default security labels.
+- [x] **Confidence Scorer** — `scoreGraphConfidence()` with 4 weighted dimensions: structural (0.30), semantic (0.25), handler coverage (0.25), topological (0.20). Per-node scoring with low-confidence flagging. P-ASP-inspired pattern.
+- [x] **Z3 Graph Pre-Verification** — `verifyGraphProperties()` checking 4 formal properties via Z3: acyclicity (topological ordering), input completeness (reference resolution), IFC monotonicity (classification lattice), handler trust (trust level compatibility). +4 Z3 properties.
+- [x] **Reliable Generation Pipeline** — `generateReliableVPIRGraph()` orchestrating: LLM generation → schema validation → diagnosis → auto-repair → re-validation → handler check → confidence scoring → Z3 verification. Full pipeline stage tracing with timing.
+- [x] **Error Recovery Benchmark** — 7 scenarios: truncated JSON, missing fields, invalid handlers, cyclic graphs, wrong enums, mixed validity, duplicate IDs. Measures diagnosis accuracy, repair success rate, and post-repair validation.
+
+| Component | Phase 7 Sprint 11 | Phase 7 Sprint 12 |
+|-----------|-------------------|-------------------|
+| Error Taxonomy | — | **6 categories, repair hints, structured LLM feedback** |
+| Auto-Repair | — | **6 repair strategies (truncation, enums, defaults, topology)** |
+| Confidence Scorer | — | **4-dimension P-ASP-inspired scoring** |
+| Z3 Verification | 17 properties | **+4 graph properties (acyclicity, completeness, IFC, trust)** |
+| Reliable Pipeline | Simple retry loop | **7-stage pipeline with full telemetry** |
+| Benchmarks | 5 | **+1 (error recovery — 7 scenarios)** |
 
 ---
 
@@ -289,7 +308,7 @@ Phase 6 shifts from "build each pillar" to "connect and validate the pillars tog
 See `docs/roadmap/paradigm-transition.md` for the complete transition roadmap.
 
 - **M2: External Task Expression** — ✅ Complete (Sprint 11). Real-world tasks expressed and executed entirely in VPIR.
-- **M3: LLM-Native Programming** — LLMs solve problems end-to-end through pnxt pipeline
+- **M3: LLM-Native Programming** — 🔄 Foundation complete (Sprint 12). Reliable bridge grammar with error recovery, confidence scoring, and Z3 pre-verification. Sprint 13 completes M3 with autonomous LLM pipeline.
 - **M4: Self-Modification** — pnxt modifies its own pipeline through VPIR
 - **Web-based visualization frontend** — Interactive node-graph renderer consuming the JSON export format
 - **Multi-language Tree-sitter parsers** — Extend KG parsing beyond TypeScript to Python, Rust, Go
@@ -359,12 +378,16 @@ pnxt/
 │   │   └── task-runner.ts     # External task runner (Phase 7 Sprint 11)
 │   ├── agent/             # Agent Runtime
 │   │   └── agent-runtime.ts   # Agent lifecycle management with channel support
-│   ├── bridge-grammar/    # Bridge Grammar (Phase 5 Sprint 2 + Phase 6 Sprint 1)
+│   ├── bridge-grammar/    # Bridge Grammar (Phase 5 Sprint 2 + Phase 6 Sprint 1 + Phase 7 Sprint 12)
 │   │   ├── vpir-schema.ts         # JSON Schema definitions for VPIR constrained decoding
 │   │   ├── schema-validator.ts    # Parse/validate LLM JSON into typed VPIR nodes/graphs
 │   │   ├── constrained-output.ts  # LLM schema format converters
 │   │   ├── llm-vpir-generator.ts  # Claude API VPIR generation (Phase 6 Sprint 1)
 │   │   ├── task-vpir-generator.ts # Task-aware VPIR generation with handler docs (Phase 7 Sprint 11)
+│   │   ├── bridge-errors.ts       # Error taxonomy with 6 categories and repair hints (Phase 7 Sprint 12)
+│   │   ├── bridge-repair.ts       # Auto-repair engine for LLM output (Phase 7 Sprint 12)
+│   │   ├── bridge-confidence.ts   # P-ASP-inspired confidence scorer (Phase 7 Sprint 12)
+│   │   ├── reliable-generator.ts  # Multi-stage reliable generation pipeline (Phase 7 Sprint 12)
 │   │   └── index.ts               # Re-exports
 │   ├── hott/              # HoTT Typed Tokenization (Phase 5 Sprint 5 + Phase 6 Sprint 2–3, 6)
 │   │   ├── category.ts        # Category operations (compose, identity, validate, addHigherPath, nPath validation)
@@ -393,11 +416,12 @@ pnxt/
 │   ├── protocol/          # Natural Language Protocols (Phase 5 Sprint 3–4)
 │   │   ├── nl-protocol.ts       # Protocol state machines for agent communication
 │   │   └── protocol-channel.ts  # Protocol sessions over DPN channels (Sprint 4)
-│   ├── verification/      # Formal Verification (Phase 5 Sprint 2 + Phase 6 Sprint 5–6)
+│   ├── verification/      # Formal Verification (Phase 5 Sprint 2 + Phase 6 Sprint 5–6 + Phase 7 Sprint 12)
 │   │   ├── z3-invariants.ts          # Z3 SMT invariant verification (15 properties)
 │   │   ├── z3-noninterference.ts     # Z3 noninterference proof encoding (Phase 6 Sprint 5)
 │   │   ├── z3-liveness.ts            # Z3 DPN progress, deadlock, fairness (Phase 6 Sprint 5)
 │   │   ├── z3-univalence.ts          # Z3 univalence axiom verification (Phase 6 Sprint 6)
+│   │   ├── z3-graph-verifier.ts      # Z3 graph pre-verification (4 properties) (Phase 7 Sprint 12)
 │   │   ├── covert-channel-analysis.ts # 3-vector covert channel analysis (Phase 6 Sprint 5)
 │   │   └── index.ts                  # Re-exports
 │   ├── capability/        # Capability Negotiation

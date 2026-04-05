@@ -54,3 +54,13 @@ export {
   runAllBenchmarks,
 } from './external-task-benchmark.js';
 export type { ExternalTaskBenchmarkResult } from './external-task-benchmark.js';
+export {
+  createErrorRecoveryScenarios,
+  runScenario as runErrorRecoveryScenario,
+  runAllErrorRecoveryBenchmarks,
+} from './error-recovery-benchmark.js';
+export type {
+  ErrorRecoveryScenario,
+  ErrorRecoveryResult,
+  ErrorRecoveryReport,
+} from './error-recovery-benchmark.js';
