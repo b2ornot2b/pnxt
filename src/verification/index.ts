@@ -37,3 +37,14 @@ export {
   type CovertChannelRisk,
   type VectorAnalysis,
 } from './covert-channel-analysis.js';
+
+export {
+  ProgramVerifier,
+  toSmtLib2,
+} from './z3-program-verifier.js';
+
+export {
+  CVC5Solver,
+  MultiSolverVerifier,
+  type CVC5Result,
+} from './cvc5-integration.js';
