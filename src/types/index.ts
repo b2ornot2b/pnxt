@@ -18,3 +18,4 @@ export * from './visualization.js';
 export * from './lambda.js';
 export * from './bisimulation.js';
 export * from './neurosymbolic.js';
+export * from './experiments.js';

@@ -16,3 +16,4 @@ export * from './errors/index.js';
 export * from './lambda/index.js';
 export * from './benchmarks/index.js';
 export * from './neurosymbolic/index.js';
+export * from './experiments/index.js';
