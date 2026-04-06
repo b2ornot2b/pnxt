@@ -15,3 +15,14 @@ export {
   executePipelineDescription,
   runSelfHostingPoC,
 } from './self-hosting-poc.js';
+export {
+  createMutablePipelineDescription,
+  proposePipelineModification,
+  applyPipelineModification,
+  getPipelineHistory,
+} from './self-mutation.js';
+export type {
+  PipelineModificationType,
+  PipelineModification,
+  MutablePipelineDescription,
+} from './self-mutation.js';
