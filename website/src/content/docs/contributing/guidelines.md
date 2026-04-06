@@ -9,11 +9,12 @@ Development guidelines are maintained in [AGENTS.md](https://github.com/b2ornot2
 
 ## Getting Started
 
-pnxt is currently in the research phase. Contributions may include:
-- Research analysis and documentation
-- Prototype implementation (Phase 4)
+pnxt is in **Phase 7** (Self-Hosting Paradigm) with a comprehensive TypeScript prototype spanning 68 test suites and 1220+ tests. Contributions may include:
+- Implementation of new paradigm features (M4 Self-Modification, M5 Self-Hosting)
 - Bug reports and issue discussion
+- Research analysis and documentation
 - Review and feedback on research documents
+- Additional Tree-sitter parsers for non-TypeScript languages
 
 ---
 

@@ -28,7 +28,7 @@ In the Agent-Native Programming (ANP) paradigm, AI agents are **first-class enti
 
 ## Project Stats
 
-> **55 test suites | 974+ tests | 17 Z3-verified properties | Advisory panel score 9.2/10**
+> **68 test suites | 1220+ tests | 21 Z3-verified properties | Advisory panel score 9.35/10**
 
 ## Research Status
 
@@ -40,12 +40,13 @@ In the Agent-Native Programming (ANP) paradigm, AI agents are **first-class enti
 | Phase 4 | Infrastructure prototype & empirical evaluation | Complete |
 | Phase 5 | Paradigm Foundation (DPN, VPIR, Bridge Grammar, HoTT, Z3) | Complete |
 | Phase 6 | Integration & Deepening (9 sprints — categorical tokenization, self-hosting) | Complete |
+| Phase 7 | Self-Hosting Paradigm (M1-M3 complete — handler library, VPIR authoring, reliable bridge grammar) | **In Progress** |
 
 See [`status.md`](status.md) for the detailed roadmap, sprint history, and repository structure.
 
 ## Implementation
 
-Phases 4–6 produced a comprehensive TypeScript prototype covering the full ANP paradigm:
+Phases 4–7 produced a comprehensive TypeScript prototype covering the full ANP paradigm:
 
 ### Core Infrastructure
 
@@ -92,7 +93,7 @@ See [**QuickStart.md**](QuickStart.md) for a hands-on guide to trying key featur
 # Install dependencies
 npm install
 
-# Run tests (974+ tests, 55 suites)
+# Run tests (1220+ tests, 68 suites)
 npm test
 
 # Type check
@@ -114,7 +115,7 @@ npm run ci
 - [`docs/research/original-prompt.md`](docs/research/original-prompt.md) — Master research prompt defining the foundational vision
 - [`docs/research/Designing Agent-Native Programming Paradigm.md`](docs/research/Designing%20Agent-Native%20Programming%20Paradigm.md) — Core ANP design document
 - [`docs/research/phase-3/`](docs/research/phase-3/) — Phase 3 deep dives (ACI, Memory, Coordination, Trust, Comparative Analysis, Reference Architecture)
-- [`docs/sprints/`](docs/sprints/) — Sprint documentation (Sprints 4–9)
+- [`docs/sprints/`](docs/sprints/) — Sprint documentation (Sprints 4–12)
 - [`docs/roadmap/paradigm-transition.md`](docs/roadmap/paradigm-transition.md) — M1–M5 paradigm transition milestones
 - [`docs/decisions/`](docs/decisions/) — Architecture Decision Records
 - [**Project Website**](https://b2ornot2b.github.io/pnxt/) — Documentation site built with Astro Starlight

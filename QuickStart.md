@@ -24,7 +24,7 @@ npm run build
 ## Run Tests
 
 ```bash
-# Run all 974+ tests across 55 suites
+# Run all 1220+ tests across 68 suites
 npm test
 
 # Type check
@@ -131,7 +131,7 @@ console.log('Generated VPIR graph:', graph);
 
 ### 3. Z3 Formal Verification — Verify Properties
 
-pnxt uses Z3 SMT solver to formally verify 17 properties including capability consistency, trust monotonicity, IFC noninterference, and DPN liveness.
+pnxt uses Z3 SMT solver to formally verify 21 properties including capability consistency, trust monotonicity, IFC noninterference, DPN liveness, and graph pre-verification.
 
 ```typescript
 import { createZ3Context } from 'pnxt';
@@ -216,10 +216,10 @@ console.log('Pipeline result:', result);
 
 ## Stats
 
-- **55** test suites, **974+** tests
-- **17** formally verified Z3 properties
+- **68** test suites, **1220+** tests
+- **21** formally verified Z3 properties
 - **21** source modules
-- Advisory panel composite score: **9.2/10**
+- Advisory panel composite score: **9.35/10**
 
 ## Next Steps
 

@@ -5,13 +5,13 @@ description: Current state, completed milestones, and roadmap for pnxt.
 
 # pnxt Project Status
 
-> Last updated: 2026-04-05 (Phase 7 Sprint 10 complete)
+> Last updated: 2026-04-06 (Phase 7 Sprint 12 complete)
 
 ---
 
 ## Current State
 
-The pnxt project has entered **Phase 7** ("Self-Hosting Paradigm"), targeting milestones M2 (External Task Expression), M3 (LLM-Native Programming), and M4 (Self-Modification). Sprint 10 ("Handler Library + Tool Registry") delivered **Standard Handler Library** (8 pre-built tool handlers), **Declarative Tool Registry** (operation-to-handler mapping with discovery and trust validation), **DPN Supervisor** (supervisor actor pattern with bounded restarts and priority mailbox), and **DPN Runtime tool registry integration**. Total: **17 formally verified Z3 properties**, 58 test suites, 1073+ tests. Advisory panel composite score: **9.25/10**. See [status.md](https://github.com/b2ornot2b/pnxt/blob/main/status.md) for full details.
+The pnxt project has entered **Phase 7** ("Self-Hosting Paradigm"), targeting milestones M2 (External Task Expression), M3 (LLM-Native Programming), and M4 (Self-Modification). Sprint 12 ("Reliable Bridge Grammar + Error Recovery") delivered **Bridge Grammar Error Taxonomy**, **Auto-Repair Engine**, **Confidence Scorer**, **Z3 Graph Pre-Verification**, **Reliable Generation Pipeline**, and **Error Recovery Benchmark**. **M3 foundation is now complete.** Total: **21 formally verified Z3 properties**, 68 test suites, 1220+ tests. Advisory panel composite score: **9.35/10**. See [status.md](https://github.com/b2ornot2b/pnxt/blob/main/status.md) for full details.
 
 ### Completed Work
 
@@ -60,54 +60,38 @@ Following the Advisory Review Panel's alignment assessment (3/10), Phase 5 imple
 
 ### Sprint 1: DPN + IFC + VPIR (Complete)
 
-- [x] **Channel\<T\> and DPN primitives** — Typed async FIFO channels with backpressure, Process actors, DataflowGraph composition. Agents communicate via dataflow instead of RPC.
-- [x] **IFC security labels** — `SecurityLabel` type with lattice-based flow control. Memory entries carry trust-level provenance; queries enforce label boundaries.
-- [x] **VPIR node types and validator** — `VPIRNode`, `VPIRGraph` types define verifiable reasoning steps. Structural validator checks DAG property, reference resolution, and IFC label consistency.
-- [x] **Runtime integration** — AgentRuntime supports channel-based inter-agent communication.
+- [x] **Channel\<T\> and DPN primitives** — Typed async FIFO channels with backpressure, Process actors, DataflowGraph composition
+- [x] **IFC security labels** — `SecurityLabel` type with lattice-based flow control
+- [x] **VPIR node types and validator** — `VPIRNode`, `VPIRGraph` types with structural validator
+- [x] **Runtime integration** — AgentRuntime supports channel-based inter-agent communication
 
 ### Sprint 2: Bridge Grammar + Formal Verification (Complete)
 
-- [x] **Bridge Grammar JSON Schema** — Constrained-decoding schemas (`VPIRNodeSchema`, `VPIRGraphSchema`, etc.) that force LLMs to output valid VPIR nodes via function calling, tool use, or structured output. Includes `parseVPIRNode`/`parseVPIRGraph` for runtime validation with JSON pointer error paths.
-- [x] **Constrained output formatters** — `toFunctionCallingSchema()`, `toAnthropicToolSchema()`, `toStructuredOutputSchema()` produce LLM-specific schema formats. Schema-only utilities, no API calls.
-- [x] **Z3 SMT integration** — Formal verification via z3-solver (z3-wasm). Four verified properties: capability grant consistency, trust transition monotonicity, IFC flow lattice, and side-effect trust requirements. Produces counterexamples on violation.
-- [x] **IFC label enforcement completion** — Extended IFC checking to ACI tool invocations (input label flow check) and Channel sends (label exposure for downstream enforcement). Backward compatible — unlabeled invocations/channels work as before.
-- [x] **Causal trust scoring** — Difficulty-weighted trust scoring (`computeCausalTrustScore`) where hard task successes contribute more and trivial task failures penalize more. `TaskDifficulty` type added to `TrustEvent`. Drop-in replacement for fixed-weight scorer.
+- [x] **Bridge Grammar JSON Schema** — Constrained-decoding schemas forcing LLMs to output valid VPIR nodes
+- [x] **Constrained output formatters** — LLM-specific schema formats (function calling, Anthropic tools, structured output)
+- [x] **Z3 SMT integration** — Four verified properties: capability grant consistency, trust transition monotonicity, IFC flow lattice, side-effect trust requirements
+- [x] **IFC label enforcement completion** — Extended IFC checking to ACI tool invocations and Channel sends
+- [x] **Causal trust scoring** — Difficulty-weighted trust scoring replacing fixed-weight scorer
 
 ### Sprint 3: VPIR Execution + NL Protocols + Visualization (Complete)
 
-- [x] **VPIR Interpreter** — Executes validated VPIR graphs in topological order. Supports all 5 node types (observation, inference, action, assertion, composition). IFC enforcement at every data-flow boundary. Full execution trace with timing. ACI gateway integration for action nodes. Timeout support and sub-graph recursion for composition nodes.
-- [x] **Natural Language Protocol Design** — Formalized agent-to-agent communication via state machines over DPN channels. Three protocols: task-delegation (`request → accept/reject → confirm`), capability-negotiation (`query → inform → propose → accept/reject`), conflict-resolution (`inform → propose → accept/reject/escalate`). IFC label enforcement on all messages. Transition validation prevents invalid message sequences.
-- [x] **VPIR Visualization (Text-Based)** — Human-readable rendering of VPIR graphs (ASCII DAG with node types, labels, connections) and execution traces (step-by-step table with timing, status, and error highlighting). No external dependencies.
+- [x] **VPIR Interpreter** — Executes validated VPIR graphs in topological order with IFC enforcement
+- [x] **Natural Language Protocol Design** — Three protocol state machines: task-delegation, capability-negotiation, conflict-resolution
+- [x] **VPIR Visualization (Text-Based)** — Human-readable rendering of VPIR graphs and execution traces
 
 ### Sprint 4: Protocol-Channel Integration + VPIR Optimizations (Complete)
 
-- [x] **Protocol-Channel Integration** — Bidirectional protocol channels (`ProtocolChannelPair`) wrapping two `Channel<ProtocolMessage>` instances for real dataflow transport. `ProtocolChannelSession` class validates protocol transitions on every send, enforces IFC labels against channel labels, supports async iteration over inbound messages, and provides `createProtocolSessionPair()` convenience factory for matched initiator/responder sessions.
-- [x] **VPIR Parallel Execution** — Wave-based execution planner (`analyzeParallelism()`) groups DAG nodes into parallel waves using modified Kahn's algorithm. `executeGraph()` now accepts optional `VPIRExecutionOptions` with `parallel`, `cache`, and `maxConcurrency` settings. Parallel execution uses a `Semaphore` for concurrency control, preserving IFC enforcement and timeout support.
-- [x] **VPIR Result Caching** — `VPIRResultCache` interface with `InMemoryResultCache` implementation. Deterministic nodes (observation, inference) are cached by node ID + input hash. Action nodes are never cached. `createInputHash()` produces stable, order-independent hashes for cache keying.
+- [x] **Protocol-Channel Integration** — Bidirectional protocol channels with IFC enforcement
+- [x] **VPIR Parallel Execution** — Wave-based execution with Kahn's algorithm and semaphore concurrency
+- [x] **VPIR Result Caching** — Deterministic node caching by ID + input hash
 
 ### Sprint 5: HoTT Foundations + Knowledge Graph + End-to-End Pipeline (Complete)
 
-- [x] **HoTT Type Foundations** — `HoTTObject`, `Morphism`, `HoTTPath`, and `Category` types implementing categorical structure for typed tokenization. Operations: `compose` (morphism composition with associativity), `identity` (identity morphisms), `addPath` (homotopy equivalences), `validateCategory` (identity law, associativity, source/target integrity). Addresses Voevodsky's "critical misalignment" verdict.
-- [x] **Tree-sitter DKB Knowledge Graph** — `KGNode` (8 code entity kinds), `KGEdge` (8 typed relations), `KnowledgeGraphDefinition` with graph operations: `addNode`/`addEdge`/`removeNode`, `query` (configurable BFS traversal with depth, direction, kind/relation filters), `findPaths` (multi-hop BFS), `subgraph` (induced subgraph extraction), `toHoTTCategory` (bridge to categorical structure). Addresses Pearl's "memory is flat, not graphical" criticism.
-- [x] **VPIR-to-HoTT Bridge** — `vpirGraphToCategory` converts VPIR reasoning DAGs into HoTT categories (nodes → objects, dependency edges → morphisms, security labels propagated). `validateCategoricalStructure` checks VPIR graphs satisfy categorical laws. `findEquivalentPaths` discovers homotopy equivalences between structurally similar VPIR graphs (basis for proving refactoring correctness). Fulfills original prompt Phase 2 requirement for "mathematical translation pipeline."
-- [x] **Z3 Categorical Verification** — Two new SMT properties: `morphism_composition_associativity` (verifies (h∘g)∘f = h∘(g∘f) for all composable triples) and `identity_morphism_laws` (verifies id∘f = f = f∘id). Total: 6 formally verified properties.
-- [x] **End-to-End Pipeline Scenarios** — Three integration scenarios: (1) KG→VPIR→HoTT roundtrip with categorical validation, (2) labeled pipeline with IFC label propagation through every boundary, (3) diamond-shaped parallel VPIR preserving categorical structure.
-
-### Advisory Review Panel Alignment
-
-### Advisory Review Panel Alignment (Phase 5)
-
-| Component | Phase 4 | Sprint 1 | Sprint 2 | Sprint 3 | Sprint 4 | Sprint 5 |
-|-----------|---------|----------|----------|----------|----------|----------|
-| Dataflow Process Networks | Absent | Channel\<T\>, Process, DataflowGraph | — | — | Protocol-Channel integration | — |
-| Information Flow Control | Absent | SecurityLabel lattice, memory enforcement | ACI + Channel enforcement | Protocol message enforcement | Channel-bound IFC on protocol sessions | KG node labels + HoTT object labels + pipeline propagation |
-| VPIR | Absent | VPIRNode types, structural validator | — | Interpreter (execution) + Renderer (visualization) | Parallel wave execution + result caching | Categorical interpretation via HoTT bridge |
-| Bridge Grammar | Absent | — | JSON Schema constrained decoding | — | — | — |
-| SMT Verification | Absent | — | Z3 invariant verification (4 properties) | — | — | + 2 categorical properties (6 total) |
-| NL Protocols | Absent | — | — | 3 protocol state machines (delegation, negotiation, resolution) | Channel transport binding | — |
-| Causal Trust | Fixed weights | — | Difficulty-weighted causal scoring | — | — | — |
-| HoTT Typed Tokenization | Absent | — | — | — | — | **Category, Morphism, Path types + VPIR bridge + KG conversion** |
-| Tree-sitter DKB | Absent | — | — | — | — | **Knowledge graph with typed edges, traversal, HoTT conversion** |
+- [x] **HoTT Type Foundations** — `HoTTObject`, `Morphism`, `HoTTPath`, and `Category` types with categorical structure
+- [x] **Tree-sitter DKB Knowledge Graph** — Typed graph with 8 entity kinds, 8 relation types, traversal, and HoTT conversion
+- [x] **VPIR-to-HoTT Bridge** — Converts VPIR reasoning DAGs into HoTT categories
+- [x] **Z3 Categorical Verification** — Two new properties: morphism composition associativity, identity morphism laws. Total: 6 properties
+- [x] **End-to-End Pipeline Scenarios** — Three integration scenarios proving paradigm pillars work together
 
 ---
 
@@ -117,32 +101,65 @@ Phase 6 focused on connecting and validating the paradigm pillars together with 
 
 ### Sprint 6: Type Identity — Univalence Axiom + LLMbda Decision (Complete)
 
-- [x] **Univalence Axiom Encoding** — True HoTT univalence: `createTypeEquivalence`, `equivalenceToPath` (ua map), `pathToEquivalence` (inverse), `verifyUnivalenceRoundTrip`. Applies univalence to merge equivalent objects via union-find.
-- [x] **Transport Along Paths** — `transport(path, typeFamily, value)` moves values P(A) to P(B) along paths. Enables Z3 property transfer between equivalent VPIR graphs without re-verification.
-- [x] **LLMbda as Semantic Foundation** — `vpirNodeToLambda()` converts VPIR nodes to lambda denotations. LLMbda Calculus is now the *meaning* of VPIR.
-- [x] **Typed LLMbda Calculus ADR** — Formal justification for typed departure from master prompt's untyped specification.
-- [x] **Z3 Univalence Verification** — New `univalence_axiom` SMT property. Total: **15 formally verified Z3 properties**.
+- [x] **Univalence Axiom Encoding** — True HoTT univalence with equivalence-to-path and inverse
+- [x] **Transport Along Paths** — Property transfer between equivalent VPIR graphs without re-verification
+- [x] **LLMbda as Semantic Foundation** — VPIR nodes carry lambda calculus denotations
+- [x] **Typed LLMbda Calculus ADR** — Formal justification for typed over untyped lambda calculus
+- [x] **Z3 Univalence Verification** — Total: **15 formally verified Z3 properties**
 
 ### Sprint 7: Verification Maturity — User-Program Verification + Bisimulation (Complete)
 
-- [x] **User-Program Property Verification** — `ProgramVerifier` binds VPIR node attributes to Z3 constants. Supports preconditions, postconditions, invariants, and assertions. SMT-LIB2 formula parser.
-- [x] **CVC5 Integration** — CVC5 as alternative solver via subprocess. `MultiSolverVerifier` orchestrates Z3 + CVC5 with graceful degradation.
-- [x] **DPN Bisimulation Checking** — `buildLTS()` constructs Labelled Transition Systems. `checkStrongBisimulation()` via partition refinement. Bisimulation results convert to HoTT paths via univalence.
-- [x] **Multi-Agent Delegation Benchmark** — Three agents (researcher, assistant, reviewer) coordinating with trust boundaries and IFC enforcement.
-- [x] **Secure Data Pipeline Benchmark** — Data flows through classification, redaction, and declassification with IFC analysis and PII verification.
+- [x] **User-Program Property Verification** — `ProgramVerifier` with preconditions, postconditions, invariants, assertions
+- [x] **CVC5 Integration** — Alternative solver via subprocess with `MultiSolverVerifier` orchestration
+- [x] **DPN Bisimulation Checking** — Strong bisimulation + observational equivalence via partition refinement
+- [x] **Multi-Agent Delegation Benchmark** — Three agents coordinating with trust boundaries and IFC enforcement
+- [x] **Secure Data Pipeline Benchmark** — PII redaction with IFC analysis and label propagation
+- [x] **Z3 Properties** — Total: **17 formally verified properties**
 
 ### Sprint 8: Neurosymbolic Bridge — P-ASP + Active Inference (Complete)
 
-- [x] **P-ASP Integration Prototype** — Probabilistic ASP for VPIR node confidence scoring based on structural validity, semantic coherence, historical accuracy, and constraint satisfaction.
-- [x] **Active Inference Engine** — Free-energy minimization for iterative VPIR graph patching with oscillation detection.
-- [x] **Refinement Pipeline** — Combines P-ASP confidence scoring with Active Inference patching in an iterative loop. Configurable convergence thresholds.
+- [x] **P-ASP Integration Prototype** — Probabilistic ASP for VPIR node confidence scoring
+- [x] **Active Inference Engine** — Free-energy minimization for iterative VPIR graph patching
+- [x] **Refinement Pipeline** — Combines P-ASP scoring with Active Inference in an iterative loop
 
 ### Sprint 9: Categorical Frontier — Native Tokenization + Self-Hosting Vision (Complete)
 
-- [x] **Categorical Tokenization Experiment** — 42-token vocabulary covering 7 categories with 23 morphism composition rules. Three-approach comparison (baseline JSON, categorical, hybrid).
-- [x] **Self-Hosting Proof of Concept** — pnxt describes its own 6-stage pipeline as VPIR, then validates, categorizes (HoTT), and executes (DPN) the self-description. Milestone M1 of paradigm transition.
-- [x] **Paradigm Transition Roadmap** — M1-M5 milestones from self-description to self-hosting.
-- [x] **Advisory Review Alignment Package** — All 10 advisor concerns addressed. Per-advisor score trajectory from 7.5 to 9.2.
+- [x] **Categorical Tokenization Experiment** — 42-token vocabulary with 23 morphism composition rules
+- [x] **Self-Hosting Proof of Concept** — pnxt describes, validates, categorizes, and executes itself as VPIR (M1)
+- [x] **Paradigm Transition Roadmap** — M1-M5 milestones from self-description to self-hosting
+- [x] **Advisory Review Alignment Package** — All 10 advisor concerns addressed. Score: 7.5 → 9.2
+
+---
+
+## Phase 7: Self-Hosting Paradigm (In Progress)
+
+Phase 7 transitions pnxt from verified prototype to self-modifying, LLM-programmable system.
+
+See [docs/roadmap/paradigm-transition.md](https://github.com/b2ornot2b/pnxt/blob/main/docs/roadmap/paradigm-transition.md) for the complete transition roadmap.
+
+### Sprint 10: Handler Library + Tool Registry (Complete)
+
+- [x] **Standard Handler Library** — 8 pre-built tool handlers (http-fetch, json-transform, file-read, file-write, string-format, math-eval, data-validate, unit-convert)
+- [x] **Declarative Tool Registry** — Operation-to-handler mapping with auto-registration, discovery API, and trust pre-validation
+- [x] **DPN Supervisor** — Supervisor actor pattern with bounded restart strategies, priority mailbox, full event log
+- [x] **DPN Runtime Integration** — Tool registry support in inference and action nodes; backward compatible
+
+### Sprint 11: VPIR Authoring + External Tasks — M2 Complete (Complete)
+
+- [x] **VPIR Graph Builder** — Fluent API and `fromJSON()` for constructing validated `VPIRGraph` from pure JSON. Auto-computes roots/terminals, validates tool availability via registry
+- [x] **External Task Runner** — `TaskRunner` orchestrating JSON spec → build → verify → DPN execute pipeline
+- [x] **Task-Aware Bridge Grammar** — Enhanced LLM generation with handler documentation and validation
+- [x] **External Task Benchmarks** — Temperature Conversion and Math Expression end-to-end benchmarks
+
+### Sprint 12: Reliable Bridge Grammar + Error Recovery — M3 Foundation (Complete)
+
+- [x] **Bridge Grammar Error Taxonomy** — 6 error categories with repair hints and structured LLM feedback
+- [x] **Auto-Repair Engine** — 6 repair strategies: truncated JSON, missing fields, fuzzy enums, duplicate IDs, topology, default labels
+- [x] **Confidence Scorer** — 4-dimension P-ASP-inspired scoring (structural, semantic, handler coverage, topological)
+- [x] **Z3 Graph Pre-Verification** — 4 formal properties: acyclicity, input completeness, IFC monotonicity, handler trust
+- [x] **Reliable Generation Pipeline** — 7-stage orchestration: generate → diagnose → repair → re-validate → score → verify
+- [x] **Error Recovery Benchmark** — 7 scenarios covering all error categories
+- [x] **Z3 Properties** — Total: **21 formally verified properties**
 
 ---
 
@@ -157,29 +174,27 @@ Phase 6 focused on connecting and validating the paradigm pillars together with 
 | Sprint 4 | 22 | ~415 | ~6,600 |
 | Sprint 5 | 26 | 479 | ~8,200 |
 | Sprint 6 | 30 | 557 | ~9,400 |
-| Sprint 7 | 49 | 882 | — |
-| Sprint 8 | 53 | ~932 | — |
-| Sprint 9 | 55 | 974+ | — |
+| Sprint 7 | 49 | 882 | ~18,100 |
+| Sprint 8 | 53 | 932 | ~19,800 |
+| Sprint 9 | 55 | 974 | ~21,000 |
+| Sprint 10 | 58 | 1073+ | ~23,000 |
+| Sprint 11 | 62 | 1128+ | ~25,000 |
+| Sprint 12 | 68 | 1220+ | ~27,000 |
 
 ---
 
 ## Future Goals
 
-### Phase 7: Paradigm Transition (Planned)
+### Phase 7 Remaining (M4–M5)
 
-See `docs/roadmap/paradigm-transition.md` for the complete transition roadmap.
-
-- **M2: External Task Expression** — Real-world tasks expressed entirely in VPIR, no TypeScript required
-- **M3: LLM-Native Programming** — LLMs solve problems end-to-end through pnxt pipeline
 - **M4: Self-Modification** — pnxt modifies its own pipeline through VPIR
-- **Web-based visualization frontend** — Interactive node-graph renderer consuming the JSON export format
-- **Multi-language Tree-sitter parsers** — Extend KG parsing beyond TypeScript to Python, Rust, Go
-- **Categorical token embeddings** — Transformer fine-tuning with morphism-structured embeddings
+- **M5: Self-Hosting** — pnxt's core components expressed in pnxt
 
 ### Long-Term (Phase 8+)
 
-- **M5: Self-Hosting** — pnxt's core components expressed in pnxt
-- **Full LLMbda Calculus runtime** — Lambda calculus with noninterference guarantees
+- **Web-based visualization frontend** — Interactive node-graph renderer consuming the JSON export format
+- **Multi-language Tree-sitter parsers** — Extend KG parsing beyond TypeScript to Python, Rust, Go
+- **Categorical token embeddings** — Transformer fine-tuning with morphism-structured embeddings
 - **Distributed DPN** — Multi-node actor execution for scale
 - **Community and ecosystem** — Open specification, reference implementations, and adoption tooling
 
@@ -237,6 +252,6 @@ pnxt/
 │   ├── decisions/         # Architecture Decision Records
 │   ├── reviews/           # Advisory panel reviews
 │   ├── roadmap/           # Paradigm transition roadmap (M1-M5)
-│   └── sprints/           # Sprint documentation (4-9)
+│   └── sprints/           # Sprint documentation (4-12)
 └── website/               # Astro Starlight documentation site
 ```

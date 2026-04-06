@@ -87,6 +87,10 @@ export default defineConfig({
           label: 'Roadmap',
           items: [
             { label: 'Phase 4 Implementation', slug: 'roadmap/phase-4' },
+            {
+              label: 'Phase 7 — Self-Hosting',
+              slug: 'roadmap/phase-7',
+            },
             { label: 'Future Vision', slug: 'roadmap/future' },
           ],
         },

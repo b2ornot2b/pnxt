@@ -55,12 +55,17 @@ This eliminates the loop-state tracking problem entirely. Instead of `for i in r
 
 **Problem**: LLMs are vulnerable to prompt injection — malicious inputs that hijack the model's behavior.
 
-**Solution**: An untyped call-by-value lambda calculus enriched with dynamic Information Flow Control (IFC):
+**Solution**: A typed lambda calculus enriched with Information Flow Control (IFC):
 
 - Every value carries a **security label** (e.g., `trusted`, `user-input`, `untrusted`)
 - Information can flow from low to high security but **never from high to low**
 - Mathematical **noninterference guarantee**: untrusted inputs cannot influence trusted outputs
+- Typing enables compile-time IFC checking, decidable Z3 queries, and LLM boundary validation
 - Provides formal protection against prompt injection at the calculus level
+
+:::note
+The original research prompt specified untyped lambda calculus. The project adopted a typed variant per an [Architecture Decision Record](https://github.com/b2ornot2b/pnxt/blob/main/docs/decisions/typed-llmbda-calculus.md) — typed calculus enables IFC enforcement, Z3 integration, and safer LLM interaction while subsuming practical untyped usage.
+:::
 
 ---
 
