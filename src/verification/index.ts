@@ -55,3 +55,14 @@ export type {
   GraphVerificationResult,
   PropertyStatus,
 } from './z3-graph-verifier.js';
+export {
+  classifyDiffImpact,
+  attemptTransport,
+  verifyPropertyPreservation,
+  toGraphVerificationResult,
+} from './z3-diff-verifier.js';
+export type {
+  DiffImpactClassification,
+  PropertyPreservationStatus,
+  PreservationResult,
+} from './z3-diff-verifier.js';

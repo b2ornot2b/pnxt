@@ -152,3 +152,82 @@ export interface VPIRValidationWarning {
   code: string;
   message: string;
 }
+
+// ── Diff/Patch Types (Sprint 14) ──────────────────────────────────
+
+/**
+ * Types of operations in a VPIR graph diff.
+ */
+export type DiffOperationType =
+  | 'add_node'
+  | 'remove_node'
+  | 'modify_node'
+  | 'add_edge'
+  | 'remove_edge'
+  | 'reroute_edge'
+  | 'modify_metadata';
+
+/**
+ * A single operation in a VPIR graph diff.
+ */
+export interface DiffOperation {
+  /** What kind of change this represents. */
+  type: DiffOperationType;
+
+  /** Path to the affected element (e.g., "nodes/node-id", "edges/from:port→to"). */
+  path: string;
+
+  /** Previous value (for modify/remove operations). */
+  before?: unknown;
+
+  /** New value (for add/modify operations). */
+  after?: unknown;
+}
+
+/**
+ * A structured diff between two VPIR graphs.
+ */
+export interface VPIRDiff {
+  /** Unique identifier for this diff. */
+  id: string;
+
+  /** ID of the source (before) graph. */
+  sourceGraphId: string;
+
+  /** ID of the target (after) graph. */
+  targetGraphId: string;
+
+  /** Ordered list of diff operations. */
+  operations: DiffOperation[];
+
+  /** Diff metadata. */
+  metadata: {
+    createdAt: string;
+    description?: string;
+  };
+}
+
+/**
+ * A conflict detected when applying a patch.
+ */
+export interface PatchConflict {
+  /** The operation that caused the conflict. */
+  operation: DiffOperation;
+
+  /** Human-readable reason for the conflict. */
+  reason: string;
+}
+
+/**
+ * Result of applying a patch to a VPIR graph.
+ */
+export interface PatchResult {
+  /** Whether the patch was applied successfully. */
+  success: boolean;
+
+  /** The patched graph (if successful). */
+  graph?: VPIRGraph;
+
+  /** Conflicts encountered during patch application. */
+  conflicts: PatchConflict[];
+}

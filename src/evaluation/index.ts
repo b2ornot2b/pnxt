@@ -75,3 +75,13 @@ export type {
   AutonomousBenchmarkResult,
   AutonomousBenchmarkOptions,
 } from './autonomous-pipeline-benchmark.js';
+export {
+  MUTATION_SCENARIOS,
+  runMutationScenario,
+  runMutationBenchmark,
+} from './self-mutation-benchmark.js';
+export type {
+  MutationScenario,
+  MutationScenarioResult,
+  MutationBenchmarkResults,
+} from './self-mutation-benchmark.js';
