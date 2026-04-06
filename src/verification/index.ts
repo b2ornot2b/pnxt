@@ -66,3 +66,13 @@ export type {
   PropertyPreservationStatus,
   PreservationResult,
 } from './z3-diff-verifier.js';
+export {
+  scoreModificationConfidence,
+} from './modification-confidence.js';
+export type {
+  ModificationConfidence,
+  ConfidenceDecision,
+  ConfidenceThresholds,
+  ConfidenceInput,
+  ModificationConfidenceScorerOptions,
+} from './modification-confidence.js';

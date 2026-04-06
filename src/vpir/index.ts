@@ -41,3 +41,10 @@ export type {
   GraphTransaction,
   TransactionOptions,
 } from './vpir-transaction.js';
+export { SelfModificationOrchestrator } from './self-modification-orchestrator.js';
+export type {
+  ProposalStatus,
+  ModificationProposal,
+  OrchestrationResult,
+  OrchestratorOptions,
+} from './self-modification-orchestrator.js';

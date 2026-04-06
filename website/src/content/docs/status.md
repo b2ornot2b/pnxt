@@ -5,13 +5,13 @@ description: Current state, completed milestones, and roadmap for pnxt.
 
 # pnxt Project Status
 
-> Last updated: 2026-04-06 (Phase 7 Sprint 12 complete)
+> Last updated: 2026-04-06 (Phase 7 complete — Sprint 15)
 
 ---
 
 ## Current State
 
-The pnxt project has entered **Phase 7** ("Self-Hosting Paradigm"), targeting milestones M2 (External Task Expression), M3 (LLM-Native Programming), and M4 (Self-Modification). Sprint 12 ("Reliable Bridge Grammar + Error Recovery") delivered **Bridge Grammar Error Taxonomy**, **Auto-Repair Engine**, **Confidence Scorer**, **Z3 Graph Pre-Verification**, **Reliable Generation Pipeline**, and **Error Recovery Benchmark**. **M3 foundation is now complete.** Total: **21 formally verified Z3 properties**, 68 test suites, 1220+ tests. Advisory panel composite score: **9.35/10**. See [status.md](https://github.com/b2ornot2b/pnxt/blob/main/status.md) for full details.
+**Phase 7 ("Self-Hosting Paradigm") is complete.** All three milestones achieved: M2 (External Task Expression), M3 (LLM-Native Programming), and M4 (Self-Modification). Sprint 15 ("Verified Self-Modification + Research Frontier") delivered a **Causal Impact Analyzer**, **Modification Confidence Scorer**, **Self-Modification Orchestrator**, **5 Real Self-Modification Scenarios**, and **Phase 7 Comprehensive Evaluation**. The system can now express tasks in VPIR, generate VPIR autonomously, and modify its own pipeline with verified correctness. Total: **21 formally verified Z3 properties**, 83 test suites, 1485+ tests. Advisory panel composite score: **9.5/10**. See [status.md](https://github.com/b2ornot2b/pnxt/blob/main/status.md) for full details.
 
 ### Completed Work
 

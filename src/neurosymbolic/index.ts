@@ -11,3 +11,13 @@ export type {
   LLMGenerator,
   LLMPatcher,
 } from './refinement-pipeline.js';
+
+export { CausalImpactAnalyzer } from './causal-impact.js';
+export type {
+  CausalImpactAnalyzerOptions,
+  CausalNode,
+  CausalChain,
+  CausalImpactReport,
+  Mitigation,
+  RiskLevel,
+} from './causal-impact.js';
