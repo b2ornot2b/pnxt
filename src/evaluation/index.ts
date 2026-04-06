@@ -64,3 +64,14 @@ export type {
   ErrorRecoveryResult,
   ErrorRecoveryReport,
 } from './error-recovery-benchmark.js';
+export {
+  AUTONOMOUS_SCENARIOS,
+  runScenario as runAutonomousScenario,
+  runAutonomousBenchmark,
+} from './autonomous-pipeline-benchmark.js';
+export type {
+  AutonomousScenario,
+  ScenarioResult as AutonomousScenarioResult,
+  AutonomousBenchmarkResult,
+  AutonomousBenchmarkOptions,
+} from './autonomous-pipeline-benchmark.js';

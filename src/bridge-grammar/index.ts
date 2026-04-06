@@ -80,3 +80,31 @@ export type {
   ReliableGeneratorOptions,
   GenerationStage,
 } from './reliable-generator.js';
+export {
+  generateWithRefinement,
+  buildRefinementPrompt,
+} from './iterative-generator.js';
+export type {
+  FeedbackStrategy,
+  AttemptRecord,
+  IterativeGenerationOptions,
+  IterativeGenerationResult,
+} from './iterative-generator.js';
+export {
+  applyNeurosymbolicRefinement,
+} from './neurosymbolic-bridge.js';
+export type {
+  NeurosymbolicPatchRecord,
+  NeurosymbolicOptions,
+  NeurosymbolicResult,
+} from './neurosymbolic-bridge.js';
+export {
+  executeAutonomousPipeline,
+} from './autonomous-pipeline.js';
+export type {
+  PipelineStageName,
+  PipelineStageTrace,
+  CategorizationResult,
+  AutonomousPipelineOptions,
+  AutonomousPipelineResult,
+} from './autonomous-pipeline.js';
