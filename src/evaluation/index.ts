@@ -85,3 +85,23 @@ export type {
   MutationScenarioResult,
   MutationBenchmarkResults,
 } from './self-mutation-benchmark.js';
+export {
+  SELF_MODIFICATION_SCENARIOS,
+  runSelfModificationScenario,
+  runAllSelfModificationScenarios,
+  createStandardPipeline,
+} from './verified-self-modification.js';
+export type {
+  SelfModificationScenario,
+  ScenarioResult as SelfModificationScenarioResult,
+  VerifiedSelfModificationResults,
+} from './verified-self-modification.js';
+export {
+  runPhase7Evaluation,
+} from './phase7-evaluation.js';
+export type {
+  MilestoneResult,
+  AdvisorAlignment,
+  ResearchContribution,
+  Phase7EvaluationReport,
+} from './phase7-evaluation.js';
