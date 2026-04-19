@@ -1,5 +1,5 @@
 export { validateNode, validateGraph } from './vpir-validator.js';
-export { executeGraph, topologicalSort } from './vpir-interpreter.js';
+export { executeGraph, resumeFromCheckpoint, topologicalSort } from './vpir-interpreter.js';
 export { renderNode, renderGraph, renderTrace, renderTraceStep } from './vpir-renderer.js';
 export {
   analyzeParallelism,
@@ -41,6 +41,21 @@ export type {
   GraphTransaction,
   TransactionOptions,
 } from './vpir-transaction.js';
+export {
+  FileBackedJournal,
+  InMemoryJournal,
+  JOURNAL_SCHEMA_VERSION,
+  assertCheckpointMatchesGraph,
+  graphContentHash,
+  isAssertionNode,
+} from './vpir-journal.js';
+export type {
+  ExecutionState,
+  JournalCheckpoint,
+  JournalEntry,
+  JournalRecord,
+  VPIRJournal,
+} from './vpir-journal.js';
 export { SelfModificationOrchestrator } from './self-modification-orchestrator.js';
 export type {
   ProposalStatus,

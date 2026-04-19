@@ -9,10 +9,12 @@
 import type {
   ProcessDefinition,
   ProcessFunction,
+  ProcessSnapshot,
   ProcessState,
   ReadableChannel,
   WritableChannel,
 } from '../types/channel.js';
+import { ProcessSnapshotMismatchError } from '../errors/vpir-errors.js';
 
 /**
  * A running process in the dataflow graph.
@@ -90,5 +92,35 @@ export class Process<TIn = unknown, TOut = unknown> {
     if (this.runPromise) {
       await this.runPromise;
     }
+  }
+
+  /**
+   * Capture the process's durable state — currently just its lifecycle
+   * state. Sprint 16 — interface-only contract (see ADR-001). Full DPN
+   * replay with mid-behavior resumption is a future sprint; this method
+   * establishes the contract so callers and a later channel-log backend
+   * can rely on a stable API shape.
+   */
+  getSnapshot(): ProcessSnapshot {
+    return {
+      processId: this.id,
+      state: this.state,
+      timestamp: Date.now(),
+    };
+  }
+
+  /**
+   * Restore the process state from a snapshot. Validates that the
+   * snapshot was taken from a process with the same id (throws
+   * ProcessSnapshotMismatchError otherwise). Only sets the state field;
+   * the behavior function and its in-flight runPromise are not restored.
+   */
+  restore(snapshot: ProcessSnapshot): void {
+    if (snapshot.processId !== this.id) {
+      throw new ProcessSnapshotMismatchError(
+        `Cannot restore snapshot for process ${snapshot.processId} onto process ${this.id}`,
+      );
+    }
+    this.state = snapshot.state;
   }
 }

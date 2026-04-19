@@ -10,11 +10,7 @@ import { PASPEngine } from './p-asp.js';
 import { ActiveInferenceEngine } from './active-inference.js';
 import type { VPIRGraph, VPIRNode, VPIROutput, Evidence } from '../types/vpir.js';
 import type { SecurityLabel } from '../types/ifc.js';
-import type {
-  NaturalLanguageTask,
-  RefinementConfig,
-  LLMQuery,
-} from '../types/neurosymbolic.js';
+import type { NaturalLanguageTask } from '../types/neurosymbolic.js';
 import type {
   ProgramProperty,
   ProgramVerificationResult,
@@ -373,7 +369,7 @@ describe('RefinementPipeline', () => {
     const defaultProp = makeProperty(['obs'], 'default-prop');
     const taskProp = makeProperty(['obs'], 'task-prop');
 
-    let verifiedPropIds: string[] = [];
+    const verifiedPropIds: string[] = [];
 
     const verifier: PropertyVerifier = {
       async verifyProgramProperty(property) {

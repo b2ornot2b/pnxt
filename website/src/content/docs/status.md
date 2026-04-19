@@ -5,13 +5,15 @@ description: Current state, completed milestones, and roadmap for pnxt.
 
 # pnxt Project Status
 
-> Last updated: 2026-04-06 (Phase 7 complete — Sprint 15)
+> Last updated: 2026-04-19 (Phase 8 Sprint 16 complete — M5 delivered)
 
 ---
 
 ## Current State
 
-**Phase 7 ("Self-Hosting Paradigm") is complete.** All three milestones achieved: M2 (External Task Expression), M3 (LLM-Native Programming), and M4 (Self-Modification). Sprint 15 ("Verified Self-Modification + Research Frontier") delivered a **Causal Impact Analyzer**, **Modification Confidence Scorer**, **Self-Modification Orchestrator**, **5 Real Self-Modification Scenarios**, and **Phase 7 Comprehensive Evaluation**. The system can now express tasks in VPIR, generate VPIR autonomously, and modify its own pipeline with verified correctness. Total: **21 formally verified Z3 properties**, 83 test suites, 1485+ tests. Advisory panel composite score: **9.5/10**. See [status.md](https://github.com/b2ornot2b/pnxt/blob/main/status.md) for full details.
+**Phase 8 ("Operational Maturity") has begun.** Sprint 16 ("Durable VPIR Execution") delivered **M5 — Crash-Safe Execution**: a `VPIRJournal` durability substrate with `JournalEntry` and `JournalCheckpoint` records persisted through an in-memory implementation and a file-backed JSON store; `executeGraph` optionally journals every settled node on both sequential and parallel paths, preserving `SecurityLabel` verbatim across replay so IFC flow checks produce identical results; `resumeFromCheckpoint` reconstructs `ExecutionState` from the latest checkpoint and rejects structurally-changed graphs via SHA-256 content-hash validation; `Channel` and `Process` gained `getSnapshot`/`restore` interface contracts for future full-DPN replay. The weather-benchmark durability scenario (kill mid-graph, restart, verify identical outputs) passes end-to-end, with the journal file staying under the ADR-001 10 KB budget. ADR-001 is now **Accepted** with full Implementation Notes. Total: **21 formally verified Z3 properties**, 86 test suites, 1530+ tests. Advisory panel composite score target: **9.55/10**. See [status.md](https://github.com/b2ornot2b/pnxt/blob/main/status.md) for full details.
+
+**Phase 7 ("Self-Hosting Paradigm") is complete.** All three milestones achieved: M2 (External Task Expression), M3 (LLM-Native Programming), and M4 (Self-Modification). Sprint 15 ("Verified Self-Modification + Research Frontier") delivered a **Causal Impact Analyzer**, **Modification Confidence Scorer**, **Self-Modification Orchestrator**, **5 Real Self-Modification Scenarios**, and **Phase 7 Comprehensive Evaluation**. The system can now express tasks in VPIR, generate VPIR autonomously, and modify its own pipeline with verified correctness. Total: **21 formally verified Z3 properties**, 83 test suites, 1485+ tests. Advisory panel composite score: **9.5/10**.
 
 ### Completed Work
 
