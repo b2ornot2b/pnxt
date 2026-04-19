@@ -1,0 +1,43 @@
+---
+title: VPIR Graph Viewer
+description: Interactive, read-only visualisation of a VPIR reasoning graph. Sprint 19 (M8 — Dual Representation) Minimum Viable Viewer.
+template: splash
+---
+
+import VPIRGraphViewer from '../../../components/VPIRGraphViewer.tsx';
+import weatherBenchmark from '../../../fixtures/weather-benchmark.vpir.json';
+
+:::note[Read-only Minimum Viable Viewer]
+This page is the first human-visible surface for a generated VPIR graph
+(Sprint 19, Milestone M8 — "Dual Representation"). It renders the
+committed Weather-API benchmark fixture. Pan and zoom are enabled;
+hovering a node surfaces its IFC classification, trust level, and
+`verifiable` flag. **Bidirectional editing and the pre-execution review
+gate are deferred to later sprints.**
+:::
+
+## Weather benchmark pipeline
+
+The graph below is produced by running `scripts/export-vpir-fixtures.ts`
+against `createWeatherVPIRGraph` from
+[`src/benchmarks/weather-api-shim.ts`](https://github.com/b2ornot2b/pnxt/blob/main/src/benchmarks/weather-api-shim.ts).
+The JSON shape is exactly what `exportGraphToJSON`
+([`src/vpir/vpir-graph-export.ts`](https://github.com/b2ornot2b/pnxt/blob/main/src/vpir/vpir-graph-export.ts))
+emits — no runtime transformation. To regenerate after a benchmark
+change:
+
+```bash
+npx tsx scripts/export-vpir-fixtures.ts
+```
+
+<VPIRGraphViewer client:load graph={weatherBenchmark} />
+
+## Visual encoding
+
+| Attribute | Encoding |
+|-----------|----------|
+| Node fill | observation (blue), inference (amber), action (red), assertion (green), composition (purple), human (pink) |
+| Node border colour | IFC classification: public (grey), internal (yellow), confidential (orange), restricted (red), external (deep purple) |
+| Node border width | Trust level 0-4 (1px → 4px) |
+| Node shape | rectangle when `verifiable: true`, diamond (60% opacity) when `verifiable: false` |
+| Edge label | Data type flowing through the port |
