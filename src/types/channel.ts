@@ -146,6 +146,34 @@ export interface DataflowGraphDefinition {
 export type ProcessState = 'idle' | 'running' | 'completed' | 'failed';
 
 /**
+ * Snapshot of a Channel's durable state. Captures the current buffer
+ * contents in FIFO order and the channel's configured bufferSize so that
+ * restore() can validate the snapshot matches the target channel's
+ * geometry. Blocked senders/receivers are intentionally NOT captured —
+ * a Channel with pending waiters is not in a snapshot-safe state by the
+ * DPN bisimulation argument (see ADR-001).
+ *
+ * Sprint 16 — Phase 8, M5. Interface-only this sprint; full DPN replay
+ * that restores causal ordering across actors is a future sprint.
+ */
+export interface ChannelSnapshot<T = unknown> {
+  channelId: string;
+  buffer: T[];
+  bufferSize: number;
+  state: ChannelState;
+  timestamp: number;
+}
+
+/**
+ * Snapshot of a Process's durable state.
+ */
+export interface ProcessSnapshot {
+  processId: string;
+  state: ProcessState;
+  timestamp: number;
+}
+
+/**
  * Process behavior function: reads from input channels, writes to output channels.
  */
 export type ProcessFunction<TIn = unknown, TOut = unknown> = (

@@ -10,8 +10,15 @@
  * - Advisory Review 2026-04-05 (Robin Milner: "Where are the channels?")
  */
 
-import type { ChannelConfig, ChannelInterface, ChannelState, ChannelStats } from '../types/channel.js';
+import type {
+  ChannelConfig,
+  ChannelInterface,
+  ChannelSnapshot,
+  ChannelState,
+  ChannelStats,
+} from '../types/channel.js';
 import type { SecurityLabel } from '../types/ifc.js';
+import { ChannelSnapshotMismatchError } from '../errors/vpir-errors.js';
 
 interface Waiter<T> {
   resolve: (value: T) => void;
@@ -211,6 +218,54 @@ export class Channel<T> implements ChannelInterface<T> {
       }
       this.receivers = [];
     }
+  }
+
+  /**
+   * Capture the channel's durable state — buffer contents in FIFO order
+   * plus the configured bufferSize. Pending senders/receivers are not
+   * captured: a snapshot-safe channel has no blocked waiters. Callers
+   * should drain or quiesce the channel before snapshotting if waiters
+   * are possible.
+   *
+   * Sprint 16 — interface only. Full DPN replay that also restores
+   * causal ordering across multiple actors is a future sprint.
+   */
+  getSnapshot(): ChannelSnapshot<T> {
+    return {
+      channelId: this.id,
+      buffer: [...this.buffer],
+      bufferSize: this.bufferSize,
+      state: this.state,
+      timestamp: Date.now(),
+    };
+  }
+
+  /**
+   * Restore the channel's buffer from a snapshot. Validates that the
+   * snapshot was taken from a channel with the same id and bufferSize
+   * (throws ChannelSnapshotMismatchError otherwise). Existing buffer
+   * contents and state are replaced; pending waiters (if any) are left
+   * intact — callers should only restore on a freshly-constructed
+   * channel with no active traffic.
+   */
+  restore(snapshot: ChannelSnapshot<T>): void {
+    if (snapshot.channelId !== this.id) {
+      throw new ChannelSnapshotMismatchError(
+        `Cannot restore snapshot for channel ${snapshot.channelId} onto channel ${this.id}`,
+      );
+    }
+    if (snapshot.bufferSize !== this.bufferSize) {
+      throw new ChannelSnapshotMismatchError(
+        `Snapshot bufferSize=${snapshot.bufferSize} does not match channel bufferSize=${this.bufferSize}`,
+      );
+    }
+    if (snapshot.buffer.length > this.bufferSize) {
+      throw new ChannelSnapshotMismatchError(
+        `Snapshot buffer length ${snapshot.buffer.length} exceeds bufferSize ${this.bufferSize}`,
+      );
+    }
+    this.buffer = [...snapshot.buffer];
+    this.state = snapshot.state;
   }
 
   /**
