@@ -25,9 +25,11 @@ import type {
   ExecutionState,
   VPIRJournal,
 } from '../types/vpir-journal.js';
+import type { AuditEvent } from '../types/aci.js';
+import type { SecurityLabel } from '../types/ifc.js';
 import { validateGraph } from './vpir-validator.js';
 import { ACIError, AssertionError, HandlerError, SubGraphError } from '../errors/vpir-errors.js';
-import { canFlowTo } from '../types/ifc.js';
+import { canFlowTo, joinLabels } from '../types/ifc.js';
 import { analyzeParallelism, createInputHash, Semaphore } from './vpir-optimizer.js';
 import { assertCheckpointMatchesGraph, graphContentHash } from './vpir-journal.js';
 
@@ -129,7 +131,7 @@ export async function executeGraph(
     }
 
     const result = await executeSingleNode(
-      nodeId, graph, context, options, nodeOutputs, trace, errors,
+      nodeId, graph, context, options, nodeOutputs, trace, errors, journalSession,
     );
     if (result) return { ...result, durationMs: Date.now() - startTime };
 
@@ -260,7 +262,7 @@ async function executeParallel(
         if (waveFailed) return; // Skip if another node in this wave failed.
 
         const result = await executeSingleNode(
-          nodeId, graph, context, options, nodeOutputs, waveTraces, waveErrors,
+          nodeId, graph, context, options, nodeOutputs, waveTraces, waveErrors, journalSession,
         );
         if (result) {
           waveFailed = true;
@@ -324,6 +326,7 @@ async function executeSingleNode(
   nodeOutputs: Map<string, Map<string, unknown>>,
   trace: VPIRExecutionTrace[],
   errors: VPIRExecutionError[],
+  journalSession: JournalSession | undefined,
 ): Promise<Omit<VPIRExecutionResult, 'durationMs'> | null> {
   const node = graph.nodes.get(nodeId)!;
   const inputs = collectInputs(node, nodeOutputs);
@@ -345,8 +348,12 @@ async function executeSingleNode(
   try {
     let output: unknown;
 
-    // Check cache for deterministic nodes (observation, inference).
-    if (options?.cache && (node.type === 'observation' || node.type === 'inference')) {
+    // Human nodes are special: they suspend on an external gateway, so
+    // they must not be cached and they emit a pre-await checkpoint so
+    // crash-recovery can re-enter the wait. See Sprint 17 / M6.
+    if (node.type === 'human') {
+      output = await executeHuman(node, inputs, context, graph, journalSession);
+    } else if (options?.cache && (node.type === 'observation' || node.type === 'inference')) {
       const inputHash = createInputHash(inputs);
       const cached = await options.cache.get(nodeId, inputHash);
 
@@ -414,6 +421,14 @@ async function executeNode(
 
     case 'composition':
       return executeComposition(node, inputs, context);
+
+    case 'human':
+      // Human nodes are handled at the executeSingleNode level so that the
+      // journal session and graph are in scope. Reaching this branch means
+      // the caller bypassed the human-node special case — treat as a bug.
+      throw new HandlerError(
+        'Human nodes must be executed via executeSingleNode; direct executeNode invocation is unsupported',
+      );
 
     default:
       throw new Error(`Unknown node type: ${node.type}`);
@@ -557,6 +572,140 @@ async function executeComposition(
   }
 
   return result.outputs;
+}
+
+/**
+ * Execute a human-in-the-loop node (Sprint 17, M6).
+ *
+ * Semantics:
+ *   1. Throw if no humanGateway is configured on the context.
+ *   2. Enforce the `human.attention` capability if a capabilityGuard is present.
+ *   3. Compute `inputJoin` — the provenance join of every predecessor label.
+ *   4. Emit a pre-await checkpoint so a crash between prompt-issued and
+ *      response-received can be resumed without losing prior settled nodes.
+ *   5. Delegate to `gateway.prompt(...)`.
+ *   6. Derive `responseLabel = joinLabels(humanLabel, inputJoin)`.
+ *   7. Emit an AuditEvent with actor.type = 'human'.
+ *   8. Return the human's response value.
+ */
+async function executeHuman(
+  node: VPIRNode,
+  inputs: Map<string, unknown>,
+  context: VPIRExecutionContext,
+  graph: VPIRGraph,
+  journalSession: JournalSession | undefined,
+): Promise<unknown> {
+  if (!context.humanGateway) {
+    throw new HandlerError(
+      `Human node "${node.id}" requires a humanGateway on the execution context`,
+    );
+  }
+
+  if (context.capabilityGuard) {
+    const allowed = await context.capabilityGuard('human.attention');
+    if (!allowed) {
+      throw new HandlerError(
+        `Human node "${node.id}" requires the 'human.attention' capability`,
+      );
+    }
+  }
+
+  const spec = node.humanPromptSpec;
+  if (!spec) {
+    throw new HandlerError(
+      `Human node "${node.id}" is missing its humanPromptSpec`,
+    );
+  }
+
+  const inputJoin = computeInputJoin(node, graph, context.agentId);
+
+  if (journalSession) {
+    await journalPreAwaitCheckpoint(journalSession, graph);
+  }
+
+  const response = await context.humanGateway.prompt({
+    promptId: node.id,
+    message: spec.message,
+    context: inputs,
+    requesterLabel: node.label,
+    timeout: spec.timeout,
+    requiresExplicitProvenance: spec.requiresExplicitProvenance,
+  });
+
+  const humanLabel: SecurityLabel = {
+    owner: response.humanId,
+    trustLevel: 4,
+    classification: node.label.classification,
+    createdAt: new Date(response.respondedAt).toISOString(),
+  };
+  const responseLabel = joinLabels(humanLabel, inputJoin);
+
+  if (context.humanAuditSink) {
+    const event: AuditEvent = {
+      id: `audit-${node.id}-${response.respondedAt}`,
+      timestamp: new Date(response.respondedAt).toISOString(),
+      category: 'action',
+      actor: { type: 'human', id: response.humanId },
+      event: node.operation,
+      details: {
+        nodeId: node.id,
+        promptMessage: spec.message,
+        responseLabel,
+      },
+      requestId: `vpir-${node.id}`,
+      result: 'success',
+    };
+    await context.humanAuditSink(event);
+  }
+
+  return response.response;
+}
+
+/**
+ * Compute the provenance join over a node's predecessor labels.
+ * Starts from a baseline label so a human node with zero inputs still
+ * produces a valid joined label.
+ */
+function computeInputJoin(
+  node: VPIRNode,
+  graph: VPIRGraph,
+  agentId: string,
+): SecurityLabel {
+  let acc: SecurityLabel = {
+    owner: agentId,
+    trustLevel: 0,
+    classification: 'public',
+    createdAt: new Date().toISOString(),
+  };
+
+  for (const ref of node.inputs) {
+    const source = graph.nodes.get(ref.nodeId);
+    if (source) {
+      acc = joinLabels(acc, source.label);
+    }
+  }
+  return acc;
+}
+
+/**
+ * Emit a pre-await checkpoint for a human node. The checkpoint snapshots
+ * the already-settled nodes so a crash during `gateway.prompt()` can
+ * resume without re-executing their handlers. The human node itself is
+ * not yet in `completedNodes`, so on resume its gateway is re-invoked;
+ * idempotent gateway surfaces de-duplicate by `promptId`.
+ */
+async function journalPreAwaitCheckpoint(
+  session: JournalSession,
+  graph: VPIRGraph,
+): Promise<void> {
+  const checkpointId = `cp-${graph.id}-${String(session.nextCheckpoint++).padStart(6, '0')}-preawait`;
+  await session.journal.recordCheckpoint({
+    checkpointId,
+    graphId: graph.id,
+    graphHash: session.graphHash,
+    completedNodeIds: [...session.completedNodes],
+    timestamp: Date.now(),
+  });
 }
 
 /**
