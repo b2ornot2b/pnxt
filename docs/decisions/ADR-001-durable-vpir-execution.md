@@ -1,6 +1,6 @@
 # ADR-001: Durable Execution for VPIR Interpreter and DPN Runtime
 
-**Status**: Proposed
+**Status**: Accepted (Sprint 16 landed 2026-04-19)
 **Date**: 2026-04-19
 **Deciders**: pnxt research team
 
@@ -147,6 +147,62 @@ Restate (Option 1) is the target for a future sprint once: (a) the `VPIRJournal`
 3. **DPN bisimulation under partial resume.** If the interpreter-level journal resumes mid-graph but the DPN runtime is restarted from scratch, the channel messages already consumed by completed processes are gone. This breaks causal ordering for the remaining processes. The journal must be treated as interpreter-only until a companion DPN channel log is designed.
 
 4. **Concurrent access.** `FileStorageBackend` is documented as "not designed for concurrent access" (`src/memory/storage-backend.ts:55`). Multi-process or multi-agent scenarios must not share a journal file.
+
+---
+
+## Implementation Notes (Sprint 16, 2026-04-19)
+
+The decision was realised with a bespoke `VPIRJournal` backed by a
+file-JSON read-modify-write persistence strategy. Key details recorded here
+for future revisitations of this ADR:
+
+- **Schema version constant**: `JOURNAL_SCHEMA_VERSION = 1` exported from
+  both `src/types/vpir-journal.ts` (type-only) and re-exported from
+  `src/vpir/vpir-journal.ts`. Bump when `JournalEntry`/`JournalCheckpoint`
+  shape changes in a way that invalidates prior entries.
+- **Graph content hash**: SHA-256 (`node:crypto`) of a canonicalised
+  adjacency payload — nodes sorted by id, edges and outputs lex-sorted,
+  value fields included. `graphContentHash(graph)` is stable across Map
+  iteration order; structural mutation (add node, reroute edge) flips the
+  hash, causing `resumeFromCheckpoint` to throw `JournalGraphHashError`.
+- **Checkpoint cadence**: every successful node emits both a
+  `JournalEntry` and a `JournalCheckpoint` carrying the running
+  `completedNodeIds` set. This deviates from the original
+  "after each assertion" design in the Sprint 16 doc — the weather graph
+  has its only assertion as its terminal, so per-node checkpoints are the
+  useful granularity for crash recovery.
+- **Parallel-path journaling**: `executeParallel` journals each settled
+  node in a wave and then emits checkpoints one per node. Intra-wave
+  ordering is immaterial for replay because wave members have no data
+  dependencies on each other by the parallelism invariant.
+- **SIGKILL equivalence**: the Sprint 16 durability test uses a fresh
+  `FileBackedJournal` instance reading the same file to simulate a
+  process restart (`src/benchmarks/weather-api-durability.test.ts`). This
+  is functionally equivalent to true SIGKILL+restart under the R-M-W
+  persistence model because there is no buffered state between `append`
+  calls — every entry is fsynced (via `writeFile`) before `append`
+  resolves. A cross-process SIGKILL test was judged unnecessary risk
+  relative to return.
+- **Observed journal file size**: for the full 7-node weather benchmark
+  run, the JSON file is approximately 6–8 KB (well under the informal
+  10 KB budget). A full test (`journal file stays below the ADR-001 10 KB
+  budget for a full run`) asserts this threshold on CI.
+- **Known limitation — append performance**: every `append()` reads,
+  mutates, then rewrites the whole JSON file. O(n²) in number of journal
+  records. Acceptable at weather-benchmark scale; unacceptable for longer
+  runs. Follow-on sprint: replace with newline-delimited JSON append-only
+  writes (`fs.appendFile`) and a scan-backwards reader.
+- **Concurrent access constraint**: `FileBackedJournal` inherits the
+  "not safe for concurrent access" documentation from `FileStorageBackend`.
+  Multi-process journaling requires a concurrent-safe backend (e.g.,
+  a database or append-only log service) — out of scope for Sprint 16.
+- **Channel/Process snapshot contracts**: `getSnapshot`/`restore` landed
+  as interfaces only this sprint (`src/channel/channel.ts`,
+  `src/channel/process.ts`). Pending senders/receivers are intentionally
+  NOT captured — a snapshot-safe channel has no blocked waiters. Full
+  DPN replay that restores causal message ordering across actors is a
+  future sprint; this interface lets a later channel-log implementation
+  plug in without modifying callers.
 
 ---
 
