@@ -39,6 +39,8 @@ function vpirTypeToObjectKind(type: VPIRNode['type']): HoTTObjectKind {
       return 'type';       // An invariant/postcondition: a type (proposition)
     case 'composition':
       return 'context';    // Aggregation: a context (environment)
+    case 'human':
+      return 'term';       // Human-attested value: a term (externally produced)
   }
 }
 

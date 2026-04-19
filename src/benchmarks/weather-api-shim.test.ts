@@ -2,10 +2,14 @@ import {
   createWeatherToolRegistration,
   createWeatherToolHandler,
   createWeatherVPIRGraph,
+  createWeatherVPIRGraphWithApproval,
   createWeatherExecutionContext,
   createWeatherBenchmarkDefinition,
   runWeatherPipeline,
+  addApprovalGateHandler,
 } from './weather-api-shim.js';
+import { executeGraph } from '../vpir/vpir-interpreter.js';
+import { NoopHumanGateway } from '../vpir/human-gateway.js';
 import { DPNRuntime } from '../channel/dpn-runtime.js';
 import { BenchmarkRunner } from './benchmark-runner.js';
 import { validateGraph } from '../vpir/vpir-validator.js';
@@ -383,6 +387,55 @@ describe('Weather API Shim', () => {
       const result = await runner.runOne('weather-api-shim');
       const stageNames = result.stages.map((s) => s.name);
       expect(stageNames).toEqual(['bridge', 'validate', 'categorize', 'compile', 'execute']);
+    });
+  });
+
+  // Sprint 17 / M6 — operator-approval gate.
+  describe('operator-approval gate', () => {
+    it('runs the gated pipeline end-to-end with NoopHumanGateway', async () => {
+      const label = makeLabel();
+      const graph = createWeatherVPIRGraphWithApproval('Weather in Tokyo', label);
+      const baseCtx = createWeatherExecutionContext(
+        makeGateway(),
+        'weather-benchmark-agent',
+        label,
+      );
+      const ctx = addApprovalGateHandler(baseCtx);
+
+      const gateway = new NoopHumanGateway({ response: 'approved', humanId: 'ci-operator' });
+      const result = await executeGraph(graph, { ...ctx, humanGateway: gateway });
+
+      expect(result.status).toBe('completed');
+      expect(gateway.calls).toBe(1);
+    });
+
+    it('fails the pipeline when the operator rejects the fetch', async () => {
+      const label = makeLabel();
+      const graph = createWeatherVPIRGraphWithApproval('Weather in Tokyo', label);
+      const ctx = addApprovalGateHandler(
+        createWeatherExecutionContext(makeGateway(), 'weather-benchmark-agent', label),
+      );
+
+      const gateway = new NoopHumanGateway({ response: 'denied', humanId: 'ci-operator' });
+      const result = await executeGraph(graph, { ...ctx, humanGateway: gateway });
+
+      expect(result.status).toBe('failed');
+      expect(result.errors.some((e) => /did not approve/.test(e.message))).toBe(true);
+    });
+
+    it('includes the human approve-fetch node routed through the gate', () => {
+      const label = makeLabel();
+      const graph = createWeatherVPIRGraphWithApproval('Weather in Tokyo', label);
+
+      const human = graph.nodes.get('approve-fetch')!;
+      expect(human.type).toBe('human');
+      expect(human.verifiable).toBe(false);
+      expect(human.humanPromptSpec?.requiresExplicitProvenance).toBe(true);
+
+      // action-fetch now consumes the gate's output, not prepare-request directly.
+      const action = graph.nodes.get('action-fetch')!;
+      expect(action.inputs).toHaveLength(1);
+      expect(action.inputs[0].nodeId).toBe('verify-approval');
     });
   });
 });

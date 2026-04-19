@@ -25,14 +25,23 @@ import { CLASSIFICATION_ORDER } from '../types/ifc.js';
 
 /**
  * Status of a single verified property.
+ *
+ * `uninterpretable` (Sprint 17 / M6) is used when a subgraph contains a
+ * 'human' VPIR node: the verifier treats the node's output as an
+ * uninterpreted function and declines to decide the surrounding property.
+ * Machine subgraphs on the same graph are still verified normally.
  */
 export interface PropertyStatus {
   /** Property name. */
   name: string;
   /** Verification outcome. */
-  status: 'verified' | 'violated' | 'unknown';
+  status: 'verified' | 'violated' | 'unknown' | 'uninterpretable';
   /** Details about the violation or verification. */
   details?: string;
+  /** Machine-readable reason for uninterpretable/unknown statuses. */
+  reason?: 'human-node' | 'solver-timeout' | 'other';
+  /** Node IDs contributing to this status, when applicable. */
+  affectedNodes?: string[];
 }
 
 /**
@@ -295,6 +304,34 @@ async function verifyHandlerTrust(
   }
 }
 
+// ── Human Node Handling (Sprint 17 / M6) ────────────────────────────
+
+/**
+ * Emit an uninterpretable-property marker for each human node in the graph.
+ * Human nodes are modelled as uninterpreted functions `f_human(inputs)` with
+ * a single semantic constraint: the output label is the provenance join of
+ * the node's human label and all input labels. Z3 cannot reason across the
+ * human node, so properties that flow through it are reported as
+ * `uninterpretable` rather than `verified` or `violated`.
+ *
+ * Machine subgraphs are still verified by the other property checks.
+ */
+function markHumanNodes(graph: VPIRGraph): PropertyStatus | null {
+  const humanNodeIds = Array.from(graph.nodes.values())
+    .filter((n) => n.type === 'human')
+    .map((n) => n.id);
+
+  if (humanNodeIds.length === 0) return null;
+
+  return {
+    name: 'human_nodes_uninterpretable',
+    status: 'uninterpretable',
+    reason: 'human-node',
+    affectedNodes: humanNodeIds,
+    details: `Graph contains ${humanNodeIds.length} human node(s); surrounding properties remain verified on the machine subgraph.`,
+  };
+}
+
 // ── Main Verifier ───────────────────────────────────────────────────
 
 /**
@@ -316,15 +353,27 @@ export async function verifyGraphProperties(
   const start = performance.now();
   const z3 = z3ctx.api as any;
 
-  const properties = await Promise.all([
+  const coreProperties = await Promise.all([
     verifyAcyclicity(graph, z3),
     verifyInputCompleteness(graph, z3),
     verifyIFCMonotonicity(graph, z3),
     verifyHandlerTrust(graph, z3, registry),
   ]);
 
+  const properties: PropertyStatus[] = [...coreProperties];
+  const humanMarker = markHumanNodes(graph);
+  if (humanMarker) properties.push(humanMarker);
+
   const z3TimeMs = performance.now() - start;
-  const verified = properties.every((p) => p.status === 'verified');
+
+  // Overall verification: every property must be verified OR uninterpretable-
+  // due-to-human-node. Machine-only graphs are unchanged; graphs containing
+  // human nodes are not rejected, they are simply reported as having a
+  // bounded uninterpretable region.
+  const verified = properties.every(
+    (p) => p.status === 'verified' ||
+      (p.status === 'uninterpretable' && p.reason === 'human-node'),
+  );
 
   return { verified, properties, z3TimeMs };
 }

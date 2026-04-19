@@ -3,6 +3,8 @@ import {
   compareVersions,
   formatVersion,
   isVersionCompatible,
+  registerHumanAttentionCapability,
+  HUMAN_ATTENTION_CAPABILITY,
 } from './capability-negotiation.js';
 import type { OfferedCapability } from '../types/capability.js';
 import type { TrustLevel } from '../types/agent.js';
@@ -339,5 +341,44 @@ describe('InMemoryCapabilityNegotiation', () => {
 
       expect(negotiation.hasCapability('agent-1', 'file.read')).toBe(false);
     });
+  });
+});
+
+describe('registerHumanAttentionCapability (Sprint 17)', () => {
+  it('registers the standard human.attention capability', () => {
+    const negotiation = new InMemoryCapabilityNegotiation({
+      trustResolver: () => 4,
+    });
+    registerHumanAttentionCapability(negotiation);
+
+    const offered = negotiation.listOfferedCapabilities();
+    expect(offered.map((c) => c.operation)).toContain('human.attention');
+    expect(HUMAN_ATTENTION_CAPABILITY.requiredTrustLevel).toBe(3);
+  });
+
+  it('is idempotent', () => {
+    const negotiation = new InMemoryCapabilityNegotiation({
+      trustResolver: () => 4,
+    });
+    registerHumanAttentionCapability(negotiation);
+    registerHumanAttentionCapability(negotiation);
+
+    const offered = negotiation.listOfferedCapabilities();
+    expect(offered.filter((c) => c.operation === 'human.attention')).toHaveLength(1);
+  });
+
+  it('denies human.attention to an agent below the required trust', () => {
+    const negotiation = new InMemoryCapabilityNegotiation({
+      trustResolver: () => 1,
+    });
+    registerHumanAttentionCapability(negotiation);
+
+    const result = negotiation.negotiate({
+      agentId: 'low-trust',
+      requested: [{ operation: 'human.attention', minVersion: { major: 1, minor: 0, patch: 0 } }],
+    });
+
+    expect(result.granted).toHaveLength(0);
+    expect(result.denied[0].reason).toMatch(/Insufficient trust/);
   });
 });

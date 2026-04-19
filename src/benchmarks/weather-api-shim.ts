@@ -252,6 +252,108 @@ export function createWeatherVPIRGraph(
   };
 }
 
+/**
+ * Variant of the weather pipeline that interposes a human approval gate
+ * before the outbound `getWeather` action — the "commit" step. Sprint 17
+ * (M6) uses this benchmark to prove the HITL primitive is wired end-to-
+ * end through validator, interpreter, and ACI gateway.
+ *
+ * The graph is identical to `createWeatherVPIRGraph` except that:
+ *   - A `'human'` node `approve-fetch` sits between `prepare-request`
+ *     and `action-fetch`.
+ *   - `action-fetch` consumes the human's decision on a new port.
+ *
+ * In CI, swap in a `NoopHumanGateway({ response: 'approved' })`. For
+ * interactive development, swap in a `CLIHumanGateway()` — no other
+ * changes are required.
+ */
+export function createWeatherVPIRGraphWithApproval(
+  query: string,
+  label: SecurityLabel,
+): VPIRGraph {
+  const base = createWeatherVPIRGraph(query, label);
+  const now = new Date().toISOString();
+
+  // Human node reads the prepared request, emits a decision string.
+  const human: VPIRNode = {
+    id: 'approve-fetch',
+    type: 'human',
+    operation: 'operator-approves-weather-fetch',
+    inputs: [{ nodeId: 'prepare-request', port: 'request', dataType: 'object' }],
+    outputs: [{ port: 'decision', dataType: 'string' }],
+    evidence: [{ type: 'data', source: 'operator', confidence: 1.0 }],
+    label,
+    verifiable: false,
+    createdAt: now,
+    humanPromptSpec: {
+      message: 'Approve outbound weather API fetch?',
+      requiresExplicitProvenance: true,
+    },
+  };
+
+  // Gate inference: forwards `prepare-request.request` only if the decision
+  // is an approval. Any other decision throws, failing the pipeline before
+  // the outbound action runs. This is the machine-side enforcement of the
+  // operator's answer and keeps `action-fetch`'s handler unchanged.
+  const gateInference: VPIRNode = {
+    id: 'verify-approval',
+    type: 'inference',
+    operation: 'verify-approval',
+    inputs: [
+      { nodeId: 'prepare-request', port: 'request', dataType: 'object' },
+      { nodeId: 'approve-fetch', port: 'decision', dataType: 'string' },
+    ],
+    outputs: [{ port: 'request', dataType: 'object' }],
+    evidence: [{ type: 'rule', source: 'approval-gate', confidence: 1.0 }],
+    label,
+    verifiable: true,
+    createdAt: now,
+  };
+
+  // Rewire action-fetch to consume the gate's output instead of the raw
+  // prepare-request. Handler semantics at action-fetch are unchanged.
+  const actionFetch = base.nodes.get('action-fetch')!;
+  const gatedActionFetch: VPIRNode = {
+    ...actionFetch,
+    inputs: [{ nodeId: 'verify-approval', port: 'request', dataType: 'object' }],
+  };
+
+  const nodes = new Map<string, VPIRNode>(base.nodes);
+  nodes.set(human.id, human);
+  nodes.set(gateInference.id, gateInference);
+  nodes.set(gatedActionFetch.id, gatedActionFetch);
+
+  return {
+    ...base,
+    id: 'weather-pipeline-gated',
+    name: 'Weather API Query Pipeline (operator-approved)',
+    nodes,
+  };
+}
+
+/**
+ * Install the approval-gate inference handler onto an execution context.
+ * Returns a new context — the original is unchanged. Sprint 17 / M6.
+ */
+export function addApprovalGateHandler(
+  context: VPIRExecutionContext,
+): VPIRExecutionContext {
+  const handlers = new Map(context.handlers);
+  handlers.set('verify-approval', async (inputs) => {
+    let request: unknown;
+    let decision: unknown;
+    for (const [key, value] of inputs) {
+      if (key.includes('request')) request = value;
+      if (key.includes('decision')) decision = value;
+    }
+    if (decision !== 'approved') {
+      throw new Error(`Operator did not approve weather fetch (decision=${String(decision)})`);
+    }
+    return request;
+  });
+  return { ...context, handlers };
+}
+
 // ── Execution Context ───────────────────────────────────────────────
 
 /**

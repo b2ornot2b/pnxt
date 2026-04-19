@@ -21,6 +21,55 @@ export type InferenceHandler = (inputs: Map<string, unknown>) => Promise<unknown
 export type AssertionHandler = (inputs: Map<string, unknown>) => Promise<boolean>;
 
 /**
+ * Request payload delivered to a HumanGateway (Sprint 17, M6).
+ */
+export interface HumanGatewayRequest {
+  /** Stable identifier for this prompt — typically the VPIR node id. */
+  promptId: string;
+
+  /** Prompt text to surface to the human. */
+  message: string;
+
+  /** Named inputs collected from predecessor nodes. */
+  context: Map<string, unknown>;
+
+  /** Label of the requesting node (used for provenance surfacing). */
+  requesterLabel: SecurityLabel;
+
+  /** Optional timeout in milliseconds. */
+  timeout?: number;
+
+  /**
+   * When true, the gateway surface must display the joined provenance
+   * summary to the operator before accepting a response.
+   */
+  requiresExplicitProvenance?: boolean;
+}
+
+/**
+ * Response returned by a HumanGateway (Sprint 17, M6).
+ */
+export interface HumanGatewayResponse {
+  /** Value supplied by the human. */
+  response: unknown;
+
+  /** Identifier of the human operator that responded. */
+  humanId: string;
+
+  /** Unix timestamp (ms) at which the response was produced. */
+  respondedAt: number;
+}
+
+/**
+ * Pluggable delivery surface for human-in-the-loop prompts (Sprint 17, M6).
+ * Implementations include CLIHumanGateway (stdin/stdout), NoopHumanGateway
+ * (test double), and future HTTP/Slack/email surfaces.
+ */
+export interface HumanGateway {
+  prompt(req: HumanGatewayRequest): Promise<HumanGatewayResponse>;
+}
+
+/**
  * Context for executing a VPIR graph.
  */
 export interface VPIRExecutionContext {
@@ -59,6 +108,27 @@ export interface VPIRExecutionContext {
 
   /** Sub-graph resolver for composition nodes. */
   subGraphResolver?: (graphId: string) => Promise<import('./vpir.js').VPIRGraph | undefined>;
+
+  /**
+   * Optional delivery surface for 'human' VPIR nodes (Sprint 17, M6).
+   * Required when the graph contains any node with type === 'human';
+   * otherwise optional so existing graphs are unaffected.
+   */
+  humanGateway?: HumanGateway;
+
+  /**
+   * Optional capability guard for 'human' nodes. Called with the capability
+   * name `'human.attention'` before the gateway is invoked; a false return
+   * throws and no prompt is issued.
+   */
+  capabilityGuard?: (capability: string) => boolean | Promise<boolean>;
+
+  /**
+   * Optional audit sink for events emitted by executeHuman. When provided,
+   * the interpreter appends an `AuditEvent` with actor.type === 'human'
+   * after the gateway resolves.
+   */
+  humanAuditSink?: (event: import('./aci.js').AuditEvent) => void | Promise<void>;
 }
 
 /**

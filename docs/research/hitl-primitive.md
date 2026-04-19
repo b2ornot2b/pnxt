@@ -1,8 +1,23 @@
 # Human-in-the-Loop (HITL) VPIR Primitive
 
-**Status**: Proposal — not implemented  
-**Depends on**: Track 1 Durability (VPIRJournal, not yet implemented)  
-**Comparison motivation**: Weft (WeaveMindAI/weft) programs pause for days awaiting a human response through the same code path as an LLM call. pnxt has no equivalent.
+**Status**: Accepted and Implemented — Sprint 17 (M6)
+**Depends on**: Track 1 Durability (VPIRJournal — delivered in Sprint 16)
+**Comparison motivation**: Weft (WeaveMindAI/weft) programs pause for days awaiting a human response through the same code path as an LLM call. pnxt now has the equivalent via the `'human'` VPIR node type and `HumanGateway` interface.
+
+## Implementation cross-reference (Sprint 17)
+
+| Area | File(s) |
+|---|---|
+| Node type + prompt spec | `src/types/vpir.ts` |
+| Gateway types + context | `src/types/vpir-execution.ts` |
+| Gateway implementations | `src/vpir/human-gateway.ts` |
+| Interpreter `executeHuman` | `src/vpir/vpir-interpreter.ts` |
+| Validator invariants | `src/vpir/vpir-validator.ts` |
+| NL protocol `human-approval` | `src/protocol/nl-protocol.ts`, `src/types/protocol.ts` |
+| Capability `human.attention` | `src/capability/capability-negotiation.ts` |
+| Z3 uninterpretable marker | `src/verification/z3-graph-verifier.ts` |
+| Weather benchmark gate | `src/benchmarks/weather-api-shim.ts` |
+| Sprint doc | `docs/sprints/sprint-17-hitl-primitive.md` |
 
 ---
 

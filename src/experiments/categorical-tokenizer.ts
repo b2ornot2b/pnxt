@@ -263,6 +263,9 @@ function nodeTypeToCategory(type: VPIRNodeType): TokenCategory {
     case 'action': return 'action';
     case 'assertion': return 'assertion';
     case 'composition': return 'composition';
+    // Human nodes are treated as observations for tokenization purposes —
+    // they introduce a value from an external (non-machine) source.
+    case 'human': return 'observation';
   }
 }
 

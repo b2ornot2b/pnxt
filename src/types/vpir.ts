@@ -22,7 +22,26 @@ export type VPIRNodeType =
   | 'observation'  // Raw data from external source
   | 'action'       // Side-effecting operation
   | 'assertion'    // Claimed invariant or postcondition
-  | 'composition'; // Aggregation of sub-nodes
+  | 'composition'  // Aggregation of sub-nodes
+  | 'human';       // Human-in-the-loop (Sprint 17, M6)
+
+/**
+ * Specification for a human-in-the-loop prompt (Sprint 17, M6).
+ * Attached to nodes with type === 'human'.
+ */
+export interface HumanPromptSpec {
+  /** Prompt text shown to the human. */
+  message: string;
+
+  /** Milliseconds to wait for a response. Undefined means wait indefinitely. */
+  timeout?: number;
+
+  /**
+   * When true, the gateway surface must surface the joined input label to
+   * the operator before accepting a response.
+   */
+  requiresExplicitProvenance?: boolean;
+}
 
 /**
  * Evidence supporting a VPIR node's validity.
@@ -93,6 +112,12 @@ export interface VPIRNode {
 
   /** Optional lambda calculus denotation (semantic foundation — Sprint 6). */
   lambdaSemantics?: LambdaTerm;
+
+  /**
+   * Optional human-prompt specification. Required when `type === 'human'`;
+   * must be absent for all other node types. See Sprint 17 / M6.
+   */
+  humanPromptSpec?: HumanPromptSpec;
 }
 
 /**

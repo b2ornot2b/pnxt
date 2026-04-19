@@ -237,4 +237,51 @@ describe('Z3 Graph Pre-Verification', () => {
       expect(result.verified).toBe(false);
     });
   });
+
+  // Sprint 17 / M6 — human nodes as uninterpreted functions
+  describe('human nodes', () => {
+    it('marks human nodes as uninterpretable without failing overall verification', async () => {
+      const a = makeNode({ id: 'a' });
+      const h = makeNode({
+        id: 'h',
+        type: 'human',
+        operation: 'approve',
+        inputs: [{ nodeId: 'a', port: 'data', dataType: 'string' }],
+        outputs: [{ port: 'decision', dataType: 'string' }],
+        verifiable: false,
+        humanPromptSpec: { message: 'ok?' },
+      });
+      const graph = makeGraph([a, h], ['a'], ['h']);
+
+      const result = await verifyGraphProperties(graph, ctx);
+
+      // Overall verification still passes — the human region is reported
+      // as bounded uninterpretable, not as a violation.
+      expect(result.verified).toBe(true);
+
+      const marker = result.properties.find((p) => p.name === 'human_nodes_uninterpretable');
+      expect(marker).toBeDefined();
+      expect(marker!.status).toBe('uninterpretable');
+      expect(marker!.reason).toBe('human-node');
+      expect(marker!.affectedNodes).toEqual(['h']);
+    });
+
+    it('does not add a human marker when the graph has no human nodes (regression)', async () => {
+      const a = makeNode({ id: 'a' });
+      const b = makeNode({
+        id: 'b',
+        type: 'inference',
+        inputs: [{ nodeId: 'a', port: 'data', dataType: 'string' }],
+      });
+      const graph = makeGraph([a, b], ['a'], ['b']);
+
+      const result = await verifyGraphProperties(graph, ctx);
+      expect(result.verified).toBe(true);
+      expect(
+        result.properties.some((p) => p.name === 'human_nodes_uninterpretable'),
+      ).toBe(false);
+      // Original four property reports unchanged.
+      expect(result.properties).toHaveLength(4);
+    });
+  });
 });

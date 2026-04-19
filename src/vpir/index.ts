@@ -56,6 +56,12 @@ export type {
   JournalRecord,
   VPIRJournal,
 } from './vpir-journal.js';
+export { CLIHumanGateway, NoopHumanGateway } from './human-gateway.js';
+export type {
+  HumanGateway,
+  HumanGatewayRequest,
+  HumanGatewayResponse,
+} from './human-gateway.js';
 export { SelfModificationOrchestrator } from './self-modification-orchestrator.js';
 export type {
   ProposalStatus,

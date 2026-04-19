@@ -70,6 +70,31 @@ describe('IFC Label Lattice', () => {
       expect(joined.classification).toBe('internal');
     });
   });
+
+  // Sprint 17 / M6 — provenance-join rule for human-in-the-loop responses.
+  describe('HITL provenance join', () => {
+    it('trust-4-launders-trust-0 is rejected when flowing into a low-trust sink', () => {
+      // Sprint 17 responseLabel = joinLabels(humanLabel@4, inputJoin)
+      const humanLabel = createLabel('operator', 4, 'internal');
+      const inputJoin = createLabel('agent-a', 0, 'public');
+      const responseLabel = joinLabels(humanLabel, inputJoin);
+
+      // The human attestation does not erase the trust ceiling: the
+      // responseLabel carries the human trust level, so a downstream
+      // trust-0 sink cannot consume it (high-to-low flow is blocked).
+      const lowSink = createLabel('public-log', 0, 'public');
+      expect(canFlowTo(responseLabel, lowSink)).toBe(false);
+    });
+
+    it('preserves classification ceiling through the join', () => {
+      const humanLabel = createLabel('operator', 4, 'internal');
+      const confidentialInput = createLabel('agent-a', 2, 'confidential');
+
+      const responseLabel = joinLabels(humanLabel, confidentialInput);
+      expect(responseLabel.classification).toBe('confidential');
+      expect(responseLabel.trustLevel).toBe(4);
+    });
+  });
 });
 
 describe('MemoryService IFC Enforcement', () => {

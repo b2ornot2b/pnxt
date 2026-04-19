@@ -1,6 +1,9 @@
-import { executeGraph } from './vpir-interpreter.js';
+import { executeGraph, resumeFromCheckpoint } from './vpir-interpreter.js';
+import { NoopHumanGateway } from './human-gateway.js';
+import { InMemoryJournal } from './vpir-journal.js';
 import type { VPIRNode, VPIRGraph } from '../types/vpir.js';
 import type { VPIRExecutionContext } from '../types/vpir-execution.js';
+import type { AuditEvent } from '../types/aci.js';
 import { createLabel } from '../types/ifc.js';
 
 function makeNode(overrides: Partial<VPIRNode> = {}): VPIRNode {
@@ -722,6 +725,162 @@ describe('executeGraph', () => {
       expect(result.status).toBe('completed');
       expect(result.outputs['multi:half']).toBe(5);
       expect(result.outputs['multi:double']).toBe(20);
+    });
+  });
+
+  describe('human nodes (Sprint 17)', () => {
+    it('executes a human node through the configured gateway', async () => {
+      const human = makeNode({
+        id: 'hum-1',
+        type: 'human',
+        operation: 'operator-approval',
+        inputs: [],
+        outputs: [{ port: 'decision', dataType: 'string' }],
+        label: createLabel('agent-a', 4, 'internal'),
+        verifiable: false,
+        humanPromptSpec: { message: 'Approve?' },
+      });
+
+      const graph = makeGraph([human], ['hum-1'], ['hum-1']);
+      const gateway = new NoopHumanGateway({ response: 'approved', humanId: 'alice' });
+      const audit: AuditEvent[] = [];
+
+      const result = await executeGraph(
+        graph,
+        makeContext({
+          humanGateway: gateway,
+          humanAuditSink: (e) => {
+            audit.push(e);
+          },
+        }),
+      );
+
+      expect(result.status).toBe('completed');
+      expect(result.outputs['hum-1:decision']).toBe('approved');
+      expect(gateway.calls).toBe(1);
+      expect(audit).toHaveLength(1);
+      expect(audit[0].actor).toEqual({ type: 'human', id: 'alice' });
+      expect(audit[0].event).toBe('operator-approval');
+    });
+
+    it('fails when no humanGateway is provided', async () => {
+      const human = makeNode({
+        id: 'hum-1',
+        type: 'human',
+        operation: 'operator-approval',
+        inputs: [],
+        outputs: [{ port: 'decision', dataType: 'string' }],
+        label: createLabel('agent-a', 4, 'internal'),
+        verifiable: false,
+        humanPromptSpec: { message: 'Approve?' },
+      });
+
+      const graph = makeGraph([human], ['hum-1'], ['hum-1']);
+      const result = await executeGraph(graph, makeContext());
+
+      expect(result.status).toBe('failed');
+      expect(result.errors[0].message).toMatch(/humanGateway/);
+    });
+
+    it('rejects when the human.attention capability is denied', async () => {
+      const human = makeNode({
+        id: 'hum-1',
+        type: 'human',
+        operation: 'operator-approval',
+        inputs: [],
+        outputs: [{ port: 'decision', dataType: 'string' }],
+        label: createLabel('agent-a', 4, 'internal'),
+        verifiable: false,
+        humanPromptSpec: { message: 'Approve?' },
+      });
+
+      const graph = makeGraph([human], ['hum-1'], ['hum-1']);
+      const gateway = new NoopHumanGateway({ response: 'approved' });
+
+      const result = await executeGraph(
+        graph,
+        makeContext({
+          humanGateway: gateway,
+          capabilityGuard: () => false,
+        }),
+      );
+
+      expect(result.status).toBe('failed');
+      expect(result.errors[0].message).toMatch(/human\.attention/);
+      expect(gateway.calls).toBe(0);
+    });
+
+    it('writes a pre-await checkpoint and resumes across restart', async () => {
+      const obs = makeNode({
+        id: 'obs-1',
+        type: 'observation',
+        operation: 'read',
+        inputs: [],
+        outputs: [{ port: 'value', dataType: 'number', value: 7 }],
+      });
+      const human = makeNode({
+        id: 'hum-1',
+        type: 'human',
+        operation: 'approve',
+        inputs: [{ nodeId: 'obs-1', port: 'value', dataType: 'number' }],
+        outputs: [{ port: 'decision', dataType: 'string' }],
+        label: createLabel('agent-a', 4, 'internal'),
+        verifiable: false,
+        humanPromptSpec: { message: 'ok?' },
+      });
+
+      const graph = makeGraph([obs, human], ['obs-1'], ['hum-1']);
+      const journal = new InMemoryJournal();
+      const gateway = new NoopHumanGateway({ response: 'approved' });
+
+      const first = await executeGraph(
+        graph,
+        makeContext({ humanGateway: gateway }),
+        { journal },
+      );
+      expect(first.status).toBe('completed');
+      expect(first.outputs['hum-1:decision']).toBe('approved');
+
+      // Simulate a fresh process — rebuild journal-backed state and resume.
+      const latest = await journal.latestCheckpoint(graph.id);
+      expect(latest).not.toBeNull();
+      const preAwaitExists = latest!.checkpointId.includes('preawait')
+        || (await journal.latestCheckpoint(graph.id))!.completedNodeIds.includes('obs-1');
+      expect(preAwaitExists).toBe(true);
+
+      const resume = await resumeFromCheckpoint(graph, journal);
+      expect(resume).not.toBeNull();
+      const second = await executeGraph(
+        graph,
+        makeContext({
+          humanGateway: new NoopHumanGateway({ response: 'approved' }),
+        }),
+        { journal, resumeFrom: resume! },
+      );
+      expect(second.status).toBe('completed');
+      expect(second.outputs['hum-1:decision']).toBe('approved');
+    });
+
+    it('rejects a human node with verifiable: true at validation time', async () => {
+      const human = makeNode({
+        id: 'hum-1',
+        type: 'human',
+        operation: 'approve',
+        inputs: [],
+        outputs: [{ port: 'decision', dataType: 'string' }],
+        label: createLabel('agent-a', 4, 'internal'),
+        verifiable: true,
+        humanPromptSpec: { message: 'ok?' },
+      });
+      const graph = makeGraph([human], ['hum-1'], ['hum-1']);
+      const gateway = new NoopHumanGateway({ response: 'approved' });
+
+      const result = await executeGraph(
+        graph,
+        makeContext({ humanGateway: gateway }),
+      );
+      expect(result.status).toBe('failed');
+      expect(result.errors.some((e) => /verifiable: false/.test(e.message))).toBe(true);
     });
   });
 });

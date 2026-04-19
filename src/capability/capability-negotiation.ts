@@ -117,6 +117,34 @@ function applyTrustConstraints(
 }
 
 /**
+ * Capability that gates human-in-the-loop prompts (Sprint 17, M6).
+ *
+ * Default trust requirement is 3: a caller must be at least a trusted agent
+ * to interrupt human attention. Scope is per-agent, per-session — callers
+ * must negotiate before any `'human'` VPIR node executes.
+ */
+export const HUMAN_ATTENTION_CAPABILITY: OfferedCapability = {
+  operation: 'human.attention',
+  version: { major: 1, minor: 0, patch: 0 },
+  description: 'Authorises interrupting a human operator for in-the-loop approval.',
+  requiredTrustLevel: 3,
+  defaultConstraints: {},
+};
+
+/**
+ * Register the standard `human.attention` capability on a negotiation service.
+ * Idempotent: returns silently if already registered.
+ */
+export function registerHumanAttentionCapability(service: CapabilityNegotiation): void {
+  const already = service
+    .listOfferedCapabilities()
+    .some((c) => c.operation === HUMAN_ATTENTION_CAPABILITY.operation);
+  if (!already) {
+    service.registerOfferedCapability(HUMAN_ATTENTION_CAPABILITY);
+  }
+}
+
+/**
  * In-memory capability negotiation implementation.
  */
 export class InMemoryCapabilityNegotiation implements CapabilityNegotiation {

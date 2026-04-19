@@ -341,3 +341,70 @@ describe('multiple concurrent conversations', () => {
     expect(conv2.state).toBe('agreed');
   });
 });
+
+describe('human-approval protocol (Sprint 17)', () => {
+  it('completes happy path: request → accept', () => {
+    let conv = createConversation('human-approval', AGENT_A, AGENT_B);
+    conv = sendMessage(conv, msg(conv, 'request', AGENT_A, AGENT_B, 'Approve deploy?'));
+    expect(conv.state).toBe('awaiting_human');
+
+    conv = sendMessage(conv, msg(conv, 'accept', AGENT_B, AGENT_A, 'ok'));
+    expect(conv.state).toBe('completed');
+    expect(isComplete(conv)).toBe(true);
+  });
+
+  it('routes to rejected on human reject', () => {
+    let conv = createConversation('human-approval', AGENT_A, AGENT_B);
+    conv = sendMessage(conv, msg(conv, 'request', AGENT_A, AGENT_B, 'Approve?'));
+    conv = sendMessage(conv, msg(conv, 'reject', AGENT_B, AGENT_A, 'no'));
+
+    expect(conv.state).toBe('rejected');
+    expect(isComplete(conv)).toBe(true);
+  });
+
+  it('routes to timed_out on system inform', () => {
+    let conv = createConversation('human-approval', AGENT_A, AGENT_B);
+    conv = sendMessage(conv, msg(conv, 'request', AGENT_A, AGENT_B, 'Approve?'));
+    conv = sendMessage(conv, msg(conv, 'inform', AGENT_A, AGENT_B, 'timeout'));
+
+    expect(conv.state).toBe('timed_out');
+    expect(isComplete(conv)).toBe(true);
+  });
+
+  it('allows human to propose back to awaiting_human', () => {
+    let conv = createConversation('human-approval', AGENT_A, AGENT_B);
+    conv = sendMessage(conv, msg(conv, 'request', AGENT_A, AGENT_B, 'Approve?'));
+    conv = sendMessage(conv, msg(conv, 'propose', AGENT_B, AGENT_A, 'amend'));
+
+    expect(conv.state).toBe('awaiting_human');
+    expect(isComplete(conv)).toBe(false);
+
+    conv = sendMessage(conv, msg(conv, 'accept', AGENT_B, AGENT_A, 'ok'));
+    expect(conv.state).toBe('completed');
+  });
+
+  it('rejects invalid transitions', () => {
+    const conv = createConversation('human-approval', AGENT_A, AGENT_B);
+    expect(() =>
+      sendMessage(conv, msg(conv, 'accept', AGENT_B, AGENT_A, 'ok')),
+    ).toThrow(ProtocolError);
+  });
+
+  it('treats rejected and timed_out as terminal only for human-approval', () => {
+    // Construct synthetic conversations with state 'rejected'/'timed_out'
+    // but in other protocols — isComplete must be false, since these are
+    // not terminal for task-delegation / capability-negotiation / conflict-resolution.
+    const base = createConversation('task-delegation', AGENT_A, AGENT_B);
+    const asRejected: ProtocolConversation = { ...base, state: 'rejected' };
+    const asTimedOut: ProtocolConversation = { ...base, state: 'timed_out' };
+
+    expect(isComplete(asRejected)).toBe(false);
+    expect(isComplete(asTimedOut)).toBe(false);
+
+    const hap = createConversation('human-approval', AGENT_A, AGENT_B);
+    const hapRejected: ProtocolConversation = { ...hap, state: 'rejected' };
+    const hapTimedOut: ProtocolConversation = { ...hap, state: 'timed_out' };
+    expect(isComplete(hapRejected)).toBe(true);
+    expect(isComplete(hapTimedOut)).toBe(true);
+  });
+});
