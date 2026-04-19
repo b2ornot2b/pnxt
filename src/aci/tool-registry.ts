@@ -11,7 +11,7 @@
  * Sprint 10 deliverable — Advisory Panel: Kay, Liskov, Milner.
  */
 
-import type { ToolRegistration } from '../types/aci.js';
+import type { ToolRegistration, SideEffect } from '../types/aci.js';
 import type { TrustLevel } from '../types/agent.js';
 import type { VPIRGraph } from '../types/vpir.js';
 import type { ToolHandler } from './aci-gateway.js';
@@ -44,6 +44,22 @@ export interface TrustValidationResult {
     requiredTrust: TrustLevel;
     agentTrust: TrustLevel;
   }>;
+}
+
+/**
+ * Manifest entry summarising a registered tool for catalog UIs and for
+ * bridge-grammar system-prompt injection.
+ *
+ * Sprint 18 — M7 (First-Class LLM + Catalog Discovery).
+ */
+export interface ToolManifestEntry {
+  name: string;
+  description: string;
+  sideEffects: SideEffect[];
+  requiredTrustLevel: TrustLevel;
+  displayName?: string;
+  category?: string;
+  tags?: string[];
 }
 
 // ── Tool Registry ─────────────────────────────────────────────────
@@ -134,6 +150,35 @@ export class ToolRegistry {
    */
   listRegistrations(): ToolRegistration[] {
     return Array.from(this.tools.values()).map((e) => e.registration);
+  }
+
+  /**
+   * Get a structural manifest of every registered tool.
+   *
+   * Merges the core registration (name, description, side effects, trust level)
+   * with the optional `uiMetadata` (category, tags, displayName). Intended for
+   * bridge-grammar prompt injection and catalog UIs; callers must not mutate
+   * the returned entries (results are fresh objects on each call).
+   */
+  getManifest(): ToolManifestEntry[] {
+    return Array.from(this.tools.values()).map((entry) => {
+      const { registration } = entry;
+      const requiredTrust = registration.requiredTrustLevel ?? 0;
+      const manifest: ToolManifestEntry = {
+        name: registration.name,
+        description: registration.description,
+        sideEffects: [...registration.sideEffects],
+        requiredTrustLevel: requiredTrust,
+      };
+      if (registration.uiMetadata) {
+        manifest.displayName = registration.uiMetadata.displayName;
+        manifest.category = registration.uiMetadata.category;
+        if (registration.uiMetadata.tags) {
+          manifest.tags = [...registration.uiMetadata.tags];
+        }
+      }
+      return manifest;
+    });
   }
 
   /**

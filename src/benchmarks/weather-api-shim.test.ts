@@ -3,10 +3,12 @@ import {
   createWeatherToolHandler,
   createWeatherVPIRGraph,
   createWeatherVPIRGraphWithApproval,
+  createWeatherVPIRGraphWithLLMSummary,
   createWeatherExecutionContext,
   createWeatherBenchmarkDefinition,
   runWeatherPipeline,
   addApprovalGateHandler,
+  addLLMSummaryPromptHandler,
 } from './weather-api-shim.js';
 import { executeGraph } from '../vpir/vpir-interpreter.js';
 import { NoopHumanGateway } from '../vpir/human-gateway.js';
@@ -17,6 +19,8 @@ import { vpirGraphToCategory } from '../hott/vpir-bridge.js';
 import { createLabel, canFlowTo } from '../types/ifc.js';
 import type { SecurityLabel } from '../types/ifc.js';
 import type { VPIRExecutionContext } from '../types/vpir-execution.js';
+import { InMemoryACIGateway } from '../aci/aci-gateway.js';
+import { llmInferenceRegistration } from '../aci/handler-library.js';
 
 // ── Helpers ─────────────────────────────────────────────────────────
 
@@ -436,6 +440,132 @@ describe('Weather API Shim', () => {
       const action = graph.nodes.get('action-fetch')!;
       expect(action.inputs).toHaveLength(1);
       expect(action.inputs[0].nodeId).toBe('verify-approval');
+    });
+  });
+
+  describe('LLM Summary Pipeline (Sprint 18 / M7)', () => {
+    /** Mock llm-inference handler — deterministic, no SDK calls. */
+    const mockLLMHandler = async (input: unknown): Promise<unknown> => {
+      const { prompt } = input as { prompt: string };
+      return {
+        response: `[summary] ${prompt.slice(0, 40)}`,
+        tokensUsed: 42,
+        model: 'mock-llm',
+      };
+    };
+
+    function makeGatewayWithLLM(): {
+      gateway: InMemoryACIGateway;
+      lastResultLabel: () => import('../types/ifc.js').SecurityLabel | undefined;
+    } {
+      const weatherHandler = createWeatherToolHandler();
+      const gateway = new InMemoryACIGateway({
+        trustResolver: () => 2,
+      });
+      gateway.registerTool(createWeatherToolRegistration(), weatherHandler);
+      gateway.registerTool(llmInferenceRegistration, mockLLMHandler);
+
+      let capturedLabel: import('../types/ifc.js').SecurityLabel | undefined;
+      const originalInvoke = gateway.invoke.bind(gateway);
+      gateway.invoke = async (inv) => {
+        const result = await originalInvoke(inv);
+        if (inv.toolName === 'llm-inference') capturedLabel = result.resultLabel;
+        return result;
+      };
+      return { gateway, lastResultLabel: () => capturedLabel };
+    }
+
+    it('validates structurally', () => {
+      const graph = createWeatherVPIRGraphWithLLMSummary('Weather in Tokyo', makeLabel());
+      expect(validateGraph(graph).valid).toBe(true);
+    });
+
+    it('inserts summarize-weather as an action invoking llm-inference', () => {
+      const graph = createWeatherVPIRGraphWithLLMSummary('Weather in Tokyo', makeLabel());
+      const node = graph.nodes.get('summarize-weather')!;
+      expect(node.type).toBe('action');
+      expect(node.operation).toBe('llm-inference');
+    });
+
+    it('routes assert-valid off the LLM summary response port', () => {
+      const graph = createWeatherVPIRGraphWithLLMSummary('Weather in Tokyo', makeLabel());
+      const assert = graph.nodes.get('assert-valid')!;
+      expect(assert.inputs).toHaveLength(1);
+      expect(assert.inputs[0].nodeId).toBe('summarize-weather');
+      expect(assert.inputs[0].port).toBe('response');
+    });
+
+    it('inserts build-summary-prompt feeding the LLM action', () => {
+      const graph = createWeatherVPIRGraphWithLLMSummary('Weather in Tokyo', makeLabel());
+      const promptNode = graph.nodes.get('build-summary-prompt')!;
+      expect(promptNode.type).toBe('inference');
+      expect(promptNode.operation).toBe('build-summary-prompt');
+      const llmNode = graph.nodes.get('summarize-weather')!;
+      expect(llmNode.inputs[0].nodeId).toBe('build-summary-prompt');
+    });
+
+    it('executes end-to-end through VPIR interpreter with mocked LLM', async () => {
+      const label = makeLabel();
+      const { gateway, lastResultLabel } = makeGatewayWithLLM();
+      const baseCtx = createWeatherExecutionContext(gateway, 'weather-benchmark-agent', label);
+      const ctx = addLLMSummaryPromptHandler(baseCtx);
+
+      const graph = createWeatherVPIRGraphWithLLMSummary('Weather in Tokyo', label);
+      const result = await executeGraph(graph, ctx);
+
+      expect(result.errors).toEqual([]);
+      expect(result.status).toBe('completed');
+      // LLM result label must be forced to {trustLevel:1, classification:'external'}.
+      const llmLabel = lastResultLabel();
+      expect(llmLabel?.classification).toBe('external');
+      expect(llmLabel?.trustLevel).toBe(1);
+    });
+
+    it('propagates the external label so a public sink cannot receive the summary directly', async () => {
+      const { gateway } = makeGatewayWithLLM();
+      // A hypothetical public sink tool — unlabeled input fine, labeled input should be blocked.
+      gateway.registerTool(
+        {
+          name: 'log-summary',
+          description: 'Log to public audit sink',
+          inputSchema: { type: 'object' },
+          outputSchema: { type: 'object' },
+          sideEffects: ['none'],
+          ops: { timeout: 1000, retryable: false, idempotent: true, costCategory: 'cheap' },
+          requiredTrustLevel: 0,
+        },
+        async () => 'ok',
+      );
+      const llmResult = await gateway.invoke({
+        toolName: 'llm-inference',
+        input: { prompt: 'Summarise the weather' },
+        agentId: 'weather-benchmark-agent',
+        requestId: 'req-llm',
+      });
+      const sinkResult = await gateway.invoke({
+        toolName: 'log-summary',
+        input: { summary: 'x' },
+        agentId: 'weather-benchmark-agent',
+        requestId: 'req-sink',
+        requesterLabel: llmResult.resultLabel!,
+      });
+      expect(llmResult.resultLabel?.classification).toBe('external');
+      expect(sinkResult.success).toBe(false);
+      expect(sinkResult.error?.code).toBe('IFC_VIOLATION');
+      // Sanity: confirm canFlowTo reports the block too.
+      expect(
+        canFlowTo(llmResult.resultLabel!, createLabel('weather-benchmark-agent', 0, 'public')),
+      ).toBe(false);
+    });
+
+    it('leaves the base (non-LLM) pipeline unaffected', async () => {
+      const label = makeLabel();
+      const result = await runWeatherPipeline("What's the weather in Tokyo?", {
+        gateway: makeGateway(),
+        label,
+        skipVerification: true,
+      });
+      expect(result.success).toBe(true);
     });
   });
 });

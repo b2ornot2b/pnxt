@@ -9,8 +9,11 @@ import {
   generateVPIRGraph,
   createMockClient,
   createSampleVPIRGraphJSON,
+  buildSystemPrompt,
+  VPIR_SYSTEM_PROMPT_BASE,
 } from './llm-vpir-generator.js';
 import { parseVPIRGraph } from './schema-validator.js';
+import { createStandardRegistry, ToolRegistry } from '../aci/tool-registry.js';
 import type { SecurityLabel } from '../types/ifc.js';
 
 // --- Mock client tests (always run) ---
@@ -276,4 +279,135 @@ const hasApiKey = !!process.env.ANTHROPIC_API_KEY;
     },
     30000,
   );
+});
+
+// --- buildSystemPrompt (Sprint 18 / M7) ---
+
+describe('buildSystemPrompt', () => {
+  it('returns the static base verbatim when handler list is empty', () => {
+    expect(buildSystemPrompt([])).toBe(VPIR_SYSTEM_PROMPT_BASE);
+  });
+
+  it('returns the base verbatim when argument is omitted', () => {
+    expect(buildSystemPrompt()).toBe(VPIR_SYSTEM_PROMPT_BASE);
+  });
+
+  it('appends an Available action operations stanza when handlers are supplied', () => {
+    const prompt = buildSystemPrompt(['http-fetch', 'llm-inference']);
+    expect(prompt.startsWith(VPIR_SYSTEM_PROMPT_BASE)).toBe(true);
+    expect(prompt).toContain('Available action operations');
+    expect(prompt).toContain('- http-fetch');
+    expect(prompt).toContain('- llm-inference');
+  });
+
+  it('lists handlers in the order provided', () => {
+    const prompt = buildSystemPrompt(['beta', 'alpha']);
+    const betaIdx = prompt.indexOf('- beta');
+    const alphaIdx = prompt.indexOf('- alpha');
+    expect(betaIdx).toBeGreaterThan(-1);
+    expect(alphaIdx).toBeGreaterThan(-1);
+    expect(betaIdx).toBeLessThan(alphaIdx);
+  });
+
+  it('is stable across calls for the same input (snapshot)', () => {
+    const a = buildSystemPrompt(['x', 'y']);
+    const b = buildSystemPrompt(['x', 'y']);
+    expect(a).toBe(b);
+  });
+
+  it('produces a prompt populated with every standard handler when fed the registry', () => {
+    const registry = createStandardRegistry();
+    const prompt = buildSystemPrompt(registry.listTools());
+    for (const name of registry.listTools()) {
+      expect(prompt).toContain(`- ${name}`);
+    }
+    expect(prompt).toContain('- llm-inference');
+  });
+
+  it('tolerates an empty registry without throwing', () => {
+    const empty = new ToolRegistry();
+    expect(() => buildSystemPrompt(empty.listTools())).not.toThrow();
+    expect(buildSystemPrompt(empty.listTools())).toBe(VPIR_SYSTEM_PROMPT_BASE);
+  });
+});
+
+describe('generateVPIRGraph + registry (Sprint 18 / M7)', () => {
+  it('injects the registry manifest into the system prompt at call time', async () => {
+    const registry = createStandardRegistry();
+    const sampleJSON = createSampleVPIRGraphJSON('manifest-test');
+    let capturedSystem: string | undefined;
+    const spyClient = {
+      messages: {
+        create: async (args: { system: string }) => {
+          capturedSystem = args.system;
+          return {
+            id: 'mock',
+            type: 'message',
+            role: 'assistant',
+            content: [
+              {
+                type: 'tool_use',
+                id: 'tu',
+                name: 'emit_vpir_graph',
+                input: sampleJSON,
+              },
+            ],
+            model: 'mock',
+            stop_reason: 'tool_use',
+            stop_sequence: null,
+            usage: { input_tokens: 0, output_tokens: 0 },
+          };
+        },
+      },
+    };
+
+    await generateVPIRGraph('Plan a task', {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      client: spyClient as any,
+      registry,
+    });
+
+    expect(capturedSystem).toBeDefined();
+    expect(capturedSystem).toContain('Available action operations');
+    for (const name of registry.listTools()) {
+      expect(capturedSystem).toContain(`- ${name}`);
+    }
+  });
+
+  it('falls back to the base prompt when no registry is supplied', async () => {
+    const sampleJSON = createSampleVPIRGraphJSON('no-registry-test');
+    let capturedSystem: string | undefined;
+    const spyClient = {
+      messages: {
+        create: async (args: { system: string }) => {
+          capturedSystem = args.system;
+          return {
+            id: 'mock',
+            type: 'message',
+            role: 'assistant',
+            content: [
+              {
+                type: 'tool_use',
+                id: 'tu',
+                name: 'emit_vpir_graph',
+                input: sampleJSON,
+              },
+            ],
+            model: 'mock',
+            stop_reason: 'tool_use',
+            stop_sequence: null,
+            usage: { input_tokens: 0, output_tokens: 0 },
+          };
+        },
+      },
+    };
+
+    await generateVPIRGraph('Plan a task', {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      client: spyClient as any,
+    });
+
+    expect(capturedSystem).toBe(VPIR_SYSTEM_PROMPT_BASE);
+    expect(capturedSystem).not.toContain('Available action operations');
+  });
 });

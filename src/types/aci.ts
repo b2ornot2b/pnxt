@@ -10,7 +10,14 @@
 import type { JSONSchema } from './json-schema.js';
 import type { TrustLevel } from './agent.js';
 
-export type SideEffect = 'file_read' | 'file_write' | 'network' | 'process' | 'git' | 'none';
+export type SideEffect =
+  | 'file_read'
+  | 'file_write'
+  | 'network'
+  | 'process'
+  | 'git'
+  | 'llm_call'
+  | 'none';
 export type CostCategory = 'cheap' | 'moderate' | 'expensive';
 
 /**
@@ -18,7 +25,7 @@ export type CostCategory = 'cheap' | 'moderate' | 'expensive';
  *
  * - Level 0 (Observer): read-only, no side effects
  * - Level 1 (Contributor): file writes within scope
- * - Level 2 (Collaborator): git, network in sandbox
+ * - Level 2 (Collaborator): git, network, llm_call in sandbox
  * - Level 3 (Trusted): process execution, broad network
  * - Level 4 (Autonomous): unrestricted within boundaries
  */
@@ -28,8 +35,22 @@ export const SIDE_EFFECT_TRUST_REQUIREMENTS: Record<SideEffect, TrustLevel> = {
   file_write: 1,
   git: 2,
   network: 2,
+  llm_call: 2,
   process: 3,
 };
+
+/**
+ * Optional catalog/UI descriptor metadata carried on a ToolRegistration.
+ * Consumed by node-browser UIs and the bridge-grammar manifest injection.
+ * Purely additive; never inspected by runtime dispatch.
+ */
+export interface ToolUIMetadata {
+  displayName: string;
+  category: string;
+  icon?: string;
+  tags?: string[];
+  examples?: Array<{ label: string; input: Record<string, unknown> }>;
+}
 
 export interface ToolRegistration {
   name: string;
@@ -47,6 +68,9 @@ export interface ToolRegistration {
 
   /** Minimum trust level to invoke this tool. Defaults to max of side-effect requirements. */
   requiredTrustLevel?: TrustLevel;
+
+  /** Optional UI/catalog descriptor. */
+  uiMetadata?: ToolUIMetadata;
 }
 
 export interface ToolInvocation {

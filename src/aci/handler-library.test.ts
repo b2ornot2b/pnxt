@@ -10,10 +10,15 @@ import {
   dataValidateHandler,
   unitConvertHandler,
   httpFetchRegistration,
+  llmInferenceHandler,
+  llmInferenceRegistration,
+  setLLMInferenceClientFactory,
+  resetLLMInferenceClientFactory,
   STANDARD_HANDLERS,
   getStandardHandler,
   getStandardHandlerNames,
 } from './handler-library.js';
+import type { LLMInferenceClient } from './handler-library.js';
 
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -21,8 +26,8 @@ import * as os from 'os';
 
 describe('Standard Handler Library', () => {
   describe('aggregate exports', () => {
-    it('should export 8 standard handlers', () => {
-      expect(STANDARD_HANDLERS).toHaveLength(8);
+    it('should export 9 standard handlers', () => {
+      expect(STANDARD_HANDLERS).toHaveLength(9);
     });
 
     it('should have unique names for all handlers', () => {
@@ -467,6 +472,191 @@ describe('Standard Handler Library', () => {
       await expect(
         fileWriteHandler({ path: path.join(tmpDir, 'x.txt') }),
       ).rejects.toThrow('content');
+    });
+  });
+
+  describe('llm-inference handler', () => {
+    type CreateArgs = Parameters<LLMInferenceClient['messages']['create']>[0];
+    type CreateResult = Awaited<ReturnType<LLMInferenceClient['messages']['create']>>;
+
+    const calls: CreateArgs[] = [];
+    const queue: CreateResult[] = [];
+
+    beforeEach(() => {
+      calls.length = 0;
+      queue.length = 0;
+      setLLMInferenceClientFactory(() => ({
+        messages: {
+          create: async (args) => {
+            calls.push(args);
+            const next = queue.shift();
+            if (!next) throw new Error('mock: queue empty');
+            return next;
+          },
+        },
+      }));
+    });
+
+    afterEach(() => {
+      resetLLMInferenceClientFactory();
+    });
+
+    function mockReply(text: string, input = 10, output = 20, model = 'claude-sonnet-4-20250514'): void {
+      queue.push({
+        content: [{ type: 'text', text }],
+        model,
+        usage: { input_tokens: input, output_tokens: output },
+      });
+    }
+
+    it('registration wires llm_call side effect and expensive cost', () => {
+      expect(llmInferenceRegistration.name).toBe('llm-inference');
+      expect(llmInferenceRegistration.sideEffects).toContain('llm_call');
+      expect(llmInferenceRegistration.sideEffects).toContain('network');
+      expect(llmInferenceRegistration.ops.costCategory).toBe('expensive');
+      expect(llmInferenceRegistration.requiredTrustLevel).toBe(2);
+      expect(llmInferenceRegistration.ops.timeout).toBe(60_000);
+    });
+
+    it('returns {response, tokensUsed, model} on happy path', async () => {
+      mockReply('hello', 7, 3);
+      const result = (await llmInferenceHandler({ prompt: 'hi' })) as {
+        response: string;
+        tokensUsed: number;
+        model: string;
+      };
+      expect(result.response).toBe('hello');
+      expect(result.tokensUsed).toBe(10);
+      expect(result.model).toBe('claude-sonnet-4-20250514');
+    });
+
+    it('applies the default model when omitted', async () => {
+      mockReply('ok');
+      await llmInferenceHandler({ prompt: 'hi' });
+      expect(calls[0].model).toBe('claude-sonnet-4-20250514');
+    });
+
+    it('applies default maxTokens of 1024 when omitted', async () => {
+      mockReply('ok');
+      await llmInferenceHandler({ prompt: 'hi' });
+      expect(calls[0].max_tokens).toBe(1024);
+    });
+
+    it('honours an explicit model override', async () => {
+      mockReply('ok', 1, 1, 'claude-opus-4-0');
+      await llmInferenceHandler({ prompt: 'hi', model: 'claude-opus-4-0' });
+      expect(calls[0].model).toBe('claude-opus-4-0');
+    });
+
+    it('honours an explicit maxTokens override', async () => {
+      mockReply('ok');
+      await llmInferenceHandler({ prompt: 'hi', maxTokens: 64 });
+      expect(calls[0].max_tokens).toBe(64);
+    });
+
+    it('forwards a custom systemPrompt', async () => {
+      mockReply('ok');
+      await llmInferenceHandler({ prompt: 'hi', systemPrompt: 'you are concise' });
+      expect(calls[0].system).toBe('you are concise');
+    });
+
+    it('omits system key when systemPrompt absent', async () => {
+      mockReply('ok');
+      await llmInferenceHandler({ prompt: 'hi' });
+      expect(Object.prototype.hasOwnProperty.call(calls[0], 'system')).toBe(false);
+    });
+
+    it('sends the user prompt verbatim as the first message', async () => {
+      mockReply('ok');
+      await llmInferenceHandler({ prompt: 'analyse this' });
+      expect(calls[0].messages).toEqual([{ role: 'user', content: 'analyse this' }]);
+    });
+
+    it('sums input_tokens + output_tokens for tokensUsed', async () => {
+      mockReply('ok', 17, 41);
+      const result = (await llmInferenceHandler({ prompt: 'hi' })) as { tokensUsed: number };
+      expect(result.tokensUsed).toBe(58);
+    });
+
+    it('treats missing usage as zero', async () => {
+      queue.push({
+        content: [{ type: 'text', text: 'ok' }],
+        model: 'claude-sonnet-4-20250514',
+      });
+      const result = (await llmInferenceHandler({ prompt: 'hi' })) as { tokensUsed: number };
+      expect(result.tokensUsed).toBe(0);
+    });
+
+    it('returns empty string when response has no text block', async () => {
+      queue.push({
+        content: [],
+        model: 'claude-sonnet-4-20250514',
+        usage: { input_tokens: 0, output_tokens: 0 },
+      });
+      const result = (await llmInferenceHandler({ prompt: 'hi' })) as { response: string };
+      expect(result.response).toBe('');
+    });
+
+    it('throws on missing prompt', async () => {
+      await expect(llmInferenceHandler({})).rejects.toThrow('prompt');
+    });
+
+    it('throws on non-string prompt', async () => {
+      await expect(llmInferenceHandler({ prompt: 42 })).rejects.toThrow('prompt');
+    });
+
+    it('throws on empty prompt', async () => {
+      await expect(llmInferenceHandler({ prompt: '' })).rejects.toThrow('prompt');
+    });
+
+    it('throws on null input', async () => {
+      await expect(llmInferenceHandler(null)).rejects.toThrow('prompt');
+    });
+
+    it('uses response.model when the API returns a different model id', async () => {
+      mockReply('ok', 1, 1, 'claude-sonnet-4-20250514-abc');
+      const result = (await llmInferenceHandler({ prompt: 'hi' })) as { model: string };
+      expect(result.model).toBe('claude-sonnet-4-20250514-abc');
+    });
+
+    it('is present in STANDARD_HANDLERS', () => {
+      const entry = STANDARD_HANDLERS.find((h) => h.name === 'llm-inference');
+      expect(entry).toBeDefined();
+      expect(entry?.handler).toBe(llmInferenceHandler);
+    });
+
+    it('has AI-category uiMetadata with llm tags', () => {
+      expect(llmInferenceRegistration.uiMetadata?.category).toBe('AI');
+      expect(llmInferenceRegistration.uiMetadata?.tags).toEqual(
+        expect.arrayContaining(['llm', 'claude']),
+      );
+      expect(llmInferenceRegistration.uiMetadata?.examples?.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('uiMetadata backfill', () => {
+    it('every standard handler carries uiMetadata', () => {
+      for (const { registration } of STANDARD_HANDLERS) {
+        expect(registration.uiMetadata).toBeDefined();
+        expect(registration.uiMetadata?.displayName).toBeTruthy();
+        expect(registration.uiMetadata?.category).toBeTruthy();
+      }
+    });
+
+    it('covers the expected category mix', () => {
+      const categories = new Set(
+        STANDARD_HANDLERS.map((h) => h.registration.uiMetadata?.category),
+      );
+      expect(categories).toEqual(new Set(['IO', 'Data', 'Compute', 'AI']));
+    });
+
+    it('every example has a label and input', () => {
+      for (const { registration } of STANDARD_HANDLERS) {
+        for (const ex of registration.uiMetadata?.examples ?? []) {
+          expect(ex.label).toBeTruthy();
+          expect(typeof ex.input).toBe('object');
+        }
+      }
     });
   });
 });

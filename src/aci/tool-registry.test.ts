@@ -301,4 +301,103 @@ describe('createStandardRegistry', () => {
     const result = await resolved!.handler({ expression: '1 + 1' });
     expect(result).toEqual({ result: 2 });
   });
+
+  it('should expose llm-inference as a first-class standard handler', () => {
+    const registry = createStandardRegistry();
+    expect(registry.has('llm-inference')).toBe(true);
+    const resolved = registry.resolve('llm-inference');
+    expect(resolved?.registration.sideEffects).toContain('llm_call');
+  });
+});
+
+describe('ToolRegistry.getManifest', () => {
+  it('returns an entry for every registered tool', () => {
+    const registry = createStandardRegistry();
+    const manifest = registry.getManifest();
+    expect(manifest).toHaveLength(registry.size);
+    const names = manifest.map((m) => m.name).sort();
+    expect(names).toEqual(registry.listTools().slice().sort());
+  });
+
+  it('populates core registration fields on every entry', () => {
+    const registry = createStandardRegistry();
+    for (const entry of registry.getManifest()) {
+      expect(entry.name).toBeTruthy();
+      expect(entry.description).toBeTruthy();
+      expect(Array.isArray(entry.sideEffects)).toBe(true);
+      expect(typeof entry.requiredTrustLevel).toBe('number');
+    }
+  });
+
+  it('defaults requiredTrustLevel to 0 when registration omits it', () => {
+    const registry = new ToolRegistry();
+    registry.register(makeRegistration('no-trust', { sideEffects: ['none'] }), async () => null);
+    const entry = registry.getManifest()[0];
+    expect(entry.requiredTrustLevel).toBe(0);
+  });
+
+  it('surfaces uiMetadata category and tags when present', () => {
+    const registry = createStandardRegistry();
+    const httpEntry = registry.getManifest().find((m) => m.name === 'http-fetch');
+    expect(httpEntry?.category).toBe('IO');
+    expect(httpEntry?.displayName).toBe('HTTP Fetch');
+    expect(httpEntry?.tags).toEqual(expect.arrayContaining(['http', 'network']));
+  });
+
+  it('omits uiMetadata fields when registration lacks them', () => {
+    const registry = new ToolRegistry();
+    registry.register(
+      makeRegistration('plain', { sideEffects: ['none'] }),
+      async () => null,
+    );
+    const entry = registry.getManifest()[0];
+    expect(entry.category).toBeUndefined();
+    expect(entry.tags).toBeUndefined();
+    expect(entry.displayName).toBeUndefined();
+  });
+
+  it('is stable across repeated calls (no mutation)', () => {
+    const registry = createStandardRegistry();
+    const a = registry.getManifest();
+    const b = registry.getManifest();
+    expect(a).toEqual(b);
+    expect(a).not.toBe(b);
+  });
+
+  it('returns a fresh sideEffects array that cannot mutate the registration', () => {
+    const registry = createStandardRegistry();
+    const entry = registry.getManifest().find((m) => m.name === 'http-fetch')!;
+    entry.sideEffects.push('process');
+    const reread = registry.resolve('http-fetch')!.registration.sideEffects;
+    expect(reread).not.toContain('process');
+  });
+
+  it('returns a fresh tags array that cannot mutate the registration', () => {
+    const registry = createStandardRegistry();
+    const entry = registry.getManifest().find((m) => m.name === 'http-fetch')!;
+    entry.tags!.push('mutated');
+    const reread = registry.resolve('http-fetch')!.registration.uiMetadata!.tags!;
+    expect(reread).not.toContain('mutated');
+  });
+
+  it('includes the llm-inference entry with AI category', () => {
+    const registry = createStandardRegistry();
+    const entry = registry.getManifest().find((m) => m.name === 'llm-inference');
+    expect(entry?.category).toBe('AI');
+    expect(entry?.sideEffects).toEqual(expect.arrayContaining(['llm_call']));
+    expect(entry?.requiredTrustLevel).toBe(2);
+  });
+
+  it('returns [] on an empty registry', () => {
+    const registry = new ToolRegistry();
+    expect(registry.getManifest()).toEqual([]);
+  });
+
+  it('returns manifest entries whose ordering matches registration ordering', () => {
+    const registry = new ToolRegistry();
+    registry.register(makeRegistration('alpha'), async () => null);
+    registry.register(makeRegistration('beta'), async () => null);
+    const names = registry.getManifest().map((m) => m.name);
+    expect(names).toEqual(['alpha', 'beta']);
+  });
 });

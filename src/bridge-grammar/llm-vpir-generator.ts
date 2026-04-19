@@ -15,6 +15,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import type { VPIRGraph } from '../types/vpir.js';
 import type { SecurityLabel } from '../types/ifc.js';
+import type { ToolRegistry } from '../aci/tool-registry.js';
 import { VPIRGraphSchema } from './vpir-schema.js';
 import { parseVPIRGraph } from './schema-validator.js';
 
@@ -39,6 +40,15 @@ export interface VPIRGeneratorOptions {
 
   /** Custom Anthropic client (for testing/DI). */
   client?: Anthropic;
+
+  /**
+   * Tool registry consulted at prompt-assembly time. When supplied, the
+   * system prompt is augmented with an `Available action operations`
+   * stanza enumerating every registered handler. Closes the "blind
+   * catalog" bug where the LLM hallucinates non-existent handler names.
+   * Sprint 18 — M7 (First-Class LLM + Catalog Discovery).
+   */
+  registry?: ToolRegistry;
 }
 
 /**
@@ -62,9 +72,11 @@ export interface VPIRGenerationResult {
 }
 
 /**
- * System prompt for VPIR graph generation.
+ * Static portion of the system prompt — node types, rules, VPIR schema.
+ * Exported so other generators (e.g. task-aware VPIR generator) can
+ * compose on top of the shared base without duplicating content.
  */
-const VPIR_SYSTEM_PROMPT = `You are a reasoning chain generator for the Agent-Native Programming (ANP) paradigm.
+export const VPIR_SYSTEM_PROMPT_BASE = `You are a reasoning chain generator for the Agent-Native Programming (ANP) paradigm.
 Your task is to decompose a given task description into a VPIR (Verifiable Programmatic Intermediate Representation) graph — a directed acyclic graph of verifiable reasoning steps.
 
 Each node in the graph represents one reasoning step:
@@ -83,6 +95,30 @@ Rules:
 6. Node IDs should be descriptive (e.g., "observe-input", "infer-dependencies")
 7. Use ISO 8601 timestamps for createdAt fields
 8. Set verifiable=true for deterministic steps, false for side-effecting actions`;
+
+/**
+ * Compose the system prompt with an optional handler manifest.
+ *
+ * When `availableHandlers` is non-empty, appends an `Available action
+ * operations` stanza so the LLM can reference real handler names
+ * instead of hallucinating them. An empty array produces the base
+ * prompt unchanged (useful for generators that intentionally omit
+ * handler advice).
+ */
+export function buildSystemPrompt(availableHandlers: string[] = []): string {
+  if (availableHandlers.length === 0) {
+    return VPIR_SYSTEM_PROMPT_BASE;
+  }
+  const lines = availableHandlers.map((name) => `- ${name}`).join('\n');
+  return `${VPIR_SYSTEM_PROMPT_BASE}\n\nAvailable action operations (use these exact names in action-node \`operation\` fields):\n${lines}`;
+}
+
+/**
+ * @deprecated Prefer `buildSystemPrompt(registry.listTools())` so the
+ * LLM sees the live catalog. Kept as an export for callers that have
+ * not yet been migrated to the manifest-aware prompt.
+ */
+export const VPIR_SYSTEM_PROMPT = VPIR_SYSTEM_PROMPT_BASE;
 
 /**
  * Generate a VPIR graph from a natural language task description.
@@ -107,6 +143,9 @@ export async function generateVPIRGraph(
   const client = options?.client ?? new Anthropic();
 
   const tool = buildVPIRGraphTool(options?.securityLabel);
+  const systemPrompt = buildSystemPrompt(
+    options?.registry ? options.registry.listTools() : [],
+  );
   const errors: string[] = [];
   let rawResponse: string | undefined;
 
@@ -120,7 +159,7 @@ export async function generateVPIRGraph(
       model,
       max_tokens: maxTokens,
       temperature,
-      system: VPIR_SYSTEM_PROMPT,
+      system: systemPrompt,
       tools: [tool],
       tool_choice: { type: 'tool', name: 'emit_vpir_graph' },
       messages,

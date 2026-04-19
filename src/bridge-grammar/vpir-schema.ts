@@ -119,8 +119,8 @@ export const SecurityLabelSchema: JSONSchema = {
     },
     classification: {
       type: 'string',
-      enum: ['public', 'internal', 'confidential', 'restricted'],
-      description: 'Data classification.',
+      enum: ['public', 'internal', 'confidential', 'restricted', 'external'],
+      description: 'Data classification. `external` is reserved for untrusted oracle output (e.g. llm-inference) and must be explicitly declassified before flowing to a trusted sink.',
     },
     createdAt: {
       type: 'string',
