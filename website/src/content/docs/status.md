@@ -5,11 +5,13 @@ description: Current state, completed milestones, and roadmap for pnxt.
 
 # pnxt Project Status
 
-> Last updated: 2026-04-19 (Phase 8 Sprint 16 complete — M5 delivered)
+> Last updated: 2026-04-19 (Phase 8 Sprint 17 complete — M6 delivered)
 
 ---
 
 ## Current State
+
+**Phase 8 ("Operational Maturity") continues.** Sprint 17 ("Human-in-the-Loop Primitive") delivered **M6 — Human-in-the-Loop**: a new `'human'` VPIR node type with a typed `humanPromptSpec`; a `HumanGateway` interface with `CLIHumanGateway` (stdin/stdout) and `NoopHumanGateway` (test double) implementations; `executeHuman()` in the interpreter with capability-guard on `human.attention`, pre-await journal checkpointing (leveraging Sprint 16's durability substrate), provenance-join IFC label derivation, and `AuditEvent` emission with `actor.type: 'human'`; a new `human-approval` NL protocol with terminal states `rejected` and `timed_out` scoped per-protocol so the three existing protocols are unaffected; Z3 verifier reports human nodes as `uninterpretable` with `reason: 'human-node'` while the machine subgraph continues to verify all 21 Z3 properties; and a Weather benchmark operator-approval gate (`createWeatherVPIRGraphWithApproval`) that inserts a human node before the outbound fetch and fails the pipeline on rejection. The design from `docs/research/hitl-primitive.md` is now **Accepted and Implemented**. Total: **21 formally verified Z3 properties**, 88 test suites, 1580+ tests. Advisory panel composite score target: **9.6/10**. See [status.md](https://github.com/b2ornot2b/pnxt/blob/main/status.md) for full details.
 
 **Phase 8 ("Operational Maturity") has begun.** Sprint 16 ("Durable VPIR Execution") delivered **M5 — Crash-Safe Execution**: a `VPIRJournal` durability substrate with `JournalEntry` and `JournalCheckpoint` records persisted through an in-memory implementation and a file-backed JSON store; `executeGraph` optionally journals every settled node on both sequential and parallel paths, preserving `SecurityLabel` verbatim across replay so IFC flow checks produce identical results; `resumeFromCheckpoint` reconstructs `ExecutionState` from the latest checkpoint and rejects structurally-changed graphs via SHA-256 content-hash validation; `Channel` and `Process` gained `getSnapshot`/`restore` interface contracts for future full-DPN replay. The weather-benchmark durability scenario (kill mid-graph, restart, verify identical outputs) passes end-to-end, with the journal file staying under the ADR-001 10 KB budget. ADR-001 is now **Accepted** with full Implementation Notes. Total: **21 formally verified Z3 properties**, 86 test suites, 1530+ tests. Advisory panel composite score target: **9.55/10**. See [status.md](https://github.com/b2ornot2b/pnxt/blob/main/status.md) for full details.
 
