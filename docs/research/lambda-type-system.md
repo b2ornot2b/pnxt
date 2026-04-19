@@ -192,6 +192,55 @@ The recommended immediate actions:
 
 ---
 
+## 10. Telemetry Infrastructure (Sprint 20, M9)
+
+The telemetry spike from §9 landed as Sprint 20 (M9 — "Type-System Decision Data"). Structured retry-failure records are now collected through an optional `RetryTelemetryCollector` injected into `generateVPIRGraph`. When the collector is absent, the retry loop behaves exactly as before; existing callers and tests are unaffected.
+
+### Components
+
+| File | Role |
+|------|------|
+| `src/types/bridge-telemetry.ts` | `RetryEvent` wire format and the `TelemetryCategory` union |
+| `src/bridge-grammar/retry-categorizer.ts` | Pure function that maps a `BridgeError[]` onto one of `schema_violation`, `type_mismatch`, `semantic_error`, `ifc_violation`, `other` |
+| `src/bridge-grammar/retry-telemetry.ts` | `RetryTelemetryCollector`, `InMemorySink`, `JsonlFileSink` (O(1)-per-append) |
+| `src/bridge-grammar/llm-vpir-generator.ts` | Instrumented at both failure branches (no `tool_use`, validation failure) |
+| `scripts/analyze-retries.ts` | Offline CLI: category histogram + top-N rejection reasons |
+| `test-fixtures/sample-telemetry.jsonl` | 10-event fixture for the CLI smoke test |
+
+### Category Mapping
+
+| Telemetry bucket | Source `BridgeErrorCategory` / code | Paper bucket |
+|---|---|---|
+| `schema_violation` | `SCHEMA` | (a) |
+| `type_mismatch` | `SEMANTIC` with `WRONG_EVIDENCE_TYPE`, `ACTION_NOT_VERIFIABLE`, `OBSERVATION_HAS_INPUTS`, `MISSING_EVIDENCE` | (b) |
+| `semantic_error` | Remaining `SEMANTIC`, `HANDLER` (except `TRUST_INSUFFICIENT` on a label path), `CONFIDENCE` | (c) |
+| `ifc_violation` | `LABEL_MISMATCH` or `TRUST_INSUFFICIENT` on a JSON path whose segments include `label` | (d) |
+| `other` | `TOPOLOGY`, `TRUNCATION`, empty batch, unknown | (d) |
+
+Categorization accuracy is pinned at ≥ 90% by a 20-sample hand-labeled test (`src/bridge-grammar/retry-categorizer.test.ts`).
+
+### Privacy Invariants
+
+- `promptHash` is the first 16 hex chars of `SHA-256(taskDescription)`; raw task descriptions are never persisted.
+- `responseExcerpt` is hard-capped at 200 characters (`RESPONSE_EXCERPT_LIMIT`) before any sink append. A 200-char prefix of a tool-use JSON payload cannot structurally contain an Anthropic API key (keys only appear in request headers).
+
+### Sprint 21+ Trigger
+
+After ≥ 100 retry events accumulate in production-like runs (weather benchmark + multi-agent delegation + manual explorations), run:
+
+```
+npx tsx scripts/analyze-retries.ts --log logs/bridge-telemetry.jsonl
+```
+
+Convene the advisory panel (Church, Sutskever, de Moura, Liskov) and apply the §7 decision framework to the histogram:
+
+- `type_mismatch` > 40% → HM extension is the lever. Sprint 21 scopes the HM spike.
+- `schema_violation` + `other` dominant → Bridge Grammar JSON schema hardening sprint.
+- `semantic_error` dominant → Handler documentation and retrieval-augmented prompting sprint.
+- `ifc_violation` > 20% → Label-aware prompting sprint.
+
+---
+
 ## Referenced Code Locations
 
 | Claim | File | Lines |
