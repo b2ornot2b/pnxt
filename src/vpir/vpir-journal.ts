@@ -13,82 +13,25 @@
 import { createHash } from 'node:crypto';
 import { readFile, writeFile } from 'node:fs/promises';
 
-import type { SecurityLabel } from '../types/ifc.js';
 import type { VPIRGraph, VPIRNode } from '../types/vpir.js';
+import type {
+  ExecutionState,
+  JournalCheckpoint,
+  JournalEntry,
+  JournalRecord,
+  VPIRJournal,
+} from '../types/vpir-journal.js';
+import { JOURNAL_SCHEMA_VERSION } from '../types/vpir-journal.js';
 import { JournalGraphHashError, JournalSchemaVersionError } from '../errors/vpir-errors.js';
 
-/**
- * Current journal schema version. Bump when `JournalEntry` or
- * `JournalCheckpoint` shape changes in a way that invalidates old entries.
- */
-export const JOURNAL_SCHEMA_VERSION = 1 as const;
-
-/**
- * One node-completion record. Emitted by `executeGraph()` after each
- * successful node. The `label` field carries the `SecurityLabel` exactly as
- * it was seen during the original execution — replay uses this stored label
- * to call `checkIFCFlow`, not a re-derived one.
- */
-export interface JournalEntry {
-  kind: 'entry';
-  graphId: string;
-  nodeId: string;
-  inputs: Record<string, unknown>;
-  outputs: Record<string, unknown>;
-  label: SecurityLabel;
-  schemaVersion: number;
-  timestamp: number;
-  sequence: number;
-}
-
-/**
- * A checkpoint written after a successful assertion node. Bundles the
- * graph content hash and the set of completed node IDs so that
- * `resumeFromCheckpoint` can validate structural integrity before replay.
- */
-export interface JournalCheckpoint {
-  kind: 'checkpoint';
-  checkpointId: string;
-  graphId: string;
-  graphHash: string;
-  schemaVersion: number;
-  completedNodeIds: string[];
-  timestamp: number;
-  sequence: number;
-}
-
-/** Either an entry or a checkpoint. The JSON file is a map of these. */
-export type JournalRecord = JournalEntry | JournalCheckpoint;
-
-/**
- * Reconstructed state produced by `replay()` — consumed by `executeGraph` via
- * its `resumeFrom` option.
- */
-export interface ExecutionState {
-  nodeOutputs: Map<string, Map<string, unknown>>;
-  completedNodes: Set<string>;
-  checkpointId: string;
-}
-
-/**
- * Persistence contract for the journal. A future Restate/Temporal adapter
- * can implement this without modifying `executeGraph()`.
- */
-export interface VPIRJournal {
-  /** Append a single node-completion record. */
-  append(entry: Omit<JournalEntry, 'kind' | 'schemaVersion' | 'sequence'>): Promise<void>;
-
-  /** Record a checkpoint after a successful assertion. */
-  recordCheckpoint(
-    cp: Omit<JournalCheckpoint, 'kind' | 'schemaVersion' | 'sequence'>,
-  ): Promise<void>;
-
-  /** Replay up to (and including) the named checkpoint. */
-  replay(checkpointId: string): Promise<ExecutionState>;
-
-  /** The most recent checkpoint for the given graph, or null if none exists. */
-  latestCheckpoint(graphId: string): Promise<JournalCheckpoint | null>;
-}
+export { JOURNAL_SCHEMA_VERSION };
+export type {
+  ExecutionState,
+  JournalCheckpoint,
+  JournalEntry,
+  JournalRecord,
+  VPIRJournal,
+} from '../types/vpir-journal.js';
 
 /**
  * Canonicalised SHA-256 hash of a VPIR graph's structure.

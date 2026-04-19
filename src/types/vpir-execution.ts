@@ -119,6 +119,21 @@ export interface VPIRExecutionOptions {
 
   /** Maximum concurrent node executions when parallel is true. Default: 4. */
   maxConcurrency?: number;
+
+  /**
+   * Optional journal for crash-safe durability (Sprint 16, M5).
+   * When provided, `executeGraph` appends a JournalEntry and emits a
+   * checkpoint after each successful node. See docs/decisions/ADR-001.
+   */
+  journal?: import('./vpir-journal.js').VPIRJournal;
+
+  /**
+   * Optional previously-replayed state produced by `resumeFromCheckpoint`.
+   * When provided, nodes whose IDs are in `completedNodes` are skipped and
+   * their outputs read from `nodeOutputs` — enabling crash recovery without
+   * re-executing settled nodes.
+   */
+  resumeFrom?: import('./vpir-journal.js').ExecutionState;
 }
 
 /**

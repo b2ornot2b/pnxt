@@ -21,10 +21,15 @@ import type {
   VPIRExecutionError,
   VPIRExecutionOptions,
 } from '../types/vpir-execution.js';
+import type {
+  ExecutionState,
+  VPIRJournal,
+} from '../types/vpir-journal.js';
 import { validateGraph } from './vpir-validator.js';
 import { ACIError, AssertionError, HandlerError, SubGraphError } from '../errors/vpir-errors.js';
 import { canFlowTo } from '../types/ifc.js';
 import { analyzeParallelism, createInputHash, Semaphore } from './vpir-optimizer.js';
+import { assertCheckpointMatchesGraph, graphContentHash } from './vpir-journal.js';
 
 /**
  * Execute a validated VPIR graph.
@@ -42,7 +47,20 @@ export async function executeGraph(
   const startTime = Date.now();
   const trace: VPIRExecutionTrace[] = [];
   const errors: VPIRExecutionError[] = [];
+
+  // Seed from a prior checkpoint when resuming. The resumed nodeOutputs
+  // carries the exact port maps written pre-crash, preserving IFC-label
+  // provenance because collectInputs reads from this map by reference.
   const nodeOutputs = new Map<string, Map<string, unknown>>();
+  const completedNodes = new Set<string>();
+  if (options?.resumeFrom) {
+    for (const [nodeId, ports] of options.resumeFrom.nodeOutputs) {
+      nodeOutputs.set(nodeId, new Map(ports));
+    }
+    for (const id of options.resumeFrom.completedNodes) {
+      completedNodes.add(id);
+    }
+  }
 
   // Validate graph structure before execution.
   const validation = validateGraph(graph);
@@ -61,15 +79,39 @@ export async function executeGraph(
     };
   }
 
+  // Journal session — bundles the journal, running completed-set, and
+  // the frozen content hash used in every checkpoint this run emits.
+  const journalSession = options?.journal
+    ? {
+        journal: options.journal,
+        graphHash: graphContentHash(graph),
+        completedNodes,
+        nextCheckpoint: 0,
+      }
+    : undefined;
+
   // Parallel execution path.
   if (options?.parallel) {
-    return executeParallel(graph, context, options, startTime, trace, errors, nodeOutputs);
+    return executeParallel(
+      graph,
+      context,
+      options,
+      startTime,
+      trace,
+      errors,
+      nodeOutputs,
+      journalSession,
+    );
   }
 
   // Sequential execution path (default).
   const order = topologicalSort(graph);
 
   for (const nodeId of order) {
+    if (completedNodes.has(nodeId)) {
+      continue; // Already settled in a previous run — skip re-execution.
+    }
+
     if (context.timeout && Date.now() - startTime > context.timeout) {
       errors.push({
         nodeId,
@@ -90,6 +132,11 @@ export async function executeGraph(
       nodeId, graph, context, options, nodeOutputs, trace, errors,
     );
     if (result) return { ...result, durationMs: Date.now() - startTime };
+
+    // Node settled — journal it and emit a checkpoint before moving on.
+    if (journalSession) {
+      await journalNodeCompletion(journalSession, graph, nodeId, nodeOutputs);
+    }
   }
 
   return {
@@ -103,6 +150,63 @@ export async function executeGraph(
 }
 
 /**
+ * Reconstruct an `ExecutionState` from a journal's most recent checkpoint.
+ * Validates that the current graph still hashes to the checkpoint's hash;
+ * throws `JournalGraphHashError` on mismatch (structural change between
+ * crash and resume). Returns `null` when no checkpoint exists for the graph.
+ */
+export async function resumeFromCheckpoint(
+  graph: VPIRGraph,
+  journal: VPIRJournal,
+): Promise<ExecutionState | null> {
+  const checkpoint = await journal.latestCheckpoint(graph.id);
+  if (!checkpoint) return null;
+
+  assertCheckpointMatchesGraph(checkpoint, graph);
+  return journal.replay(checkpoint.checkpointId);
+}
+
+// ── Internal helpers for durability ───────────────────────────────────────
+
+interface JournalSession {
+  journal: VPIRJournal;
+  graphHash: string;
+  completedNodes: Set<string>;
+  nextCheckpoint: number;
+}
+
+async function journalNodeCompletion(
+  session: JournalSession,
+  graph: VPIRGraph,
+  nodeId: string,
+  nodeOutputs: Map<string, Map<string, unknown>>,
+): Promise<void> {
+  const node = graph.nodes.get(nodeId)!;
+  const outputs = Object.fromEntries(nodeOutputs.get(nodeId) ?? new Map());
+  const inputs = Object.fromEntries(collectInputs(node, nodeOutputs));
+  const now = Date.now();
+
+  await session.journal.append({
+    graphId: graph.id,
+    nodeId,
+    inputs,
+    outputs,
+    label: node.label,
+    timestamp: now,
+  });
+
+  session.completedNodes.add(nodeId);
+  const checkpointId = `cp-${graph.id}-${String(session.nextCheckpoint++).padStart(6, '0')}`;
+  await session.journal.recordCheckpoint({
+    checkpointId,
+    graphId: graph.id,
+    graphHash: session.graphHash,
+    completedNodeIds: [...session.completedNodes],
+    timestamp: now,
+  });
+}
+
+/**
  * Execute a VPIR graph with parallel wave-based execution.
  */
 async function executeParallel(
@@ -113,16 +217,24 @@ async function executeParallel(
   trace: VPIRExecutionTrace[],
   errors: VPIRExecutionError[],
   nodeOutputs: Map<string, Map<string, unknown>>,
+  journalSession?: JournalSession,
 ): Promise<VPIRExecutionResult> {
   const plan = analyzeParallelism(graph);
   const maxConcurrency = options.maxConcurrency ?? 4;
   const semaphore = new Semaphore(maxConcurrency);
 
   for (const wave of plan.waves) {
+    // Filter out nodes already settled by a resumed checkpoint.
+    const pending = journalSession
+      ? wave.nodeIds.filter((id) => !journalSession.completedNodes.has(id))
+      : wave.nodeIds;
+
+    if (pending.length === 0) continue;
+
     // Check timeout before each wave.
     if (context.timeout && Date.now() - startTime > context.timeout) {
       errors.push({
-        nodeId: wave.nodeIds[0],
+        nodeId: pending[0],
         code: 'TIMEOUT',
         message: `Execution timed out after ${context.timeout}ms`,
       });
@@ -136,12 +248,13 @@ async function executeParallel(
       };
     }
 
-    // Execute all nodes in this wave concurrently (up to maxConcurrency).
+    // Execute all pending nodes in this wave concurrently.
     const waveTraces: VPIRExecutionTrace[] = [];
     const waveErrors: VPIRExecutionError[] = [];
     let waveFailed = false;
+    const settledInWave: string[] = [];
 
-    const nodePromises = wave.nodeIds.map(async (nodeId) => {
+    const nodePromises = pending.map(async (nodeId) => {
       await semaphore.acquire();
       try {
         if (waveFailed) return; // Skip if another node in this wave failed.
@@ -151,6 +264,8 @@ async function executeParallel(
         );
         if (result) {
           waveFailed = true;
+        } else {
+          settledInWave.push(nodeId);
         }
       } finally {
         semaphore.release();
@@ -172,6 +287,16 @@ async function executeParallel(
         errors,
         durationMs: Date.now() - startTime,
       };
+    }
+
+    // Wave succeeded — journal every settled node, then emit one
+    // checkpoint for the wave. Order within the wave is irrelevant for
+    // replay because intra-wave nodes have no data dependencies on each
+    // other by definition (that is the parallelism invariant).
+    if (journalSession) {
+      for (const nodeId of settledInWave) {
+        await journalNodeCompletion(journalSession, graph, nodeId, nodeOutputs);
+      }
     }
   }
 
