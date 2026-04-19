@@ -45,3 +45,47 @@ export class HandlerError extends Error {
     this.name = 'HandlerError';
   }
 }
+
+/**
+ * Thrown when a journal entry's schemaVersion does not match the
+ * interpreter's current schema — the journal was written by a different build.
+ */
+export class JournalSchemaVersionError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'JournalSchemaVersionError';
+  }
+}
+
+/**
+ * Thrown when a journal checkpoint's graphHash does not match the current
+ * graph — the graph structure changed between crash and resume.
+ */
+export class JournalGraphHashError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'JournalGraphHashError';
+  }
+}
+
+/**
+ * Thrown when a Channel snapshot cannot be restored because its
+ * bufferSize or channelId does not match the target channel.
+ */
+export class ChannelSnapshotMismatchError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ChannelSnapshotMismatchError';
+  }
+}
+
+/**
+ * Thrown when a Process snapshot cannot be restored because its
+ * processId does not match the target process.
+ */
+export class ProcessSnapshotMismatchError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ProcessSnapshotMismatchError';
+  }
+}

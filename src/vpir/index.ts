@@ -41,6 +41,21 @@ export type {
   GraphTransaction,
   TransactionOptions,
 } from './vpir-transaction.js';
+export {
+  FileBackedJournal,
+  InMemoryJournal,
+  JOURNAL_SCHEMA_VERSION,
+  assertCheckpointMatchesGraph,
+  graphContentHash,
+  isAssertionNode,
+} from './vpir-journal.js';
+export type {
+  ExecutionState,
+  JournalCheckpoint,
+  JournalEntry,
+  JournalRecord,
+  VPIRJournal,
+} from './vpir-journal.js';
 export { SelfModificationOrchestrator } from './self-modification-orchestrator.js';
 export type {
   ProposalStatus,
