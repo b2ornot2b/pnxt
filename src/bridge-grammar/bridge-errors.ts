@@ -186,7 +186,7 @@ function generateRepairHint(code: string, path: string, message: string): string
         return 'Node type must be one of: observation, inference, action, assertion, composition.';
       }
       if (path.includes('classification')) {
-        return 'Classification must be one of: public, internal, confidential, restricted.';
+        return 'Classification must be one of: public, internal, confidential, restricted, external.';
       }
       return undefined;
     case TOPOLOGY_ERRORS.MISSING_ROOTS:

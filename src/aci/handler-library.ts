@@ -8,7 +8,12 @@
  * Sprint 10 deliverable — Advisory Panel: Kay, Liskov, Milner.
  */
 
-import type { ToolRegistration, SideEffect, CostCategory } from '../types/aci.js';
+import type {
+  ToolRegistration,
+  ToolUIMetadata,
+  SideEffect,
+  CostCategory,
+} from '../types/aci.js';
 import type { TrustLevel } from '../types/agent.js';
 import type { ToolHandler } from './aci-gateway.js';
 
@@ -95,6 +100,7 @@ function makeRegistration(
     idempotent?: boolean;
     costCategory?: CostCategory;
     requiredTrustLevel?: TrustLevel;
+    uiMetadata?: ToolUIMetadata;
   } = {},
 ): ToolRegistration {
   return {
@@ -110,6 +116,7 @@ function makeRegistration(
       costCategory: options.costCategory ?? 'cheap',
     },
     requiredTrustLevel: options.requiredTrustLevel,
+    uiMetadata: options.uiMetadata,
   };
 }
 
@@ -169,7 +176,25 @@ export const httpFetchRegistration: ToolRegistration = makeRegistration(
     required: ['status', 'headers', 'body'],
   },
   ['network'],
-  { timeout: 30_000, retryable: true, idempotent: false, costCategory: 'moderate', requiredTrustLevel: 2 },
+  {
+    timeout: 30_000,
+    retryable: true,
+    idempotent: false,
+    costCategory: 'moderate',
+    requiredTrustLevel: 2,
+    uiMetadata: {
+      displayName: 'HTTP Fetch',
+      category: 'IO',
+      icon: 'globe',
+      tags: ['http', 'network', 'rest', 'api'],
+      examples: [
+        {
+          label: 'GET a JSON endpoint',
+          input: { url: 'https://api.example.com/v1/status', method: 'GET' },
+        },
+      ],
+    },
+  },
 );
 
 /**
@@ -248,7 +273,21 @@ export const jsonTransformRegistration: ToolRegistration = makeRegistration(
   },
   { type: 'object', description: 'Transformed data' },
   ['none'],
-  { idempotent: true },
+  {
+    idempotent: true,
+    uiMetadata: {
+      displayName: 'JSON Transform',
+      category: 'Data',
+      icon: 'braces',
+      tags: ['json', 'transform', 'jmespath', 'reshape'],
+      examples: [
+        {
+          label: 'Pick a nested field',
+          input: { data: { user: { name: 'alice' } }, path: 'user.name', operation: 'pick' },
+        },
+      ],
+    },
+  },
 );
 
 /**
@@ -286,7 +325,18 @@ export const fileReadRegistration: ToolRegistration = makeRegistration(
     required: ['content', 'path'],
   },
   ['file_read'],
-  { requiredTrustLevel: 0 },
+  {
+    requiredTrustLevel: 0,
+    uiMetadata: {
+      displayName: 'File Read',
+      category: 'IO',
+      icon: 'file',
+      tags: ['file', 'read', 'filesystem'],
+      examples: [
+        { label: 'Read a UTF-8 text file', input: { path: './README.md' } },
+      ],
+    },
+  },
 );
 
 /**
@@ -328,7 +378,19 @@ export const fileWriteRegistration: ToolRegistration = makeRegistration(
     required: ['path', 'bytesWritten'],
   },
   ['file_write'],
-  { idempotent: true, requiredTrustLevel: 1 },
+  {
+    idempotent: true,
+    requiredTrustLevel: 1,
+    uiMetadata: {
+      displayName: 'File Write',
+      category: 'IO',
+      icon: 'file-plus',
+      tags: ['file', 'write', 'filesystem'],
+      examples: [
+        { label: 'Write a text file', input: { path: './out.txt', content: 'hello' } },
+      ],
+    },
+  },
 );
 
 /**
@@ -370,7 +432,21 @@ export const stringFormatRegistration: ToolRegistration = makeRegistration(
     required: ['formatted'],
   },
   ['none'],
-  { idempotent: true },
+  {
+    idempotent: true,
+    uiMetadata: {
+      displayName: 'String Format',
+      category: 'Compute',
+      icon: 'type',
+      tags: ['string', 'template', 'format'],
+      examples: [
+        {
+          label: 'Interpolate a greeting',
+          input: { template: 'Hello, {{name}}!', values: { name: 'world' } },
+        },
+      ],
+    },
+  },
 );
 
 /**
@@ -496,7 +572,18 @@ export const mathEvalRegistration: ToolRegistration = makeRegistration(
     required: ['result'],
   },
   ['none'],
-  { idempotent: true },
+  {
+    idempotent: true,
+    uiMetadata: {
+      displayName: 'Math Evaluator',
+      category: 'Compute',
+      icon: 'calculator',
+      tags: ['math', 'arithmetic', 'expression'],
+      examples: [
+        { label: 'Evaluate with a variable', input: { expression: '2 * (x + 3)', variables: { x: 5 } } },
+      ],
+    },
+  },
 );
 
 /**
@@ -598,7 +685,21 @@ export const dataValidateRegistration: ToolRegistration = makeRegistration(
     required: ['valid', 'errors'],
   },
   ['none'],
-  { idempotent: true },
+  {
+    idempotent: true,
+    uiMetadata: {
+      displayName: 'Data Validator',
+      category: 'Data',
+      icon: 'shield-check',
+      tags: ['validate', 'schema', 'json-schema'],
+      examples: [
+        {
+          label: 'Required string field',
+          input: { data: { name: 'alice' }, rules: [{ field: 'name', type: 'string', required: true }] },
+        },
+      ],
+    },
+  },
 );
 
 /**
@@ -698,7 +799,175 @@ export const unitConvertRegistration: ToolRegistration = makeRegistration(
     required: ['result', 'from', 'to'],
   },
   ['none'],
-  { idempotent: true },
+  {
+    idempotent: true,
+    uiMetadata: {
+      displayName: 'Unit Converter',
+      category: 'Compute',
+      icon: 'ruler',
+      tags: ['unit', 'convert', 'measurement'],
+      examples: [
+        { label: 'Fahrenheit to Celsius', input: { value: 98.6, from: 'F', to: 'C' } },
+      ],
+    },
+  },
+);
+
+// ── LLM inference handler ─────────────────────────────────────────
+
+export interface LlmInferenceInput {
+  prompt: string;
+  model?: string;
+  maxTokens?: number;
+  systemPrompt?: string;
+}
+
+export interface LlmInferenceOutput {
+  response: string;
+  tokensUsed: number;
+  model: string;
+}
+
+const DEFAULT_LLM_MODEL = 'claude-sonnet-4-20250514';
+const DEFAULT_LLM_MAX_TOKENS = 1024;
+
+/**
+ * Minimal client surface used by `llmInferenceHandler`. Mirrors the
+ * Anthropic SDK's `messages.create` return shape but is narrow enough
+ * for tests to stub without pulling in the full SDK types.
+ */
+export interface LLMInferenceClient {
+  messages: {
+    create: (params: {
+      model: string;
+      max_tokens: number;
+      messages: Array<{ role: 'user'; content: string }>;
+      system?: string;
+    }) => Promise<{
+      content: Array<{ type: string; text?: string }>;
+      model?: string;
+      usage?: { input_tokens?: number; output_tokens?: number };
+    }>;
+  };
+}
+
+let _llmClientFactory:
+  | (() => LLMInferenceClient | Promise<LLMInferenceClient>)
+  | null = null;
+
+/**
+ * Test/DI seam: override how `llmInferenceHandler` obtains its client.
+ * Pass `null` (or call {@link resetLLMInferenceClientFactory}) to fall
+ * back to the real `@anthropic-ai/sdk` default export. Kept module-
+ * local so production callers cannot accidentally rebind it at runtime.
+ */
+export function setLLMInferenceClientFactory(
+  factory: (() => LLMInferenceClient | Promise<LLMInferenceClient>) | null,
+): void {
+  _llmClientFactory = factory;
+}
+
+/** Restore the default Anthropic SDK client factory. */
+export function resetLLMInferenceClientFactory(): void {
+  _llmClientFactory = null;
+}
+
+async function defaultLLMClient(): Promise<LLMInferenceClient> {
+  const sdk: typeof import('@anthropic-ai/sdk') = await import('@anthropic-ai/sdk');
+  const AnthropicCtor = sdk.default ?? (sdk as unknown as { Anthropic: typeof sdk.default }).Anthropic;
+  return new AnthropicCtor() as unknown as LLMInferenceClient;
+}
+
+/**
+ * LLM inference handler — calls the Anthropic Claude API for a single
+ * prompt/response exchange.
+ *
+ * The handler stays pure: the ACI gateway is responsible for forcing the
+ * `{trustLevel: 1, classification: 'external'}` label on results carrying
+ * the `llm_call` side effect (Sprint 18 / M7). Centralising the label
+ * policy in the gateway keeps Myers's noninterference rule inspectable
+ * in one place.
+ */
+export const llmInferenceHandler: ToolHandler = async (input: unknown): Promise<unknown> => {
+  const raw = input as LlmInferenceInput;
+
+  if (!raw || typeof raw.prompt !== 'string' || raw.prompt.length === 0) {
+    throw new Error('llm-inference: "prompt" is required and must be a non-empty string');
+  }
+
+  const model = raw.model ?? DEFAULT_LLM_MODEL;
+  const maxTokens = raw.maxTokens ?? DEFAULT_LLM_MAX_TOKENS;
+
+  const client: LLMInferenceClient = _llmClientFactory
+    ? await _llmClientFactory()
+    : await defaultLLMClient();
+
+  const messageParams: {
+    model: string;
+    max_tokens: number;
+    messages: Array<{ role: 'user'; content: string }>;
+    system?: string;
+  } = {
+    model,
+    max_tokens: maxTokens,
+    messages: [{ role: 'user', content: raw.prompt }],
+  };
+  if (raw.systemPrompt !== undefined) {
+    messageParams.system = raw.systemPrompt;
+  }
+
+  const response = await client.messages.create(messageParams);
+
+  const textBlock = response.content.find(
+    (block: { type: string }) => block.type === 'text',
+  ) as { type: 'text'; text: string } | undefined;
+  const text = textBlock?.text ?? '';
+
+  const usage = response.usage ?? { input_tokens: 0, output_tokens: 0 };
+  const tokensUsed = (usage.input_tokens ?? 0) + (usage.output_tokens ?? 0);
+
+  return { response: text, tokensUsed, model: response.model ?? model } satisfies LlmInferenceOutput;
+};
+
+export const llmInferenceRegistration: ToolRegistration = makeRegistration(
+  'llm-inference',
+  'Invoke an Anthropic Claude model with a single prompt and return the text response',
+  {
+    type: 'object',
+    properties: {
+      prompt: { type: 'string', description: 'User prompt to send to the model' },
+      model: { type: 'string', description: 'Anthropic model ID (defaults to claude-sonnet-4-20250514)' },
+      maxTokens: { type: 'number', description: 'Maximum completion tokens (default 1024)' },
+      systemPrompt: { type: 'string', description: 'Optional system prompt' },
+    },
+    required: ['prompt'],
+  },
+  {
+    type: 'object',
+    properties: {
+      response: { type: 'string' },
+      tokensUsed: { type: 'number' },
+      model: { type: 'string' },
+    },
+    required: ['response', 'tokensUsed', 'model'],
+  },
+  ['network', 'llm_call'],
+  {
+    timeout: 60_000,
+    retryable: true,
+    idempotent: false,
+    costCategory: 'expensive',
+    requiredTrustLevel: 2,
+    uiMetadata: {
+      displayName: 'LLM Inference',
+      category: 'AI',
+      icon: 'sparkles',
+      tags: ['llm', 'claude', 'inference', 'ai', 'external'],
+      examples: [
+        { label: 'Summarise text', input: { prompt: 'Summarise the following in one sentence: ...' } },
+      ],
+    },
+  },
 );
 
 // ── Aggregate exports ─────────────────────────────────────────────
@@ -721,6 +990,7 @@ export const STANDARD_HANDLERS: StandardHandler[] = [
   { name: 'math-eval', registration: mathEvalRegistration, handler: mathEvalHandler },
   { name: 'data-validate', registration: dataValidateRegistration, handler: dataValidateHandler },
   { name: 'unit-convert', registration: unitConvertRegistration, handler: unitConvertHandler },
+  { name: 'llm-inference', registration: llmInferenceRegistration, handler: llmInferenceHandler },
 ];
 
 /**

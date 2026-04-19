@@ -38,6 +38,7 @@ const VALID_CLASSIFICATIONS: Classification[] = [
   'internal',
   'confidential',
   'restricted',
+  'external',
 ];
 
 /**

@@ -332,6 +332,95 @@ export function createWeatherVPIRGraphWithApproval(
 }
 
 /**
+ * Variant of the weather pipeline that chains an `llm-inference` action
+ * after the deterministic formatter to produce a natural-language
+ * summary. Sprint 18 (M7) uses this to prove that LLM handlers are
+ * first-class catalog entries AND that their output carries the
+ * forced `external` IFC label all the way to the terminal.
+ *
+ * The graph adds one node:
+ *   - `summarize-weather`: action invoking `llm-inference` with a
+ *     prompt built from the `infer-format` response. Inherits `label`
+ *     structurally; at execution time the ACI gateway replaces the
+ *     result label with `{trustLevel:1, classification:'external'}`.
+ *
+ * `assert-valid` is rewired to validate the LLM summary instead of the
+ * raw formatted response, so the terminal is guaranteed to have seen a
+ * value stamped `external`.
+ */
+export function createWeatherVPIRGraphWithLLMSummary(
+  query: string,
+  label: SecurityLabel,
+): VPIRGraph {
+  const base = createWeatherVPIRGraph(query, label);
+  const now = new Date().toISOString();
+
+  const summarizePrompt: VPIRNode = {
+    id: 'build-summary-prompt',
+    type: 'inference',
+    operation: 'build-summary-prompt',
+    inputs: [{ nodeId: 'infer-format', port: 'response', dataType: 'string' }],
+    outputs: [{ port: 'prompt', dataType: 'object' }],
+    evidence: [{ type: 'rule', source: 'prompt-template', confidence: 1.0 }],
+    label,
+    verifiable: true,
+    createdAt: now,
+  };
+
+  const summarize: VPIRNode = {
+    id: 'summarize-weather',
+    type: 'action',
+    operation: 'llm-inference',
+    inputs: [{ nodeId: 'build-summary-prompt', port: 'prompt', dataType: 'object' }],
+    outputs: [
+      { port: 'response', dataType: 'string' },
+      { port: 'tokensUsed', dataType: 'number' },
+      { port: 'model', dataType: 'string' },
+    ],
+    evidence: [{ type: 'model_output', source: 'anthropic', confidence: 0.85 }],
+    label,
+    verifiable: false,
+    createdAt: now,
+  };
+
+  const assertValid = base.nodes.get('assert-valid')!;
+  const rewiredAssert: VPIRNode = {
+    ...assertValid,
+    inputs: [{ nodeId: 'summarize-weather', port: 'response', dataType: 'string' }],
+  };
+
+  const nodes = new Map<string, VPIRNode>(base.nodes);
+  nodes.set(summarizePrompt.id, summarizePrompt);
+  nodes.set(summarize.id, summarize);
+  nodes.set(rewiredAssert.id, rewiredAssert);
+
+  return {
+    ...base,
+    id: 'weather-pipeline-llm',
+    name: 'Weather API Query Pipeline (LLM summary)',
+    nodes,
+  };
+}
+
+/**
+ * Install the `build-summary-prompt` inference handler. Produces the
+ * `{ prompt }` input consumed by the `llm-inference` handler. Returns a
+ * new context — the original is unchanged. Sprint 18 / M7.
+ */
+export function addLLMSummaryPromptHandler(
+  context: VPIRExecutionContext,
+): VPIRExecutionContext {
+  const handlers = new Map(context.handlers);
+  handlers.set('build-summary-prompt', async (inputs) => {
+    const response = inputs.values().next().value as string;
+    return {
+      prompt: `Summarise the following weather report in one friendly sentence: ${response}`,
+    };
+  });
+  return { ...context, handlers };
+}
+
+/**
  * Install the approval-gate inference handler onto an execution context.
  * Returns a new context — the original is unchanged. Sprint 17 / M6.
  */

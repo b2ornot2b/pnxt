@@ -260,15 +260,20 @@ export class InMemoryACIGateway implements ACIGateway {
         'success',
       );
 
-      // IFC: label the result with the tool's trust requirement level.
-      // This ensures data produced by high-trust tools carries a high label,
-      // preventing it from flowing to low-trust contexts without explicit check.
+      // IFC: label the result. Outputs from untrusted oracles (currently
+      // `llm_call`) are forced to the `external` classification at trust 1
+      // regardless of caller trust — Myers's noninterference rule. Other
+      // tools label the result by their own trust requirement so high-trust
+      // data carries a high label downstream.
       const requiredTrust = computeRequiredTrust(tool.registration);
-      const resultLabel: SecurityLabel = createLabel(
-        invocation.agentId,
-        requiredTrust,
-        requiredTrust >= 3 ? 'confidential' : requiredTrust >= 1 ? 'internal' : 'public',
-      );
+      const isExternalOracle = tool.registration.sideEffects.includes('llm_call');
+      const resultLabel: SecurityLabel = isExternalOracle
+        ? createLabel(invocation.agentId, 1, 'external')
+        : createLabel(
+            invocation.agentId,
+            requiredTrust,
+            requiredTrust >= 3 ? 'confidential' : requiredTrust >= 1 ? 'internal' : 'public',
+          );
 
       return {
         requestId: invocation.requestId,

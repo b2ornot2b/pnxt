@@ -15,9 +15,21 @@ import type { TrustLevel } from './agent.js';
 
 /**
  * Data classification levels, ordered from least to most restrictive.
- * Forms a total order: public < internal < confidential < restricted.
+ * Forms a total order:
+ *   public < internal < confidential < restricted < external.
+ *
+ * `external` is the tainted band reserved for untrusted third-party
+ * oracles (LLM output, remote APIs that return unvetted data). It sits
+ * above `restricted` so tainted data cannot flow to any trusted sink
+ * without passing through an explicit declassification node — Myers's
+ * noninterference rule (Sprint 18 / M7).
  */
-export type Classification = 'public' | 'internal' | 'confidential' | 'restricted';
+export type Classification =
+  | 'public'
+  | 'internal'
+  | 'confidential'
+  | 'restricted'
+  | 'external';
 
 /**
  * Numeric ordering for classifications, used in lattice comparisons.
@@ -27,6 +39,7 @@ export const CLASSIFICATION_ORDER: Record<Classification, number> = {
   internal: 1,
   confidential: 2,
   restricted: 3,
+  external: 4,
 };
 
 /**
@@ -91,7 +104,13 @@ export function joinLabels(a: SecurityLabel, b: SecurityLabel): SecurityLabel {
     CLASSIFICATION_ORDER[b.classification],
   );
 
-  const classifications: Classification[] = ['public', 'internal', 'confidential', 'restricted'];
+  const classifications: Classification[] = [
+    'public',
+    'internal',
+    'confidential',
+    'restricted',
+    'external',
+  ];
   const classification = classifications[classOrder];
 
   return {
