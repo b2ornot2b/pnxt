@@ -60,10 +60,18 @@ export interface ProtocolMessage {
 /**
  * Named protocol definitions.
  */
-export type ProtocolName = 'task-delegation' | 'capability-negotiation' | 'conflict-resolution';
+export type ProtocolName =
+  | 'task-delegation'
+  | 'capability-negotiation'
+  | 'conflict-resolution'
+  | 'human-approval';   // Sprint 17 / M6
 
 /**
  * State of a protocol conversation.
+ *
+ * The last three states (awaiting_human, rejected, timed_out) are terminal
+ * only for `human-approval`; see TERMINAL_STATES_BY_PROTOCOL in
+ * src/protocol/nl-protocol.ts.
  */
 export type ProtocolState =
   | 'initiated'
@@ -71,7 +79,10 @@ export type ProtocolState =
   | 'agreed'
   | 'executing'
   | 'completed'
-  | 'failed';
+  | 'failed'
+  | 'awaiting_human'
+  | 'rejected'
+  | 'timed_out';
 
 /**
  * A protocol conversation between agents.

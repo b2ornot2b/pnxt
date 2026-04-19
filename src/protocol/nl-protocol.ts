@@ -57,12 +57,37 @@ const PROTOCOL_TRANSITIONS: Record<ProtocolName, ProtocolTransition[]> = {
     { from: 'agreed', messageType: 'confirm', to: 'completed', sender: 'initiator' },
     { from: 'agreed', messageType: 'confirm', to: 'completed', sender: 'responder' },
   ],
+  // Sprint 17 / M6 — Human-in-the-Loop approval.
+  //   initiator = agent requesting approval (also acts as "system" for timeouts)
+  //   responder = the human operator
+  'human-approval': [
+    { from: 'initiated', messageType: 'request', to: 'awaiting_human', sender: 'initiator' },
+    { from: 'awaiting_human', messageType: 'accept', to: 'completed', sender: 'responder' },
+    { from: 'awaiting_human', messageType: 'reject', to: 'rejected', sender: 'responder' },
+    { from: 'awaiting_human', messageType: 'propose', to: 'awaiting_human', sender: 'responder' },
+    { from: 'awaiting_human', messageType: 'inform', to: 'timed_out', sender: 'initiator' },
+  ],
 };
 
 /**
- * Terminal states — conversations in these states cannot accept more messages.
+ * Terminal states per protocol. Shared terminals (`completed`, `failed`) apply
+ * to every protocol; `human-approval` adds `rejected` and `timed_out` as
+ * additional terminals. Refactored from a flat array in Sprint 17 so
+ * human-approval-specific terminals do not bleed into the other three
+ * protocols' semantics.
  */
-const TERMINAL_STATES: ProtocolState[] = ['completed', 'failed'];
+const SHARED_TERMINAL_STATES: ProtocolState[] = ['completed', 'failed'];
+
+const TERMINAL_STATES_BY_PROTOCOL: Record<ProtocolName, ProtocolState[]> = {
+  'task-delegation': SHARED_TERMINAL_STATES,
+  'capability-negotiation': SHARED_TERMINAL_STATES,
+  'conflict-resolution': SHARED_TERMINAL_STATES,
+  'human-approval': [...SHARED_TERMINAL_STATES, 'rejected', 'timed_out'],
+};
+
+function isTerminalState(protocol: ProtocolName, state: ProtocolState): boolean {
+  return TERMINAL_STATES_BY_PROTOCOL[protocol].includes(state);
+}
 
 /**
  * Create a new protocol conversation.
@@ -159,7 +184,7 @@ export function sendMessage(
 
   // Apply transition.
   const newState = validTransition.to;
-  const isTerminal = TERMINAL_STATES.includes(newState);
+  const isTerminal = isTerminalState(conversation.protocol, newState);
 
   return {
     ...conversation,
@@ -194,10 +219,12 @@ export function getValidTransitions(
 }
 
 /**
- * Check if a conversation is in a terminal state.
+ * Check if a conversation is in a terminal state. Terminality is per-protocol:
+ * `human-approval` extends the shared {completed, failed} with `rejected` and
+ * `timed_out`.
  */
 export function isComplete(conversation: ProtocolConversation): boolean {
-  return TERMINAL_STATES.includes(conversation.state);
+  return isTerminalState(conversation.protocol, conversation.state);
 }
 
 /**
