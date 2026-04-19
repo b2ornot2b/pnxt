@@ -4,7 +4,7 @@ import {
   buildTaskAwareVPIRTool,
 } from './task-vpir-generator.js';
 import { createStandardRegistry } from '../aci/tool-registry.js';
-import { createMockClient, createSampleVPIRGraphJSON } from './llm-vpir-generator.js';
+import { createMockClient } from './llm-vpir-generator.js';
 import type Anthropic from '@anthropic-ai/sdk';
 
 /**

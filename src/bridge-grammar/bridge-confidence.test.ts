@@ -307,7 +307,7 @@ describe('scoreGraphConfidence', () => {
       const node = makeNode({ id: 'node' });
       const graph = makeGraph([node]);
 
-      const highThreshold = scoreGraphConfidence(graph, undefined, { threshold: 0.99 });
+      scoreGraphConfidence(graph, undefined, { threshold: 0.99 });
       const lowThreshold = scoreGraphConfidence(graph, undefined, { threshold: 0.1 });
 
       // With very high threshold, node might be flagged

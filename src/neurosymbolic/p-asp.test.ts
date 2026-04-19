@@ -7,8 +7,8 @@
 import { PASPEngine } from './p-asp.js';
 import type { VPIRGraph, VPIRNode, VPIROutput, VPIRRef, Evidence } from '../types/vpir.js';
 import type { SecurityLabel } from '../types/ifc.js';
-import type { PipelineContext, NodeConfidenceMap } from '../types/neurosymbolic.js';
-import type { ProgramProperty, ProgramVerificationResult } from '../types/verification.js';
+import type { PipelineContext } from '../types/neurosymbolic.js';
+import type { ProgramVerificationResult } from '../types/verification.js';
 import { createLabel } from '../types/ifc.js';
 
 // ── Helpers ──────────────────────────────────────────────────────────

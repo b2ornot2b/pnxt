@@ -21,7 +21,6 @@ import type {
   ProgramProperty,
   ProgramVerificationResult,
 } from '../types/verification.js';
-import type { VPIRGenerationResult } from '../bridge-grammar/llm-vpir-generator.js';
 import type { LLMQuery } from '../types/neurosymbolic.js';
 
 // ── Helpers ──────────────────────────────────────────────────────────
