@@ -22,7 +22,7 @@ export interface GraphNode {
   id: string;
 
   /** VPIR node type. */
-  type: 'observation' | 'inference' | 'action' | 'assertion' | 'composition';
+  type: 'observation' | 'inference' | 'action' | 'assertion' | 'composition' | 'human';
 
   /** Operation label. */
   label: string;

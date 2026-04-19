@@ -48,6 +48,7 @@ const EXPECTED_EVIDENCE_TYPES: Record<VPIRNodeType, EvidenceType[]> = {
   action: ['data', 'rule'],
   assertion: ['rule'],
   composition: ['data', 'model_output', 'rule'],
+  human: ['data'],
 };
 
 // ── P-ASP Engine ─────────────────────────────────────────────────────

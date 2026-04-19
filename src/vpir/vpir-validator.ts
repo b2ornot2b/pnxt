@@ -77,6 +77,35 @@ export function validateNode(node: VPIRNode): VPIRValidationResult {
     });
   }
 
+  if (node.type === 'human') {
+    if (node.verifiable === true) {
+      errors.push({
+        nodeId: node.id,
+        code: 'HUMAN_NODE_VERIFIABLE',
+        message: 'Human nodes must have verifiable: false',
+      });
+    }
+    if (!node.humanPromptSpec) {
+      errors.push({
+        nodeId: node.id,
+        code: 'HUMAN_NODE_MISSING_PROMPT_SPEC',
+        message: 'Human nodes must have a humanPromptSpec',
+      });
+    } else if (!node.humanPromptSpec.message) {
+      errors.push({
+        nodeId: node.id,
+        code: 'HUMAN_PROMPT_MISSING_MESSAGE',
+        message: 'humanPromptSpec.message is required',
+      });
+    }
+  } else if (node.humanPromptSpec) {
+    errors.push({
+      nodeId: node.id,
+      code: 'UNEXPECTED_HUMAN_PROMPT_SPEC',
+      message: 'humanPromptSpec is only valid on nodes with type === "human"',
+    });
+  }
+
   return { valid: errors.length === 0, errors, warnings };
 }
 

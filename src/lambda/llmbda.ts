@@ -530,6 +530,11 @@ export function vpirNodeToLambda(node: VPIRNode): LambdaTerm {
       }
       return result;
     }
+    case 'human': {
+      // Human: an externally-produced value. Modelled as a variable that
+      // stands in as an opaque input to the surrounding lambda term.
+      return createVar(node.id, baseType(outputType), label);
+    }
   }
 }
 
