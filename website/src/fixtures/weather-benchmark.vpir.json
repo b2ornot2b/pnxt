@@ -1,0 +1,179 @@
+{
+  "nodes": [
+    {
+      "id": "observe-query",
+      "type": "observation",
+      "label": "capture-user-query",
+      "position": {
+        "layer": 0,
+        "index": 0
+      },
+      "securityLabel": {
+        "owner": "weather-benchmark",
+        "trustLevel": 2,
+        "classification": "internal",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      "verifiable": true
+    },
+    {
+      "id": "infer-location",
+      "type": "inference",
+      "label": "extract-location",
+      "position": {
+        "layer": 1,
+        "index": 0
+      },
+      "securityLabel": {
+        "owner": "weather-benchmark",
+        "trustLevel": 2,
+        "classification": "internal",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      "verifiable": true
+    },
+    {
+      "id": "infer-params",
+      "type": "inference",
+      "label": "determine-parameters",
+      "position": {
+        "layer": 1,
+        "index": 1
+      },
+      "securityLabel": {
+        "owner": "weather-benchmark",
+        "trustLevel": 2,
+        "classification": "internal",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      "verifiable": true
+    },
+    {
+      "id": "prepare-request",
+      "type": "inference",
+      "label": "build-api-request",
+      "position": {
+        "layer": 2,
+        "index": 0
+      },
+      "securityLabel": {
+        "owner": "weather-benchmark",
+        "trustLevel": 2,
+        "classification": "internal",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      "verifiable": true
+    },
+    {
+      "id": "action-fetch",
+      "type": "action",
+      "label": "getWeather",
+      "position": {
+        "layer": 3,
+        "index": 0
+      },
+      "securityLabel": {
+        "owner": "weather-benchmark",
+        "trustLevel": 2,
+        "classification": "internal",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      "verifiable": true
+    },
+    {
+      "id": "infer-format",
+      "type": "inference",
+      "label": "format-response",
+      "position": {
+        "layer": 4,
+        "index": 0
+      },
+      "securityLabel": {
+        "owner": "weather-benchmark",
+        "trustLevel": 2,
+        "classification": "internal",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      "verifiable": true
+    },
+    {
+      "id": "assert-valid",
+      "type": "assertion",
+      "label": "validate-response",
+      "position": {
+        "layer": 5,
+        "index": 0
+      },
+      "securityLabel": {
+        "owner": "weather-benchmark",
+        "trustLevel": 2,
+        "classification": "internal",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      "verifiable": true
+    }
+  ],
+  "edges": [
+    {
+      "id": "e_0",
+      "source": "observe-query",
+      "target": "infer-location",
+      "label": "query",
+      "dataType": "string"
+    },
+    {
+      "id": "e_1",
+      "source": "observe-query",
+      "target": "infer-params",
+      "label": "query",
+      "dataType": "string"
+    },
+    {
+      "id": "e_2",
+      "source": "infer-location",
+      "target": "prepare-request",
+      "label": "location",
+      "dataType": "string"
+    },
+    {
+      "id": "e_3",
+      "source": "infer-params",
+      "target": "prepare-request",
+      "label": "params",
+      "dataType": "object"
+    },
+    {
+      "id": "e_4",
+      "source": "prepare-request",
+      "target": "action-fetch",
+      "label": "request",
+      "dataType": "object"
+    },
+    {
+      "id": "e_5",
+      "source": "action-fetch",
+      "target": "infer-format",
+      "label": "weather",
+      "dataType": "object"
+    },
+    {
+      "id": "e_6",
+      "source": "infer-format",
+      "target": "assert-valid",
+      "label": "response",
+      "dataType": "string"
+    }
+  ],
+  "metadata": {
+    "id": "weather-pipeline",
+    "name": "Weather API Query Pipeline",
+    "nodeCount": 7,
+    "edgeCount": 7,
+    "roots": [
+      "observe-query"
+    ],
+    "terminals": [
+      "assert-valid"
+    ]
+  }
+}

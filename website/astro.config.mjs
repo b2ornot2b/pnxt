@@ -1,10 +1,12 @@
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
+import react from '@astrojs/react';
 
 export default defineConfig({
   site: 'https://b2ornot2b.github.io',
   base: '/pnxt',
   integrations: [
+    react(),
     starlight({
       title: 'pnxt',
       description:
@@ -92,6 +94,12 @@ export default defineConfig({
               slug: 'roadmap/phase-7',
             },
             { label: 'Future Vision', slug: 'roadmap/future' },
+          ],
+        },
+        {
+          label: 'Playground',
+          items: [
+            { label: 'VPIR Viewer', slug: 'playground/viewer' },
           ],
         },
         {
