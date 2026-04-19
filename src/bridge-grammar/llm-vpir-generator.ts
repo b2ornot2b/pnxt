@@ -18,6 +18,9 @@ import type { SecurityLabel } from '../types/ifc.js';
 import type { ToolRegistry } from '../aci/tool-registry.js';
 import { VPIRGraphSchema } from './vpir-schema.js';
 import { parseVPIRGraph } from './schema-validator.js';
+import { classifyError } from './bridge-errors.js';
+import { categorize } from './retry-categorizer.js';
+import type { RetryTelemetryCollector } from './retry-telemetry.js';
 
 /**
  * Options for VPIR generation.
@@ -49,6 +52,15 @@ export interface VPIRGeneratorOptions {
    * Sprint 18 — M7 (First-Class LLM + Catalog Discovery).
    */
   registry?: ToolRegistry;
+
+  /**
+   * Optional retry-telemetry collector. When supplied, every failed
+   * retry attempt produces one structured `RetryEvent` categorized into
+   * the five-bucket telemetry taxonomy. When absent (default), no
+   * telemetry is recorded and behavior matches the pre-Sprint-20 loop.
+   * Sprint 20 — M9 (Type-System Decision Data).
+   */
+  collector?: RetryTelemetryCollector;
 }
 
 /**
@@ -175,7 +187,17 @@ export async function generateVPIRGraph(
         (block): block is Anthropic.TextBlock => block.type === 'text',
       );
       rawResponse = textBlock?.text;
-      errors.push(`Attempt ${attempt + 1}: No tool_use block in response`);
+      const rejectionReason = 'No tool_use block in response';
+      errors.push(`Attempt ${attempt + 1}: ${rejectionReason}`);
+      if (options?.collector) {
+        await options.collector.record({
+          attemptNumber: attempt + 1,
+          rejectionReason,
+          errorCategory: 'other',
+          taskDescription,
+          rawResponse,
+        });
+      }
       continue;
     }
 
@@ -204,6 +226,17 @@ export async function generateVPIRGraph(
     errors.push(
       `Attempt ${attempt + 1}: Validation failed — ${attemptErrors.join('; ')}`,
     );
+
+    if (options?.collector) {
+      const classified = validationResult.errors.map(classifyError);
+      await options.collector.record({
+        attemptNumber: attempt + 1,
+        rejectionReason: attemptErrors.join('; '),
+        errorCategory: categorize(classified),
+        taskDescription,
+        rawResponse,
+      });
+    }
   }
 
   return {

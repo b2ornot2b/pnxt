@@ -176,7 +176,7 @@ S15 █████████████████████████�
 | [S17](./sprint-17-hitl-primitive.md) | Human-in-the-Loop Primitive | P1 | Liskov, Myers, Agha, Pearl | **M6 (Human-in-the-Loop)** |
 | [S18](./sprint-18-node-catalog.md) | Node Catalog Expansion — llm-inference + Descriptor Metadata | P1 | Myers, Sutskever, Liskov | **M7 (First-Class LLM + Catalog Discovery)** — ✅ complete 2026-04-19 |
 | [S19](./sprint-19-visual-authoring-mvv.md) | Visual Authoring MVV — Interactive VPIR Graph Viewer | P2 | Kay, Liskov, Myers | **M8 (Dual Representation)** |
-| [S20](./sprint-20-bridge-grammar-telemetry.md) | Bridge-Grammar Retry Telemetry | P3 | Church, Sutskever, de Moura, Liskov | **M9 (Type-System Decision Data)** |
+| [S20](./sprint-20-bridge-grammar-telemetry.md) | Bridge-Grammar Retry Telemetry | P3 | Church, Sutskever, de Moura, Liskov | **M9 (Type-System Decision Data)** — ✅ code-complete 2026-04-19; post-sprint triage pending ≥ 100 real events |
 
 ### Sequencing & Dependencies
 
