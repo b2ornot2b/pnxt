@@ -177,6 +177,7 @@ S15 █████████████████████████�
 | [S18](./sprint-18-node-catalog.md) | Node Catalog Expansion — llm-inference + Descriptor Metadata | P1 | Myers, Sutskever, Liskov | **M7 (First-Class LLM + Catalog Discovery)** — ✅ complete 2026-04-19 |
 | [S19](./sprint-19-visual-authoring-mvv.md) | Visual Authoring MVV — Interactive VPIR Graph Viewer | P2 | Kay, Liskov, Myers | **M8 (Dual Representation)** |
 | [S20](./sprint-20-bridge-grammar-telemetry.md) | Bridge-Grammar Retry Telemetry | P3 | Church, Sutskever, de Moura, Liskov | **M9 (Type-System Decision Data)** — ✅ code-complete 2026-04-19; post-sprint triage pending ≥ 100 real events |
+| [S21](./sprint-21-bidirectional-mvv.md) | Bidirectional MVV — Authoring Surface with Verified Patches | P2 | Kay, Liskov, Myers, Agha | **M8 Phase 2 (Dual Representation — Edit)** — 📋 planned |
 
 ### Sequencing & Dependencies
 
@@ -184,15 +185,17 @@ S15 █████████████████████████�
 S16 (Durable) ──┬──> S17 (HITL depends on journal)
                 └──> S18 (llm-inference benefits from journaled side effects)
 S18 (Catalog) ─────> S19 (Visual viewer benefits from uiMetadata)
+S19 (MVV read) ────> S21 (MVV edit builds on viewer + S14 diff/patch + S17 HumanGateway)
 S20 (Telemetry) ── independent; late in the phase to accumulate data
 ```
 
-Recommended order: **S16 → S17 → S18 → S19 → S20**. S16 + S18 can run in parallel if capacity allows.
+Recommended order: **S16 → S17 → S18 → S19 → S20 → S21**. S21 is independent of M9 telemetry and closes the M8 dual-representation loop.
 
 ### Non-Goals for Phase 8
 
 - Restate SDK integration (deferred; bespoke journal is the research-phase substrate).
 - Hindley-Milner type-system extensions (waits for S20 telemetry before committing).
 - Messaging integrations (Slack, Discord, Email, etc.) — lowest research leverage per the catalog roadmap.
-- Bidirectional graph editing in the MVV (Sprint 19 is view-only; editing is a later sprint).
+- Dense-code surface syntax (M8 Phase 3; S21 delivers structured editing, not textual DSL).
+- Multi-user collaboration or persisted undo history in the MVV.
 
